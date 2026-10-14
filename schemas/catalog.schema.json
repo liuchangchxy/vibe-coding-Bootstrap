@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/catalog.schema.json",
+  "title": "Capability registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "catalog_version",
+    "capabilities"
+  ],
+  "properties": {
+    "catalog_version": {
+      "const": 1
+    },
+    "capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^(engineering|workflow|quality|research|agent|automation|delivery|domain)/[a-z0-9]+(?:-[a-z0-9]+)*\\.yaml$"
+      }
+    }
+  }
+}

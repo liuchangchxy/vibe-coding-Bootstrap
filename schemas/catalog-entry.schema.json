@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/catalog-entry.schema.json",
+  "title": "Catalog entry",
+  "description": "Admission constraints on Capability records listed in the registry; legacy Capability records need not be catalog entries.",
+  "allOf": [
+    {
+      "$ref": "capability.schema.json"
+    },
+    {
+      "required": [
+        "purpose",
+        "applicability",
+        "category",
+        "maturity",
+        "components",
+        "component_sources",
+        "source",
+        "maintainer",
+        "last_reviewed",
+        "evidence",
+        "selection_hints"
+      ],
+      "if": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "state": {
+                "const": "pending"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "status": {
+            "enum": [
+              "draft",
+              "deprecated"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

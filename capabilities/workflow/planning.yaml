@@ -1,0 +1,42 @@
+id: planning
+name: Planning
+kind: workflow
+description: Make goals, scope, acceptance conditions, and work dependencies explicit before implementation.
+status: draft
+source: ../../docs/catalog-rules.md
+category: workflow
+purpose: Make goals, scope, acceptance conditions, and work dependencies explicit before implementation.
+applicability:
+  use_when:
+  - Work has multiple steps or unresolved scope that benefits from a shared plan.
+  not_for:
+  - Mandatory ceremony for every small edit or automatic task execution.
+maturity: experimental
+maintainer: vibe-coding-bootstrap repository maintainers
+last_reviewed: '2026-10-15'
+requires: []
+related_capabilities:
+- documentation
+- research-workflow
+conflicts_with: []
+components:
+- id: reference
+  kind: documentation
+  role: Offer an existing work-item representation for human-maintained plans.
+  source_id: primary
+component_sources:
+- id: primary
+  title: 'GitHub Docs: About issues'
+  uri: https://docs.github.com/en/issues/tracking-your-work-with-issues/learning-about-issues/about-issues
+  relationship: reference
+  accessed_on: '2026-10-15'
+selection_hints:
+  signals:
+  - Scope, dependencies, or acceptance conditions need clarification.
+  constraints:
+  - GitHub issues are one possible component, not a required host.
+  - Planning depth follows project complexity and user preference.
+evidence:
+  state: pending
+  summary: No project-use evidence has been recorded. The external reference establishes provenance only;
+    a maintainer must review observed outcomes before validation.

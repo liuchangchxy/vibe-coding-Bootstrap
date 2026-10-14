@@ -1,0 +1,42 @@
+id: research-workflow
+name: Research workflow
+kind: workflow
+description: Preserve methods, inputs, and evidence so research findings can be examined and reproduced.
+status: draft
+source: ../../docs/catalog-rules.md
+category: research
+purpose: Preserve methods, inputs, and evidence so research findings can be examined and reproduced.
+applicability:
+  use_when:
+  - An investigation or experiment must report provenance, outcomes, and limitations.
+  not_for:
+  - Automatic Experience extraction or copying private datasets into this catalog.
+maturity: experimental
+maintainer: vibe-coding-bootstrap repository maintainers
+last_reviewed: '2026-10-15'
+requires: []
+related_capabilities:
+- documentation
+- planning
+conflicts_with: []
+components:
+- id: reference
+  kind: documentation
+  role: Clarify reproducibility terms when describing evidence and methods.
+  source_id: primary
+component_sources:
+- id: primary
+  title: 'The Turing Way: Definitions'
+  uri: https://book.the-turing-way.org/reproducible-research/overview/overview-definitions/
+  relationship: reference
+  accessed_on: '2026-10-15'
+selection_hints:
+  signals:
+  - Claims depend on experiments, datasets, or reproducible methods.
+  constraints:
+  - A source reference is not evidence that this capability improved a real project.
+  - Keep confidential inputs and project observations in their owning project.
+evidence:
+  state: pending
+  summary: No project-use evidence has been recorded. The external reference establishes provenance only;
+    a maintainer must review observed outcomes before validation.

@@ -1,0 +1,41 @@
+id: engineering-baseline
+name: Engineering baseline
+kind: workflow
+description: Keep development changes traceable and reviewable through explicit version-control practices.
+status: draft
+source: ../../docs/catalog-rules.md
+category: engineering
+purpose: Keep development changes traceable and reviewable through explicit version-control practices.
+applicability:
+  use_when:
+  - A software project needs a shared baseline for recording and inspecting changes.
+  not_for:
+  - Repository hosting policy or a project-specific branching mandate.
+maturity: experimental
+maintainer: vibe-coding-bootstrap repository maintainers
+last_reviewed: '2026-10-15'
+requires: []
+related_capabilities:
+- code-review
+- documentation
+conflicts_with: []
+components:
+- id: reference
+  kind: documentation
+  role: Explain version history and recovery concepts when defining a project baseline.
+  source_id: primary
+component_sources:
+- id: primary
+  title: 'Pro Git: About Version Control'
+  uri: https://git-scm.com/book/en/v2/Getting-Started-About-Version-Control
+  relationship: reference
+  accessed_on: '2026-10-15'
+selection_hints:
+  signals:
+  - Change history and reviewability are required.
+  constraints:
+  - Choose the actual branching policy with the project owner.
+evidence:
+  state: pending
+  summary: No project-use evidence has been recorded. The external reference establishes provenance only;
+    a maintainer must review observed outcomes before validation.

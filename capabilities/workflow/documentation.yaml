@@ -1,0 +1,41 @@
+id: documentation
+name: Documentation
+kind: workflow
+description: Organize explanations, reference material, tutorials, and task guidance around reader needs.
+status: draft
+source: ../../docs/catalog-rules.md
+category: workflow
+purpose: Organize explanations, reference material, tutorials, and task guidance around reader needs.
+applicability:
+  use_when:
+  - Project knowledge needs a clear audience and a maintainable documentation structure.
+  not_for:
+  - Promoting private project facts into global capability records.
+maturity: experimental
+maintainer: vibe-coding-bootstrap repository maintainers
+last_reviewed: '2026-10-15'
+requires: []
+related_capabilities:
+- planning
+- engineering-baseline
+conflicts_with: []
+components:
+- id: reference
+  kind: documentation
+  role: Distinguish documentation needs before selecting the form of a document.
+  source_id: primary
+component_sources:
+- id: primary
+  title: Diataxis
+  uri: https://diataxis.fr/
+  relationship: reference
+  accessed_on: '2026-10-15'
+selection_hints:
+  signals:
+  - Readers need guidance or stable reference material.
+  constraints:
+  - Project-specific content stays in the project; this catalog only describes the reusable ability.
+evidence:
+  state: pending
+  summary: No project-use evidence has been recorded. The external reference establishes provenance only;
+    a maintainer must review observed outcomes before validation.

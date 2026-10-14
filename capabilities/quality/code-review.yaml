@@ -1,0 +1,41 @@
+id: code-review
+name: Code review
+kind: workflow
+description: Assess a proposed change for correctness, clarity, and maintainability before acceptance.
+status: draft
+source: ../../docs/catalog-rules.md
+category: quality
+purpose: Assess a proposed change for correctness, clarity, and maintainability before acceptance.
+applicability:
+  use_when:
+  - Changes need an explicit review by a person or a separately authorized reviewer.
+  not_for:
+  - Automatic approval, merge authority, or a substitute for runtime evidence.
+maturity: experimental
+maintainer: vibe-coding-bootstrap repository maintainers
+last_reviewed: '2026-10-15'
+requires: []
+related_capabilities:
+- testing
+- engineering-baseline
+conflicts_with: []
+components:
+- id: reference
+  kind: documentation
+  role: Inform the review scope and the distinction between author and reviewer responsibilities.
+  source_id: primary
+component_sources:
+- id: primary
+  title: 'Google Engineering Practices: Code Review'
+  uri: https://google.github.io/eng-practices/review/
+  relationship: reference
+  accessed_on: '2026-10-15'
+selection_hints:
+  signals:
+  - A reviewable change and acceptance expectations exist.
+  constraints:
+  - Who reviews and who accepts remain project decisions.
+evidence:
+  state: pending
+  summary: No project-use evidence has been recorded. The external reference establishes provenance only;
+    a maintainer must review observed outcomes before validation.

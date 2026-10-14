@@ -10,7 +10,7 @@ The long-term learning loop is: initialize a project, select and assemble capabi
 
 ### Capability
 
-A Capability is a reusable development asset. Its `kind` identifies one of the supported asset categories: Skill, MCP, Rule, Prompt, Template, Documentation, or Workflow. Metadata describes its intended fit, provenance, status, prerequisites, conflicts, and review history. Capability records describe assets; they do not download, install, execute, or manage them.
+A Capability is a reusable development ability described through references to development assets. Its `kind` identifies its primary representation: Skill, MCP, Rule, Prompt, Template, Documentation, or Workflow. Metadata describes its intended fit, provenance, status, prerequisites, conflicts, and review history. Capability records describe assets; they do not download, install, execute, or manage them. Phase 2 makes composite abilities explicit with `components`: a Skill can be a component without being the ability itself.
 
 Only the catalog owner can mark a Capability `validated`. That status indicates the asset has been reviewed for use; it does not promise success in every project.
 
@@ -30,6 +30,7 @@ Experience records are entered by a person. Their presence does not establish ca
 - An Experience may refer to Capabilities used through `capability_ids`.
 - A Capability may point to supporting Experience records through `experience_ids`.
 - These are identifier references; Phase 1 does not enforce catalog-wide referential integrity.
+- Phase 2 adds a unique [registry](../capabilities/catalog.yaml), [admission rules](catalog-rules.md), and a [discovery contract](capability-discovery.md). Its repository validation checks these references for catalog entries; no runtime resolver is provided.
 
 ## Data and maintenance conventions
 
@@ -41,4 +42,4 @@ Experience records are entered by a person. Their presence does not establish ca
 
 ## Phase boundary
 
-This phase delivers the three JSON Schemas and their shared conceptual documentation. It does not implement project analysis, automatic recommendations or installation, CLI, MCP download, Skill management, Memory, or automatic Experience extraction. These can be considered in later phases without changing the meaning of the foundational records.
+Phase 1 delivered the three JSON Schemas and their shared conceptual documentation. Phase 2 extends the Capability schema with optional metadata and applies stricter admission constraints only to catalog entries. It does not implement project analysis, automatic recommendations or installation, CLI, MCP download, Skill management, Memory, or automatic Experience extraction.

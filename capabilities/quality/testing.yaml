@@ -1,0 +1,43 @@
+id: testing
+name: Testing
+kind: workflow
+description: Check observable behavior with focused, repeatable tests appropriate to the change.
+status: draft
+source: ../../docs/catalog-rules.md
+category: quality
+purpose: Check observable behavior with focused, repeatable tests appropriate to the change.
+applicability:
+  use_when:
+  - Behavior changes need regression evidence.
+  - An executable project needs a test organization convention.
+  not_for:
+  - A guarantee of correctness from coverage numbers alone.
+maturity: experimental
+maintainer: vibe-coding-bootstrap repository maintainers
+last_reviewed: '2026-10-15'
+requires: []
+related_capabilities:
+- debugging
+- code-review
+conflicts_with: []
+components:
+- id: reference
+  kind: documentation
+  role: Provide a concrete Python example of test organization and collection conventions.
+  source_id: primary
+component_sources:
+- id: primary
+  title: 'pytest: Good Integration Practices'
+  uri: https://docs.pytest.org/en/stable/explanation/goodpractices.html
+  relationship: reference
+  accessed_on: '2026-10-15'
+selection_hints:
+  signals:
+  - Regression risk or repeatable behavioral checks are relevant.
+  constraints:
+  - The referenced pytest component applies to Python; other stacks need a suitable component reference.
+  - Test effort must reflect change impact.
+evidence:
+  state: pending
+  summary: No project-use evidence has been recorded. The external reference establishes provenance only;
+    a maintainer must review observed outcomes before validation.

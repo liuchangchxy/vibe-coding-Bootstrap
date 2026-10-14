@@ -1,0 +1,42 @@
+id: debugging
+name: Debugging
+kind: workflow
+description: Reproduce a failure and inspect execution evidence to distinguish observations from hypotheses.
+status: draft
+source: ../../docs/catalog-rules.md
+category: engineering
+purpose: Reproduce a failure and inspect execution evidence to distinguish observations from hypotheses.
+applicability:
+  use_when:
+  - A concrete failure or discrepancy needs a bounded investigation.
+  not_for:
+  - Speculative fallback code without a reproduced failure or known requirement.
+maturity: experimental
+maintainer: vibe-coding-bootstrap repository maintainers
+last_reviewed: '2026-10-15'
+requires: []
+related_capabilities:
+- testing
+- research-workflow
+conflicts_with: []
+components:
+- id: reference
+  kind: documentation
+  role: Provide a concrete execution-inspection component for Python failures.
+  source_id: primary
+component_sources:
+- id: primary
+  title: 'Python documentation: pdb'
+  uri: https://docs.python.org/3/library/pdb.html
+  relationship: reference
+  accessed_on: '2026-10-15'
+selection_hints:
+  signals:
+  - An observed failure, reproducible input, or discrepancy is available.
+  constraints:
+  - The pdb component applies to Python; use a suitable debugger for another runtime.
+  - An investigation does not establish a root cause until evidence supports it.
+evidence:
+  state: pending
+  summary: No project-use evidence has been recorded. The external reference establishes provenance only;
+    a maintainer must review observed outcomes before validation.

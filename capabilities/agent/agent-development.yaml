@@ -1,0 +1,44 @@
+id: agent-development
+name: Agent development
+kind: workflow
+description: Describe an agent system with explicit task boundaries and a way to check its observable
+  behavior.
+status: draft
+source: ../../docs/catalog-rules.md
+category: agent
+purpose: Describe an agent system with explicit task boundaries and a way to check its observable behavior.
+applicability:
+  use_when:
+  - A project is intentionally developing agent behavior and needs behavioral acceptance cases.
+  not_for:
+  - Creating an agent in Bootstrap Phase 2 or granting tools autonomous authority.
+maturity: experimental
+maintainer: vibe-coding-bootstrap repository maintainers
+last_reviewed: '2026-10-15'
+requires:
+- testing
+related_capabilities:
+- planning
+- code-review
+conflicts_with: []
+components:
+- id: reference
+  kind: documentation
+  role: Inform the distinction between predefined workflows and agent-directed behavior.
+  source_id: primary
+component_sources:
+- id: primary
+  title: 'Anthropic: Building effective agents'
+  uri: https://www.anthropic.com/engineering/building-effective-agents
+  relationship: reference
+  accessed_on: '2026-10-15'
+selection_hints:
+  signals:
+  - The product includes agent behavior rather than merely using an AI coding assistant.
+  constraints:
+  - Testing is a catalog prerequisite for checking agent behavior.
+  - Tool permissions, evaluation cases, and runtime choices remain project-specific.
+evidence:
+  state: pending
+  summary: No project-use evidence has been recorded. The external reference establishes provenance only;
+    a maintainer must review observed outcomes before validation.

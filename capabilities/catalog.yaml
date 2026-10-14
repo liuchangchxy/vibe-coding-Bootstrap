@@ -1,0 +1,10 @@
+catalog_version: 1
+capabilities:
+- engineering/engineering-baseline.yaml
+- quality/testing.yaml
+- quality/code-review.yaml
+- workflow/documentation.yaml
+- workflow/planning.yaml
+- engineering/debugging.yaml
+- research/research-workflow.yaml
+- agent/agent-development.yaml
