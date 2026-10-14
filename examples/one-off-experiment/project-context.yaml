@@ -1,0 +1,11 @@
+name: One-off experiment
+description: A disposable local experiment.
+project_type: experiment
+lifecycle: short_term
+technology_tags: []
+runtime: unspecified
+platform: local
+goal: Answer one bounded question.
+constraints:
+- Avoid unnecessary process.
+collaboration: solo

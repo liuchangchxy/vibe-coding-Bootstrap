@@ -1,0 +1,12 @@
+name: Maintained web project
+description: A long-lived web application.
+project_type: web
+lifecycle: long_lived
+technology_tags:
+- web
+runtime: Node.js
+platform: browser
+goal: Maintain a reliable web application.
+constraints:
+- Keep private facts in the project.
+collaboration: team

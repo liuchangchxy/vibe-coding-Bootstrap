@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/project-context.schema.json",
+  "title": "Project Context",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "name",
+    "description",
+    "project_type",
+    "lifecycle",
+    "technology_tags",
+    "runtime",
+    "platform",
+    "goal",
+    "constraints",
+    "collaboration"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "project_type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lifecycle": {
+      "enum": [
+        "prototype",
+        "short_term",
+        "long_lived",
+        "production"
+      ]
+    },
+    "technology_tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "runtime": {
+      "type": "string",
+      "minLength": 1
+    },
+    "platform": {
+      "type": "string",
+      "minLength": 1
+    },
+    "goal": {
+      "type": "string",
+      "minLength": 1
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "collaboration": {
+      "enum": [
+        "solo",
+        "team",
+        "open_source"
+      ]
+    }
+  }
+}

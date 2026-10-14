@@ -1,0 +1,67 @@
+project_context:
+  name: Agent prototype
+  description: A bounded agent development project.
+  project_type: agent
+  lifecycle: prototype
+  technology_tags:
+  - python
+  runtime: Python
+  platform: local
+  goal: Validate observable agent behavior.
+  constraints:
+  - No autonomous approval.
+  collaboration: solo
+catalog_revision: sha256:fc4b741c5f90fac0b12aa079583c8e5c9bbeccf0ac5ed824530957fd64e1a453
+profile_source: profiles/personal.yaml
+experience_sources: []
+recommendations:
+- capability_id: agent-development
+  reason: 'Explicit agent development needs bounded behavior and acceptance cases.
+    Matched: {''project_type'': ''agent''}.'
+  confidence: high
+  source:
+  - composer/rules.yaml#agent-project
+  catalog_record: capabilities/agent/agent-development.yaml
+  status: draft
+  maturity: experimental
+  evidence:
+    state: pending
+    summary: No project-use evidence has been recorded. The external reference establishes
+      provenance only; a maintainer must review observed outcomes before validation.
+  constraints:
+  - Testing is a catalog prerequisite for checking agent behavior.
+  - Tool permissions, evaluation cases, and runtime choices remain project-specific.
+  not_for:
+  - Creating an agent in Bootstrap Phase 2 or granting tools autonomous authority.
+  requires:
+  - testing
+  experiences: []
+- capability_id: testing
+  reason: Catalog prerequisite of agent-development.
+  confidence: high
+  source:
+  - capabilities/agent/agent-development.yaml#requires
+  catalog_record: capabilities/quality/testing.yaml
+  status: draft
+  maturity: experimental
+  evidence:
+    state: pending
+    summary: No project-use evidence has been recorded. The external reference establishes
+      provenance only; a maintainer must review observed outcomes before validation.
+  constraints:
+  - The referenced pytest component applies to Python; other stacks need a suitable
+    component reference.
+  - Test effort must reflect change impact.
+  not_for:
+  - A guarantee of correctness from coverage numbers alone.
+  requires: []
+  experiences: []
+excluded: []
+conflicts: []
+requires_confirmation: true
+notes:
+- Confidence describes rule relevance, not proven capability effectiveness.
+- Free-text goals, constraints, runtime and platform require human applicability review.
+- Experiences match project type only; original evidence and limits are retained without
+  changing recommendations.
+- Conflicting candidates have no automatic winner; resolve them before any later assembly.

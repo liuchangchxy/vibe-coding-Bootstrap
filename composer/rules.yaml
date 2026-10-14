@@ -1,0 +1,19 @@
+rules:
+- id: maintained-project
+  condition:
+    lifecycle: [long_lived, production]
+  recommend: [engineering-baseline, testing, documentation]
+  reason: Long-lived and production projects need change history, regression checks, and maintainable guidance.
+  confidence: high
+- id: agent-project
+  condition:
+    project_type: [agent]
+  recommend: [agent-development]
+  reason: Explicit agent development needs bounded behavior and acceptance cases.
+  confidence: high
+- id: research-project
+  condition:
+    project_type: [research]
+  recommend: [research-workflow]
+  reason: Explicit research work needs traceable methods and evidence limits.
+  confidence: medium

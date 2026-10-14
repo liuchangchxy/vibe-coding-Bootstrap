@@ -1,0 +1,12 @@
+name: Agent prototype
+description: A bounded agent development project.
+project_type: agent
+lifecycle: prototype
+technology_tags:
+- python
+runtime: Python
+platform: local
+goal: Validate observable agent behavior.
+constraints:
+- No autonomous approval.
+collaboration: solo

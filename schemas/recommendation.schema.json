@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/recommendation.schema.json",
+  "title": "Capability Recommendation Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "project_context",
+    "catalog_revision",
+    "profile_source",
+    "experience_sources",
+    "recommendations",
+    "excluded",
+    "conflicts",
+    "requires_confirmation",
+    "notes"
+  ],
+  "properties": {
+    "project_context": {
+      "$ref": "project-context.schema.json"
+    },
+    "catalog_revision": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "profile_source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "experience_sources": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "capability_id",
+          "reason",
+          "confidence",
+          "source",
+          "catalog_record",
+          "status",
+          "maturity",
+          "evidence",
+          "constraints",
+          "not_for",
+          "requires",
+          "experiences"
+        ],
+        "properties": {
+          "capability_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "confidence": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "source": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true,
+            "minItems": 1
+          },
+          "catalog_record": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "$ref": "capability.schema.json#/properties/status"
+          },
+          "maturity": {
+            "$ref": "capability.schema.json#/properties/maturity"
+          },
+          "evidence": {
+            "$ref": "capability.schema.json#/properties/evidence"
+          },
+          "constraints": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "not_for": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "requires": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "experiences": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "source",
+                "record"
+              ],
+              "properties": {
+                "source": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "record": {
+                  "$ref": "experience.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "excluded": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "capability_id",
+          "reason"
+        ],
+        "properties": {
+          "capability_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "uniqueItems": true,
+        "items": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "requires_confirmation": {
+      "const": true
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    }
+  }
+}

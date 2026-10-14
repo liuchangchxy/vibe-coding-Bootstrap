@@ -25,4 +25,12 @@ The [registry](capabilities/catalog.yaml) indexes eight authored capability desc
 
 The original Capability schema remains compatible with Phase 1 records. The catalog-entry schema adds admission requirements, and the catalog schema describes the registry. Profile and Experience schemas are unchanged.
 
-Phase 2 delivers data and documentation only. Composer, recommendation algorithms, installation, CLI, Web UI, agents, services, Memory, automatic Experience extraction, and VCCP integration are deferred. Implementation is ready for Controller acceptance; Phase 3 has not started.
+Phase 2 delivered data and documentation only; its historical discovery contract remains documented above.
+
+## Phase 3: Capability Composer MVP
+
+The [Composer](docs/composer.md) reads a [project context](schemas/project-context.schema.json), the Catalog, an explicit [personal Profile](profiles/personal.yaml), and curated Experience to produce an explainable [recommendation plan](schemas/recommendation.schema.json). Editable [rules](composer/rules.yaml) preserve human control. Plans always require confirmation.
+
+Three [examples](examples/) cover a maintained web project, an agent project, and a one-off experiment. Run the validation prototype with `python -m composer examples/agent/project-context.yaml --output recommendation.yaml` after installing `requirements.txt`.
+
+Phase 3 performs no installation, target-project modification, synchronization, agent execution, or automatic approval. Phase 4 awaits Controller acceptance.
