@@ -1,0 +1,31 @@
+id: exp-testing-gap-candidate-001
+title: Consider focused regression coverage for changed behavior
+recorded_by: example-maintainer
+recorded_at: '2026-10-15T00:00:00Z'
+project_context:
+  project_type: maintained-web-application
+  goal: Make changed behavior easier to validate
+approach: Propose adding a focused regression test when changing behavior.
+outcome:
+  summary: Candidate hypothesis derived from the illustrative raw record; not yet tried.
+  result: inconclusive
+evidence:
+  - description: The source record is illustrative and supplies no validation result.
+    source: ../raw/testing-gap.yaml
+confidence: low
+capability_ids: [quality/testing]
+identity: exp-testing-gap-candidate-001
+source:
+  project: illustrative-maintained-web-application
+  recorded_by: example-maintainer
+  record_uri: ../raw/testing-gap.yaml
+context: A hypothetical change lacked a focused regression check.
+observation: No targeted test was available for the changed behavior.
+solution: Candidate guidance is to identify focused regression coverage during planning.
+scope: [hypothetical-maintenance-change]
+reasoning:
+  interpretation: A focused test could make this behavior easier to check.
+  limits: [Not validated, May not fit one-off work, No evidence of outcome improvement]
+status: candidate
+review:
+  review_status: pending

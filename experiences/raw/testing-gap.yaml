@@ -1,0 +1,30 @@
+id: exp-testing-gap-001
+title: Capture a missing test as a project observation
+recorded_by: example-maintainer
+recorded_at: '2026-10-15T00:00:00Z'
+project_context:
+  project_type: maintained-web-application
+  goal: Deliver a change with a repeatable validation path
+  technologies: [Python]
+  constraints: [Illustrative example only]
+approach: A change was made without a focused regression test.
+outcome:
+  summary: The example records a validation gap; it asserts no real project result.
+  result: inconclusive
+evidence:
+  - description: Illustrative source observation; not evidence from a real project.
+    source: examples/experience-lifecycle/testing-gap.yaml
+confidence: low
+identity: exp-testing-gap-001
+source:
+  project: illustrative-maintained-web-application
+  recorded_by: example-maintainer
+  recorded_at: '2026-10-15T00:00:00Z'
+context: A hypothetical maintenance task had no focused regression check.
+observation: The change could not be checked with a targeted regression test.
+solution: Capture the gap and affected behavior for later review; no fix is claimed here.
+scope: [illustrative-example]
+reasoning:
+  interpretation: This observation may motivate a candidate about test planning.
+  limits: [Hypothetical example, No test result, No claim of reusable benefit]
+status: raw

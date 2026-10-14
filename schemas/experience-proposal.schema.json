@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/experience-proposal.schema.json",
+  "title": "Experience Proposal",
+  "description": "A reviewed proposal describing whether and how an Experience may inform a Capability change.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["proposal_id", "source_experience", "target_capability", "change_type", "reason", "evidence", "confidence", "scope", "risk", "review_status"],
+  "properties": {
+    "proposal_id": { "type": "string", "minLength": 1 },
+    "source_experience": { "type": "string", "minLength": 1 },
+    "target_capability": { "type": "string", "minLength": 1 },
+    "change_type": { "enum": ["add_component", "modify_guidance", "change_applicability", "no_action"] },
+    "reason": { "type": "string", "minLength": 1 },
+    "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "evidence.schema.json" } },
+    "confidence": { "enum": ["low", "medium", "high"] },
+    "scope": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "risk": { "type": "string", "minLength": 1 },
+    "review_status": { "enum": ["pending", "accepted", "rejected", "deferred"] },
+    "reviewer": { "type": "string", "minLength": 1 },
+    "reviewed_at": { "type": "string", "format": "date-time" },
+    "review_notes": { "type": "string" }
+  }
+}

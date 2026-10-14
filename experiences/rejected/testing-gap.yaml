@@ -1,0 +1,33 @@
+id: exp-testing-gap-rejected-example
+title: Reject a project-specific practice as a universal rule
+recorded_by: example-maintainer
+recorded_at: '2026-10-15T00:00:00Z'
+project_context:
+  project_type: one-off-prototype
+  goal: Demonstrate a rejected overgeneralization
+approach: A hypothetical team proposed mandatory integration tests for every edit.
+outcome:
+  summary: Review found the universal claim unsupported by the single hypothetical context.
+  result: inconclusive
+evidence:
+  - description: Hypothetical single-project observation only.
+    source: examples/experience-lifecycle/rejected-overgeneralization
+confidence: low
+identity: exp-testing-gap-rejected-example
+source:
+  project: illustrative-one-off-prototype
+  recorded_by: example-maintainer
+  recorded_at: '2026-10-15T00:00:00Z'
+context: The proposed scope was all edits in all projects.
+observation: Only one hypothetical prototype was considered.
+solution: Reject the universal generalization and preserve the scope limitation.
+scope: [single-hypothetical-prototype]
+reasoning:
+  interpretation: A project-specific choice does not establish a global testing requirement.
+  limits: [Illustrative example, No real project evidence, Different projects need different validation]
+status: rejected
+review:
+  review_status: rejected
+  reviewer: example-maintainer
+  reviewed_at: '2026-10-15T00:00:00Z'
+  notes: Evidence cannot support the proposed universal applicability.

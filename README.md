@@ -33,4 +33,8 @@ The [Composer](docs/composer.md) reads a [project context](schemas/project-conte
 
 Three [examples](examples/) cover a maintained web project, an agent project, and a one-off experiment. Run the validation prototype with `python -m composer examples/agent/project-context.yaml --output recommendation.yaml` after installing `requirements.txt`.
 
-Phase 3 performs no installation, target-project modification, synchronization, agent execution, or automatic approval. Phase 4 awaits Controller acceptance.
+Phase 3 performs no installation, target-project modification, synchronization, agent execution, or automatic approval.
+
+## Phase 4: Experience Feedback Loop Foundation
+
+Phase 4 adds a human-governed [Experience lifecycle](docs/experience-lifecycle.md), traceable [Evidence](schemas/evidence.schema.json), and separate Experience and Capability proposals. Lifecycle records are grouped by state under [`experiences/`](experiences/README.md). Proposals document review; they never edit or promote Capabilities automatically. See [Experience governance](docs/experience-governance.md) for the boundary with Composer and Capability changes.
