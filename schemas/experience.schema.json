@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/experience.schema.json",
+  "title": "Experience",
+  "description": "A human-recorded account of an approach used in a project and its observed outcome.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "project_context", "approach", "outcome", "evidence", "confidence", "recorded_at"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "project_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_type", "goal"],
+      "properties": {
+        "project_type": { "type": "string", "minLength": 1 },
+        "goal": { "type": "string", "minLength": 1 },
+        "technologies": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "constraints": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "approach": { "type": "string", "minLength": 1 },
+    "capability_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "result"],
+      "properties": {
+        "summary": { "type": "string", "minLength": 1 },
+        "result": { "enum": ["success", "mixed", "failure", "inconclusive"] },
+        "measures": { "type": "array", "items": { "$ref": "#/$defs/measure" } }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["description"],
+        "properties": {
+          "description": { "type": "string", "minLength": 1 },
+          "source": { "type": "string", "format": "uri-reference" },
+          "observed_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "confidence": { "enum": ["low", "medium", "high"] },
+    "lesson": { "type": "string", "description": "A cautious, reusable takeaway, including known limits." },
+    "recorded_by": { "type": "string", "minLength": 1 },
+    "recorded_at": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "measure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "value": { "type": ["number", "string", "boolean"] },
+        "unit": { "type": "string", "minLength": 1 },
+        "context": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/profile.schema.json",
+  "title": "Profile",
+  "description": "A person's stated preferences and defaults for AI-assisted software development.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "created_at", "updated_at"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "preferences": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "preferred_languages": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "preferred_tools": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "interaction_style": { "enum": ["concise", "balanced", "detailed"] },
+        "planning_level": { "enum": ["light", "balanced", "thorough"] },
+        "testing_approach": { "enum": ["minimal", "targeted", "comprehensive"] },
+        "review_before_changes": { "type": "boolean" },
+        "additional": { "type": "object", "description": "Other explicitly stated preferences as string-valued settings.", "additionalProperties": { "type": "string" } }
+      }
+    },
+    "default_capability_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "excluded_capability_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  }
+}

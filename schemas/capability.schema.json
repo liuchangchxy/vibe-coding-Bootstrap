@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/capability.schema.json",
+  "title": "Capability",
+  "description": "A reusable asset that can contribute to an AI-assisted project's development environment.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "kind", "description", "status"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1, "description": "Stable identifier chosen by the capability catalog owner." },
+    "name": { "type": "string", "minLength": 1 },
+    "kind": { "enum": ["skill", "mcp", "rule", "prompt", "template", "documentation", "workflow"] },
+    "description": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["draft", "validated", "deprecated"] },
+    "source": { "type": "string", "format": "uri-reference", "description": "Origin or location of the asset, when known." },
+    "version": { "type": "string", "minLength": 1 },
+    "project_types": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "technologies": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "tags": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "requires": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 }, "description": "IDs of prerequisite capabilities." },
+    "conflicts_with": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 }, "description": "IDs of capabilities known to conflict with this one." },
+    "maintainer": { "type": "string", "minLength": 1 },
+    "last_reviewed": { "type": "string", "format": "date" },
+    "experience_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 }, "description": "IDs of Experience records that provide evidence about this capability." }
+  }
+}
