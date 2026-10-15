@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/adoption-report.schema.json",
+  "title": "Adoption Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["project", "discovered_assets", "asset_type_counts", "capability_coverage", "gaps", "conflicts", "recommendations", "requires_confirmation", "generated_at"],
+  "properties": {
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "project_type", "description", "technologies", "platforms", "development_signals"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "project_type": {"type": "string", "minLength": 1},
+        "description": {"type": "string"},
+        "technologies": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "platforms": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "development_signals": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "discovered_assets": {"type": "array", "items": {"$ref": "existing-asset.schema.json"}},
+    "asset_type_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "capability_coverage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability_id", "status", "evidence", "reason"],
+        "properties": {
+          "capability_id": {"type": "string", "minLength": 1},
+          "status": {"enum": ["satisfied", "partial", "missing", "conflict", "unknown"]},
+          "evidence": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["path", "ownership"], "properties": {"path": {"type": "string", "minLength": 1}, "ownership": {"enum": ["project_owned", "bootstrap_managed", "external"]}}}},
+          "reason": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "gaps": {"type": "array", "items": {"type": "string"}},
+    "conflicts": {"type": "array", "items": {"type": "string"}},
+    "recommendations": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["capability_id", "recommendation", "requires_confirmation"], "properties": {"capability_id": {"type": "string"}, "recommendation": {"type": "string"}, "requires_confirmation": {"type": "boolean"}}}},
+    "requires_confirmation": {"type": "boolean", "const": true},
+    "generated_at": {"type": "string", "format": "date-time"}
+  }
+}

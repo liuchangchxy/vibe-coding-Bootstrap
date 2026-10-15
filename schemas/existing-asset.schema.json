@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/existing-asset.schema.json",
+  "title": "Existing Asset",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "path", "asset_type", "ownership", "summary", "detected_signals", "candidate_capabilities"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "path": {"type": "string", "minLength": 1},
+    "asset_type": {"enum": ["agent_instruction", "skill", "prompt", "mcp_configuration", "workflow", "documentation", "test_policy", "development_rule", "other"]},
+    "ownership": {"enum": ["project_owned", "bootstrap_managed", "external"]},
+    "summary": {"type": "string"},
+    "detected_signals": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "candidate_capabilities": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+  }
+}

@@ -1,0 +1,915 @@
+{
+  "project": {
+    "name": "dayspark",
+    "project_type": "cross-platform application",
+    "description": "开源、自托管优先的日历与待办应用（对标 Todo清单 的执行向体验）。Flutter 全平台运行，数据同步与 AI 接口由你自己的服务器掌控。",
+    "technologies": [
+      "Dart",
+      "Flutter"
+    ],
+    "platforms": [
+      "Android",
+      "Desktop",
+      "Web",
+      "iOS"
+    ],
+    "development_signals": [
+      "AI development tooling",
+      "GitHub Actions",
+      "MCP",
+      "server component",
+      "tests"
+    ]
+  },
+  "discovered_assets": [
+    {
+      "id": "asset-001",
+      "path": ".claude/skills/release-prep/SKILL.md",
+      "asset_type": "skill",
+      "ownership": "project_owned",
+      "summary": "Dev-to-Release Pipeline / 开发到发版流水线",
+      "detected_signals": [
+        "flutter test"
+      ],
+      "candidate_capabilities": [
+        "testing"
+      ]
+    },
+    {
+      "id": "asset-002",
+      "path": ".github/vccp/installation-lock.json",
+      "asset_type": "other",
+      "ownership": "project_owned",
+      "summary": "installation-lock.json",
+      "detected_signals": [],
+      "candidate_capabilities": []
+    },
+    {
+      "id": "asset-003",
+      "path": ".github/vccp/reviewer-task-prompt.md",
+      "asset_type": "prompt",
+      "ownership": "project_owned",
+      "summary": "ChatGPT Work Reviewer Task — Canonical Prompt",
+      "detected_signals": [
+        "reviewer-task-prompt"
+      ],
+      "candidate_capabilities": [
+        "code-review"
+      ]
+    },
+    {
+      "id": "asset-004",
+      "path": ".github/workflows/ci.yml",
+      "asset_type": "workflow",
+      "ownership": "project_owned",
+      "summary": "ci.yml",
+      "detected_signals": [
+        ".github/workflows/ci."
+      ],
+      "candidate_capabilities": [
+        "testing"
+      ]
+    },
+    {
+      "id": "asset-005",
+      "path": ".github/workflows/release.yml",
+      "asset_type": "workflow",
+      "ownership": "project_owned",
+      "summary": "release.yml",
+      "detected_signals": [],
+      "candidate_capabilities": []
+    },
+    {
+      "id": "asset-006",
+      "path": ".github/workflows/vccp-coordination-label-cleanup.yml",
+      "asset_type": "workflow",
+      "ownership": "project_owned",
+      "summary": "vccp-coordination-label-cleanup.yml",
+      "detected_signals": [],
+      "candidate_capabilities": []
+    },
+    {
+      "id": "asset-007",
+      "path": ".opencode/skills/dayspark-code-review/SKILL.md",
+      "asset_type": "skill",
+      "ownership": "project_owned",
+      "summary": "DaySpark Code Review / 代码审查",
+      "detected_signals": [
+        "code review",
+        "code-review"
+      ],
+      "candidate_capabilities": [
+        "code-review"
+      ]
+    },
+    {
+      "id": "asset-008",
+      "path": "AGENTS.md",
+      "asset_type": "agent_instruction",
+      "ownership": "project_owned",
+      "summary": "AI 助手行为准则 (AGENTS.md)",
+      "detected_signals": [
+        "agents.md",
+        "flutter test",
+        "hard constraints"
+      ],
+      "candidate_capabilities": [
+        "engineering-baseline",
+        "testing"
+      ]
+    },
+    {
+      "id": "asset-009",
+      "path": "CLAUDE.md",
+      "asset_type": "agent_instruction",
+      "ownership": "project_owned",
+      "summary": "DaySpark (灵光) — Project Rules",
+      "detected_signals": [
+        "claude.md",
+        "documentation",
+        "flutter test"
+      ],
+      "candidate_capabilities": [
+        "documentation",
+        "engineering-baseline",
+        "testing"
+      ]
+    },
+    {
+      "id": "asset-010",
+      "path": "DECISIONS.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "决策与演进时间线 (DECISIONS.md)",
+      "detected_signals": [
+        "decisions.md",
+        "documentation asset",
+        "scope"
+      ],
+      "candidate_capabilities": [
+        "documentation",
+        "planning"
+      ]
+    },
+    {
+      "id": "asset-011",
+      "path": "README.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "DaySpark / 灵光",
+      "detected_signals": [
+        "documentation",
+        "documentation asset",
+        "readme.md"
+      ],
+      "candidate_capabilities": [
+        "documentation"
+      ]
+    },
+    {
+      "id": "asset-012",
+      "path": "SPEC.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "DaySpark (灵光) 核心功能规范 (SPEC.md)",
+      "detected_signals": [
+        "documentation asset",
+        "spec.md"
+      ],
+      "candidate_capabilities": [
+        "documentation"
+      ]
+    },
+    {
+      "id": "asset-013",
+      "path": "docs/CONSTRAINTS.md",
+      "asset_type": "development_rule",
+      "ownership": "project_owned",
+      "summary": "Technical Constraints / 技术约束记录",
+      "detected_signals": [
+        "constraints.md",
+        "scope"
+      ],
+      "candidate_capabilities": [
+        "documentation",
+        "planning"
+      ]
+    },
+    {
+      "id": "asset-014",
+      "path": "docs/ROADMAP.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "DaySpark Feature Evolution / 功能演进全景图",
+      "detected_signals": [
+        "code review",
+        "documentation asset",
+        "roadmap",
+        "roadmap.md",
+        "scope",
+        "spec.md"
+      ],
+      "candidate_capabilities": [
+        "code-review",
+        "documentation",
+        "planning"
+      ]
+    },
+    {
+      "id": "asset-015",
+      "path": "docs/START_HERE.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "START HERE — DaySpark 接续工作唯一入口",
+      "detected_signals": [
+        "documentation asset",
+        "start_here"
+      ],
+      "candidate_capabilities": [
+        "documentation",
+        "planning"
+      ]
+    },
+    {
+      "id": "asset-016",
+      "path": "docs/archive/2026-04/2026-04-16-calendar-ui.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "Calendar UI Implementation Plan",
+      "detected_signals": [
+        "documentation asset",
+        "scope"
+      ],
+      "candidate_capabilities": [
+        "documentation",
+        "planning"
+      ]
+    },
+    {
+      "id": "asset-017",
+      "path": "docs/archive/2026-04/2026-04-16-project-foundation.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "Project Foundation Implementation Plan",
+      "detected_signals": [
+        "documentation asset"
+      ],
+      "candidate_capabilities": [
+        "documentation"
+      ]
+    },
+    {
+      "id": "asset-018",
+      "path": "docs/archive/2026-04/2026-04-16-todo-ui.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "Todo UI Implementation Plan",
+      "detected_signals": [
+        "documentation asset",
+        "scope"
+      ],
+      "candidate_capabilities": [
+        "documentation",
+        "planning"
+      ]
+    },
+    {
+      "id": "asset-019",
+      "path": "docs/archive/2026-04/2026-04-17-caldav-sync.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "Phase 3: CalDAV Sync Engine Implementation Plan",
+      "detected_signals": [
+        "documentation asset"
+      ],
+      "candidate_capabilities": [
+        "documentation"
+      ]
+    },
+    {
+      "id": "asset-020",
+      "path": "docs/archive/2026-04/2026-04-18-remaining-phases.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "Remaining Implementation Plan",
+      "detected_signals": [
+        "documentation asset"
+      ],
+      "candidate_capabilities": [
+        "documentation"
+      ]
+    },
+    {
+      "id": "asset-021",
+      "path": "docs/archive/ARCHITECTURE_REVIEW.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "DaySpark 结构设计评审报告",
+      "detected_signals": [
+        "documentation asset"
+      ],
+      "candidate_capabilities": [
+        "documentation"
+      ]
+    },
+    {
+      "id": "asset-022",
+      "path": "docs/archive/caldav-sync-plan.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "Cross-Platform Calendar & Todo Sync Plan / 跨平台日历 & 待办同步方案",
+      "detected_signals": [
+        "documentation asset"
+      ],
+      "candidate_capabilities": [
+        "documentation"
+      ]
+    },
+    {
+      "id": "asset-023",
+      "path": "docs/mcp-setup.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "MCP Setup Guide / MCP 服务器配置教程",
+      "detected_signals": [
+        "MCP setup",
+        "constraints.md",
+        "documentation asset"
+      ],
+      "candidate_capabilities": [
+        "documentation"
+      ]
+    },
+    {
+      "id": "asset-024",
+      "path": "docs/process/ARCHITECTURE.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "顶层架构推导法 (ARCHITECTURE.md)",
+      "detected_signals": [
+        "documentation asset"
+      ],
+      "candidate_capabilities": [
+        "documentation"
+      ]
+    },
+    {
+      "id": "asset-025",
+      "path": "docs/process/EXECUTION.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "多代理执行工序守则 (EXECUTION.md)",
+      "detected_signals": [
+        "documentation asset",
+        "execution.md"
+      ],
+      "candidate_capabilities": [
+        "documentation",
+        "engineering-baseline"
+      ]
+    },
+    {
+      "id": "asset-026",
+      "path": "docs/process/LOCALIZATION.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "全生命周期本地化与视觉主题工程架构规约 (LOCALIZATION.md)",
+      "detected_signals": [
+        "documentation asset"
+      ],
+      "candidate_capabilities": [
+        "documentation"
+      ]
+    },
+    {
+      "id": "asset-027",
+      "path": "docs/process/REVIEWING.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "对抗性审查配方 (REVIEWING.md)",
+      "detected_signals": [
+        "documentation asset",
+        "reviewing.md"
+      ],
+      "candidate_capabilities": [
+        "code-review",
+        "documentation"
+      ]
+    },
+    {
+      "id": "asset-028",
+      "path": "docs/process/TESTING.md",
+      "asset_type": "test_policy",
+      "ownership": "project_owned",
+      "summary": "工程规范与防退化（Regression）防线守则 (TESTING.md)",
+      "detected_signals": [
+        "testing.md"
+      ],
+      "candidate_capabilities": [
+        "testing"
+      ]
+    },
+    {
+      "id": "asset-029",
+      "path": "docs/qa/TEST_EVIDENCE_TEMPLATE.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "测试证据报告 / Test Evidence Report",
+      "detected_signals": [
+        "documentation asset"
+      ],
+      "candidate_capabilities": [
+        "documentation"
+      ]
+    },
+    {
+      "id": "asset-030",
+      "path": "docs/qa/p3-mcp-qa.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "P3 MCP 手工验收清单 / P3 MCP Manual QA Checklist",
+      "detected_signals": [
+        "MCP setup",
+        "documentation asset"
+      ],
+      "candidate_capabilities": [
+        "documentation"
+      ]
+    },
+    {
+      "id": "asset-031",
+      "path": "docs/superpowers/plans/2026-09-22-master-refactor-plan.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "DaySpark 重生（重构）Implementation Plan",
+      "detected_signals": [
+        "claude.md",
+        "documentation asset",
+        "plans/"
+      ],
+      "candidate_capabilities": [
+        "documentation",
+        "engineering-baseline",
+        "planning"
+      ]
+    },
+    {
+      "id": "asset-032",
+      "path": "docs/superpowers/plans/2026-09-23-p2-sync-backend.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "P2 — Sync Backend Implementation Plan",
+      "detected_signals": [
+        "claude.md",
+        "documentation asset",
+        "plans/"
+      ],
+      "candidate_capabilities": [
+        "documentation",
+        "engineering-baseline",
+        "planning"
+      ]
+    },
+    {
+      "id": "asset-033",
+      "path": "docs/superpowers/plans/2026-09-23-p3-mcp-cli.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "P3 — MCP + CLI Implementation Plan",
+      "detected_signals": [
+        "MCP setup",
+        "documentation asset",
+        "plans/"
+      ],
+      "candidate_capabilities": [
+        "documentation",
+        "planning"
+      ]
+    },
+    {
+      "id": "asset-034",
+      "path": "docs/superpowers/plans/2026-09-24-d2-event-seam.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "债务2 — 统一事件缝（post-commit 领域事件 record-applied / record-removed）",
+      "detected_signals": [
+        "decisions.md",
+        "documentation asset",
+        "plans/",
+        "roadmap",
+        "roadmap.md"
+      ],
+      "candidate_capabilities": [
+        "documentation",
+        "planning"
+      ]
+    },
+    {
+      "id": "asset-035",
+      "path": "docs/superpowers/plans/2026-09-24-p4-platform-ux.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "P4 — Platform Completion + Todo清单 UX Implementation Plan",
+      "detected_signals": [
+        "documentation asset",
+        "plans/"
+      ],
+      "candidate_capabilities": [
+        "documentation",
+        "planning"
+      ]
+    },
+    {
+      "id": "asset-036",
+      "path": "docs/superpowers/plans/2026-10-01-p5-background-sync.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "P5 后台同步 + 设备注册 — 实施方案",
+      "detected_signals": [
+        "documentation asset",
+        "plans/"
+      ],
+      "candidate_capabilities": [
+        "documentation",
+        "planning"
+      ]
+    },
+    {
+      "id": "asset-037",
+      "path": "docs/superpowers/plans/2026-10-04-recurring-todo-design-spike.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "Recurring Todo / occurrence identity / timezone / DST — Design Spike",
+      "detected_signals": [
+        "documentation asset",
+        "plans/",
+        "scope"
+      ],
+      "candidate_capabilities": [
+        "documentation",
+        "planning"
+      ]
+    },
+    {
+      "id": "asset-038",
+      "path": "docs/superpowers/plans/2026-10-04-recurring-todo.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "Recurring Todo — Implementation Plan",
+      "detected_signals": [
+        "documentation asset",
+        "plans/",
+        "scope"
+      ],
+      "candidate_capabilities": [
+        "documentation",
+        "planning"
+      ]
+    },
+    {
+      "id": "asset-039",
+      "path": "docs/superpowers/plans/2026-10-04-task-allocation.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "TaskAllocation — 实施计划",
+      "detected_signals": [
+        "documentation asset",
+        "plans/"
+      ],
+      "candidate_capabilities": [
+        "documentation",
+        "planning"
+      ]
+    },
+    {
+      "id": "asset-040",
+      "path": "docs/superpowers/plans/2026-10-06-action-loop-foundation.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "Phase 1 — Action Loop Foundation Implementation Plan",
+      "detected_signals": [
+        "documentation asset",
+        "plans/",
+        "roadmap"
+      ],
+      "candidate_capabilities": [
+        "documentation",
+        "planning"
+      ]
+    }
+  ],
+  "asset_type_counts": {
+    "agent_instruction": 2,
+    "development_rule": 1,
+    "documentation": 29,
+    "other": 1,
+    "prompt": 1,
+    "skill": 2,
+    "test_policy": 1,
+    "workflow": 3
+  },
+  "capability_coverage": [
+    {
+      "capability_id": "agent-development",
+      "status": "unknown",
+      "evidence": [],
+      "reason": "AI or MCP tooling alone does not show that the project develops an agent product. The catalog applies when a project is intentionally developing agent behavior and needs behavioral acceptance cases."
+    },
+    {
+      "capability_id": "code-review",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": ".github/vccp/reviewer-task-prompt.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": ".opencode/skills/dayspark-code-review/SKILL.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/ROADMAP.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/REVIEWING.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Assess a proposed change for correctness, clarity, and maintainability before acceptance.'; paths are listed below."
+    },
+    {
+      "capability_id": "debugging",
+      "status": "unknown",
+      "evidence": [],
+      "reason": "No sufficiently specific evidence for catalog signals: An observed failure, reproducible input, or discrepancy is available.. Applicable when a concrete failure or discrepancy needs a bounded investigation."
+    },
+    {
+      "capability_id": "documentation",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": "CLAUDE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "DECISIONS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "README.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "SPEC.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/CONSTRAINTS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/ROADMAP.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/START_HERE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-16-calendar-ui.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-16-project-foundation.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-16-todo-ui.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-17-caldav-sync.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-18-remaining-phases.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/ARCHITECTURE_REVIEW.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/caldav-sync-plan.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/mcp-setup.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/ARCHITECTURE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/EXECUTION.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/LOCALIZATION.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/REVIEWING.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/qa/TEST_EVIDENCE_TEMPLATE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/qa/p3-mcp-qa.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-22-master-refactor-plan.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-23-p2-sync-backend.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-23-p3-mcp-cli.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-d2-event-seam.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-p4-platform-ux.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-01-p5-background-sync.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-04-recurring-todo-design-spike.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-04-recurring-todo.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-04-task-allocation.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-06-action-loop-foundation.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Organize explanations, reference material, tutorials, and task guidance around reader needs.'; paths are listed below."
+    },
+    {
+      "capability_id": "engineering-baseline",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "CLAUDE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/EXECUTION.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-22-master-refactor-plan.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-23-p2-sync-backend.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Keep development changes traceable and reviewable through explicit version-control practices.'; paths are listed below."
+    },
+    {
+      "capability_id": "planning",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": "DECISIONS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/CONSTRAINTS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/ROADMAP.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/START_HERE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-16-calendar-ui.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-16-todo-ui.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-22-master-refactor-plan.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-23-p2-sync-backend.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-23-p3-mcp-cli.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-d2-event-seam.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-p4-platform-ux.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-01-p5-background-sync.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-04-recurring-todo-design-spike.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-04-recurring-todo.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-04-task-allocation.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-06-action-loop-foundation.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Make goals, scope, acceptance conditions, and work dependencies explicit before implementation.'; paths are listed below."
+    },
+    {
+      "capability_id": "research-workflow",
+      "status": "unknown",
+      "evidence": [],
+      "reason": "No sufficiently specific evidence for catalog signals: Claims depend on experiments, datasets, or reproducible methods.. Applicable when an investigation or experiment must report provenance, outcomes, and limitations."
+    },
+    {
+      "capability_id": "testing",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": ".claude/skills/release-prep/SKILL.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "AGENTS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "CLAUDE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/TESTING.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Check observable behavior with focused, repeatable tests appropriate to the change.'; paths are listed below."
+    }
+  ],
+  "gaps": [],
+  "conflicts": [],
+  "recommendations": [],
+  "requires_confirmation": true,
+  "generated_at": "2026-10-15T16:51:10Z"
+}

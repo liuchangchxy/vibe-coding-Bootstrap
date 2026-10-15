@@ -49,6 +49,10 @@ Preview without writing a file with `python -m assembly examples/assembly/agent-
 
 Confirmed Assembly Plans can now materialize Bootstrap-owned local components into explicit Project/Global roots with dry-run, conflict detection, idempotence and manifests. External references are not downloaded and materialization does not imply native agent activation. See [Materialization](docs/materialization.md).
 
+## Phase 7A: Existing Project Adoption Discovery
+
+The [adoption discovery command](docs/adoption-discovery.md) inventories existing development-environment assets, identifies project context, and maps evidence to the current Capability Catalog. It produces a read-only Adoption Report; it does not install or modify target files.
+
 ## Integrity guarantees
 
 Repository tests validate Catalog paths and references, lifecycle Experience records use structured Evidence, and `verified` requires reviewed checked evidence. Capability proposals bind to the target's current version. GitHub Actions runs repository integrity, Composer, Assembly, and Materializer tests.
