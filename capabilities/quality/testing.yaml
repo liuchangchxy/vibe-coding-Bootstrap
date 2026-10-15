@@ -25,12 +25,32 @@ components:
   kind: documentation
   role: Provide a concrete Python example of test organization and collection conventions.
   source_id: primary
+- id: project-test-guidance
+  kind: template
+  role: Adaptable testing guidance for a single project.
+  source_id: local-template
+  assembly:
+    id: project-test-guidance
+    name: Project test guidance template
+    type: template
+    source: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/project/test-guidance.md
+    provider: vibe-coding-bootstrap
+    version: '1'
+    scope: project
+    delivery: reference
+    optional: true
+    provenance:
+      repository_path: components/project/test-guidance.md
 component_sources:
 - id: primary
   title: 'pytest: Good Integration Practices'
   uri: https://docs.pytest.org/en/stable/explanation/goodpractices.html
   relationship: reference
   accessed_on: '2026-10-15'
+- id: local-template
+  title: Project test guidance template
+  uri: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/project/test-guidance.md
+  relationship: reference
 selection_hints:
   signals:
   - Regression risk or repeatable behavioral checks are relevant.

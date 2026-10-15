@@ -1,0 +1,10 @@
+version: 1
+rules:
+  - id: external-reference
+    when: external
+    action: review_required
+    reason: External reference only; assess suitability and version before any later installation.
+  - id: documentation-reference
+    when: documentation
+    action: review_required
+    reason: Capability exists, but no installable implementation component is registered.

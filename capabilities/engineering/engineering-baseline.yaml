@@ -24,12 +24,45 @@ components:
   kind: documentation
   role: Explain version history and recovery concepts when defining a project baseline.
   source_id: primary
+  assembly:
+    id: pro-git-reference
+    name: 'Pro Git: About Version Control'
+    type: document
+    source: https://git-scm.com/book/en/v2/Getting-Started-About-Version-Control
+    provider: Pro Git
+    version: unspecified
+    scope: external
+    delivery: reference
+    optional: true
+    provenance:
+      source_id: primary
+      relationship: reference
+- id: reviewable-changes
+  kind: prompt
+  role: Shared guidance for keeping changes traceable and reviewable.
+  source_id: local-prompt
+  assembly:
+    id: reviewable-changes
+    name: Reviewable changes prompt
+    type: prompt
+    source: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/global/reviewable-changes.md
+    provider: vibe-coding-bootstrap
+    version: '1'
+    scope: global
+    delivery: reference
+    optional: true
+    provenance:
+      repository_path: components/global/reviewable-changes.md
 component_sources:
 - id: primary
   title: 'Pro Git: About Version Control'
   uri: https://git-scm.com/book/en/v2/Getting-Started-About-Version-Control
   relationship: reference
   accessed_on: '2026-10-15'
+- id: local-prompt
+  title: Reviewable changes prompt
+  uri: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/global/reviewable-changes.md
+  relationship: reference
 selection_hints:
   signals:
   - Change history and reviewability are required.

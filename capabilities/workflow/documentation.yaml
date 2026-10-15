@@ -24,12 +24,32 @@ components:
   kind: documentation
   role: Distinguish documentation needs before selecting the form of a document.
   source_id: primary
+- id: project-documentation-outline
+  kind: template
+  role: Adaptable documentation structure for a single project.
+  source_id: local-template
+  assembly:
+    id: project-documentation-outline
+    name: Project documentation outline
+    type: template
+    source: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/project/documentation-outline.md
+    provider: vibe-coding-bootstrap
+    version: '1'
+    scope: project
+    delivery: reference
+    optional: true
+    provenance:
+      repository_path: components/project/documentation-outline.md
 component_sources:
 - id: primary
   title: Diataxis
   uri: https://diataxis.fr/
   relationship: reference
   accessed_on: '2026-10-15'
+- id: local-template
+  title: Project documentation outline
+  uri: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/project/documentation-outline.md
+  relationship: reference
 selection_hints:
   signals:
   - Readers need guidance or stable reference material.

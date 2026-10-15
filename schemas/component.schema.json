@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/component.schema.json",
+  "title": "Environment Component",
+  "description": "A registered Capability resource described for a future environment assembly; it is never executed by this model.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "type", "source", "provider", "version", "scope", "delivery", "optional", "provenance"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "name": {"type": "string", "minLength": 1},
+    "type": {"enum": ["skill", "mcp", "rule", "prompt", "template", "document", "workflow_reference"]},
+    "source": {"type": "string", "format": "uri-reference", "minLength": 1},
+    "provider": {"type": "string", "minLength": 1},
+    "version": {"type": "string", "minLength": 1},
+    "scope": {"enum": ["global", "project", "external"]},
+    "delivery": {"enum": ["reference", "copy", "symlink", "native_install", "generated"]},
+    "configuration": {"type": "object"},
+    "optional": {"type": "boolean"},
+    "provenance": {"type": "object", "minProperties": 1},
+    "dependencies": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "conflicts": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"scope": {"const": "external"}}},
+      "then": {"properties": {"delivery": {"const": "reference"}, "source": {"format": "uri"}}}
+    }
+  ]
+}

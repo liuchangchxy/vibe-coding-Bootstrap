@@ -1,0 +1,20 @@
+project_context:
+  name: One-off experiment
+  description: A disposable local experiment.
+  project_type: experiment
+  lifecycle: short_term
+  technology_tags: []
+  runtime: unspecified
+  platform: local
+  goal: Answer one bounded question.
+  constraints:
+  - Avoid unnecessary process.
+  collaboration: solo
+recommendation_source: examples/assembly/minimal-experiment/recommendation.yaml
+selected_capabilities: []
+components: []
+skipped_components: []
+unresolved_conflicts: []
+warnings: []
+requires_confirmation: true
+generated_at: '2026-10-15T12:40:45Z'

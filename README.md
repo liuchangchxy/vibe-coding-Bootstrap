@@ -38,3 +38,9 @@ Phase 3 performs no installation, target-project modification, synchronization, 
 ## Phase 4: Experience Feedback Loop Foundation
 
 Phase 4 adds a human-governed [Experience lifecycle](docs/experience-lifecycle.md), traceable [Evidence](schemas/evidence.schema.json), and separate Experience and Capability proposals. Lifecycle records are grouped by state under [`experiences/`](experiences/README.md). Proposals document review; they never edit or promote Capabilities automatically. See [Experience governance](docs/experience-governance.md) for the boundary with Composer and Capability changes.
+
+## Phase 5: Environment Assembly Foundation
+
+The [Assembly planner](assembly/) resolves a Recommendation Plan through the selected Capabilities into registered components and produces an inspectable [Assembly Plan](schemas/assembly-plan.schema.json). Components retain explicit Global, Project, or External scope; external resources remain references. See [Environment Assembly](docs/environment-assembly.md) and the [scope model](docs/scope-model.md).
+
+Preview without writing a file with `python -m assembly examples/assembly/agent-project/recommendation.yaml --preview`, or write a plan with `--output assembly-plan.yaml`. Assembly is local-only and never installs resources or modifies a target project. All plans require human confirmation.

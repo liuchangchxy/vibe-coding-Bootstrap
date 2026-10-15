@@ -1,0 +1,105 @@
+project_context:
+  name: Maintained web project
+  description: A long-lived web application.
+  project_type: web
+  lifecycle: long_lived
+  technology_tags:
+  - web
+  runtime: Node.js
+  platform: browser
+  goal: Maintain a reliable web application.
+  constraints:
+  - Keep private facts in the project.
+  collaboration: team
+recommendation_source: examples/assembly/long-lived-solo/recommendation.yaml
+selected_capabilities:
+- documentation
+- engineering-baseline
+- testing
+components:
+- component_id: pro-git-reference
+  component_type: document
+  source_capability: engineering-baseline
+  reason: 'Capability exists, but no installable implementation component is registered.
+    Long-lived and production projects need change history, regression checks, and
+    maintainable guidance. Matched: {''lifecycle'': ''long_lived''}.'
+  scope: external
+  source: https://git-scm.com/book/en/v2/Getting-Started-About-Version-Control
+  delivery: reference
+  action: review_required
+  configuration_preview: {}
+  dependencies: []
+  conflicts: []
+- component_id: reviewable-changes
+  component_type: prompt
+  source_capability: engineering-baseline
+  reason: 'Long-lived and production projects need change history, regression checks,
+    and maintainable guidance. Matched: {''lifecycle'': ''long_lived''}.'
+  scope: global
+  source: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/global/reviewable-changes.md
+  delivery: reference
+  action: include
+  configuration_preview: {}
+  dependencies: []
+  conflicts: []
+- component_id: reference
+  component_type: document
+  source_capability: testing
+  reason: 'Capability exists, but no installable implementation component is registered.
+    Long-lived and production projects need change history, regression checks, and
+    maintainable guidance. Matched: {''lifecycle'': ''long_lived''}.'
+  scope: external
+  source: https://docs.pytest.org/en/stable/explanation/goodpractices.html
+  delivery: reference
+  action: review_required
+  configuration_preview: {}
+  dependencies: []
+  conflicts: []
+- component_id: project-test-guidance
+  component_type: template
+  source_capability: testing
+  reason: 'Long-lived and production projects need change history, regression checks,
+    and maintainable guidance. Matched: {''lifecycle'': ''long_lived''}.'
+  scope: project
+  source: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/project/test-guidance.md
+  delivery: reference
+  action: include
+  configuration_preview: {}
+  dependencies: []
+  conflicts: []
+- component_id: reference
+  component_type: document
+  source_capability: documentation
+  reason: 'Capability exists, but no installable implementation component is registered.
+    Long-lived and production projects need change history, regression checks, and
+    maintainable guidance. Matched: {''lifecycle'': ''long_lived''}.'
+  scope: external
+  source: https://diataxis.fr/
+  delivery: reference
+  action: review_required
+  configuration_preview: {}
+  dependencies: []
+  conflicts: []
+- component_id: project-documentation-outline
+  component_type: template
+  source_capability: documentation
+  reason: 'Long-lived and production projects need change history, regression checks,
+    and maintainable guidance. Matched: {''lifecycle'': ''long_lived''}.'
+  scope: project
+  source: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/project/documentation-outline.md
+  delivery: reference
+  action: include
+  configuration_preview: {}
+  dependencies: []
+  conflicts: []
+skipped_components: []
+unresolved_conflicts: []
+warnings:
+- 'documentation: Project-specific content stays in the project; this catalog only
+  describes the reusable ability.'
+- 'engineering-baseline: Choose the actual branching policy with the project owner.'
+- 'testing: Test effort must reflect change impact.'
+- 'testing: The referenced pytest component applies to Python; other stacks need a
+  suitable component reference.'
+requires_confirmation: true
+generated_at: '2026-10-15T12:40:44Z'

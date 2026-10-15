@@ -1,0 +1,25 @@
+project_context:
+  name: One-off experiment
+  description: A disposable local experiment.
+  project_type: experiment
+  lifecycle: short_term
+  technology_tags: []
+  runtime: unspecified
+  platform: local
+  goal: Answer one bounded question.
+  constraints:
+  - Avoid unnecessary process.
+  collaboration: solo
+catalog_revision: sha256:fc4b741c5f90fac0b12aa079583c8e5c9bbeccf0ac5ed824530957fd64e1a453
+profile_source: profiles/personal.yaml
+experience_sources: []
+recommendations: []
+excluded: []
+conflicts: []
+requires_confirmation: true
+notes:
+- Confidence describes rule relevance, not proven capability effectiveness.
+- Free-text goals, constraints, runtime and platform require human applicability review.
+- Experiences match project type only; original evidence and limits are retained without
+  changing recommendations.
+- Conflicting candidates have no automatic winner; resolve them before any later assembly.

@@ -1,0 +1,65 @@
+project_context:
+  name: Agent prototype
+  description: A bounded agent development project.
+  project_type: agent
+  lifecycle: prototype
+  technology_tags:
+  - python
+  runtime: Python
+  platform: local
+  goal: Validate observable agent behavior.
+  constraints:
+  - No autonomous approval.
+  collaboration: solo
+recommendation_source: examples/assembly/agent-project/recommendation.yaml
+selected_capabilities:
+- agent-development
+- testing
+components:
+- component_id: reference
+  component_type: document
+  source_capability: agent-development
+  reason: 'Capability exists, but no installable implementation component is registered.
+    Explicit agent development needs bounded behavior and acceptance cases. Matched:
+    {''project_type'': ''agent''}.'
+  scope: external
+  source: https://www.anthropic.com/engineering/building-effective-agents
+  delivery: reference
+  action: review_required
+  configuration_preview: {}
+  dependencies: []
+  conflicts: []
+- component_id: reference
+  component_type: document
+  source_capability: testing
+  reason: Capability exists, but no installable implementation component is registered.
+    Catalog prerequisite of agent-development.
+  scope: external
+  source: https://docs.pytest.org/en/stable/explanation/goodpractices.html
+  delivery: reference
+  action: review_required
+  configuration_preview: {}
+  dependencies: []
+  conflicts: []
+- component_id: project-test-guidance
+  component_type: template
+  source_capability: testing
+  reason: Catalog prerequisite of agent-development.
+  scope: project
+  source: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/project/test-guidance.md
+  delivery: reference
+  action: include
+  configuration_preview: {}
+  dependencies: []
+  conflicts: []
+skipped_components: []
+unresolved_conflicts: []
+warnings:
+- 'agent-development: Testing is a catalog prerequisite for checking agent behavior.'
+- 'agent-development: Tool permissions, evaluation cases, and runtime choices remain
+  project-specific.'
+- 'testing: Test effort must reflect change impact.'
+- 'testing: The referenced pytest component applies to Python; other stacks need a
+  suitable component reference.'
+requires_confirmation: true
+generated_at: '2026-10-15T12:40:44Z'
