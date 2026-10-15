@@ -1,7 +1,7 @@
 """Repository-wide cross-file checks; fixtures in this module are synthetic."""
 
 from collections import defaultdict
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import shutil
 import tempfile
 import unittest
@@ -43,7 +43,7 @@ def check_repository(root=ROOT):
         for source in record.get("component_sources", []):
             uri = source["uri"]
             if "://" not in uri and not uri.startswith("/"):
-                relative_sources.append((path.parent / uri).resolve())
+                relative_sources.append((root / uri).resolve())
         source_ids = [s["id"] for s in record.get("component_sources", [])]
         component_ids = [c["id"] for c in record.get("components", [])]
         if len(source_ids) != len(set(source_ids)):
@@ -57,6 +57,22 @@ def check_repository(root=ROOT):
             components.add(component["id"])
             assembly = component.get("assembly")
             if assembly:
+                validate(assembly, "component.schema.json", root)
+                if assembly["delivery"] == "copy":
+                    if assembly["scope"] == "external":
+                        raise ValueError(f"Copy component cannot have external scope: {cid}/{assembly['id']}")
+                    source = assembly["source"]
+                    source_path = (root / source).resolve()
+                    if (Path(source).is_absolute() or ".." in Path(source).parts
+                            or PureWindowsPath(source).is_absolute() or PureWindowsPath(source).drive
+                            or "://" in source or not source_path.is_relative_to(root.resolve())
+                            or not source_path.is_file()):
+                        raise ValueError(f"Invalid local copy source: {cid}/{assembly['id']}")
+                    destination = assembly["destination"].replace("\\", "/")
+                    if (not destination or destination.startswith("/") or Path(destination).is_absolute()
+                            or PureWindowsPath(destination).is_absolute() or PureWindowsPath(destination).drive
+                            or ".." in PurePosixPath(destination).parts):
+                        raise ValueError(f"Invalid component destination: {cid}/{assembly['id']}")
                 components.add(assembly["id"])
                 assembly_references.extend((cid, assembly["id"], field, ref)
                                            for field in ("dependencies", "conflicts")

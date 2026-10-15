@@ -238,7 +238,7 @@
           },
           "uri": {
             "type": "string",
-            "format": "uri"
+            "format": "uri-reference"
           },
           "relationship": {
             "enum": [

@@ -34,11 +34,12 @@ components:
     id: project-test-guidance
     name: Project test guidance template
     type: template
-    source: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/project/test-guidance.md
+    source: components/project/test-guidance.md
     provider: vibe-coding-bootstrap
     version: '1'
     scope: project
-    delivery: reference
+    delivery: copy
+    destination: .vibe-coding-bootstrap/components/test-guidance.md
     optional: true
     provenance:
       repository_path: components/project/test-guidance.md
@@ -50,7 +51,7 @@ component_sources:
   accessed_on: '2026-10-15'
 - id: local-template
   title: Project test guidance template
-  uri: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/project/test-guidance.md
+  uri: components/project/test-guidance.md
   relationship: reference
 selection_hints:
   signals:

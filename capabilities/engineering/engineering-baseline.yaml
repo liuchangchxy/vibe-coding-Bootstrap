@@ -46,11 +46,12 @@ components:
     id: reviewable-changes
     name: Reviewable changes prompt
     type: prompt
-    source: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/global/reviewable-changes.md
+    source: components/global/reviewable-changes.md
     provider: vibe-coding-bootstrap
     version: '1'
     scope: global
-    delivery: reference
+    delivery: copy
+    destination: components/reviewable-changes.md
     optional: true
     provenance:
       repository_path: components/global/reviewable-changes.md
@@ -62,7 +63,7 @@ component_sources:
   accessed_on: '2026-10-15'
 - id: local-prompt
   title: Reviewable changes prompt
-  uri: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/global/reviewable-changes.md
+  uri: components/global/reviewable-changes.md
   relationship: reference
 selection_hints:
   signals:

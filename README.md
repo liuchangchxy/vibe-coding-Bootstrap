@@ -45,6 +45,10 @@ The [Assembly planner](assembly/) resolves a Recommendation Plan through the sel
 
 Preview without writing a file with `python -m assembly examples/assembly/agent-project/recommendation.yaml --preview`, or write a plan with `--output assembly-plan.yaml`. Assembly is local-only and never installs resources or modifies a target project. All plans require human confirmation.
 
+## Phase 6: Safe Materialization / Installer MVP
+
+Confirmed Assembly Plans can now materialize Bootstrap-owned local components into explicit Project/Global roots with dry-run, conflict detection, idempotence and manifests. External references are not downloaded and materialization does not imply native agent activation. See [Materialization](docs/materialization.md).
+
 ## Integrity guarantees
 
-Repository tests validate Catalog paths and references, lifecycle Experience records use structured Evidence, and `verified` requires reviewed checked evidence. Capability proposals bind to the target's current version. GitHub Actions runs the repository integrity, Composer, and Assembly tests.
+Repository tests validate Catalog paths and references, lifecycle Experience records use structured Evidence, and `verified` requires reviewed checked evidence. Capability proposals bind to the target's current version. GitHub Actions runs repository integrity, Composer, Assembly, and Materializer tests.

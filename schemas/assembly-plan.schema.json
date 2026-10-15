@@ -28,12 +28,17 @@
         "reason": {"type": "string", "minLength": 1},
         "scope": {"enum": ["global", "project", "external"]},
         "source": {"type": "string", "minLength": 1},
+        "capability_version": {"type": "string", "minLength": 1},
         "delivery": {"enum": ["reference", "copy", "symlink", "native_install", "generated"]},
+        "destination": {"type": "string", "minLength": 1, "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+"},
         "action": {"enum": ["include", "skip", "review_required"]},
         "configuration_preview": {"type": "object"},
         "dependencies": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
         "conflicts": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
-      }
+      },
+      "allOf": [
+        {"if": {"properties": {"delivery": {"const": "copy"}}}, "then": {"required": ["destination"]}}
+      ]
     }
   }
 }

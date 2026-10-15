@@ -33,11 +33,12 @@ components:
     id: project-documentation-outline
     name: Project documentation outline
     type: template
-    source: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/project/documentation-outline.md
+    source: components/project/documentation-outline.md
     provider: vibe-coding-bootstrap
     version: '1'
     scope: project
-    delivery: reference
+    delivery: copy
+    destination: .vibe-coding-bootstrap/components/documentation-outline.md
     optional: true
     provenance:
       repository_path: components/project/documentation-outline.md
@@ -49,7 +50,7 @@ component_sources:
   accessed_on: '2026-10-15'
 - id: local-template
   title: Project documentation outline
-  uri: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/project/documentation-outline.md
+  uri: components/project/documentation-outline.md
   relationship: reference
 selection_hints:
   signals:

@@ -87,7 +87,7 @@ class AssemblyTests(unittest.TestCase):
                     "id": "reviewable-changes", "name": "Reviewable changes prompt",
                     "type": "prompt", "source": "https://example.invalid/reviewable-changes.md",
                     "provider": "vibe-coding-bootstrap", "version": "1", "scope": "project",
-                    "delivery": "copy", "optional": True, "provenance": {"test": True},
+                    "delivery": "native_install", "optional": True, "provenance": {"test": True},
                     "dependencies": ["missing-component"],
                 },
             })

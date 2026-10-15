@@ -15,6 +15,7 @@
     "version": {"type": "string", "minLength": 1},
     "scope": {"enum": ["global", "project", "external"]},
     "delivery": {"enum": ["reference", "copy", "symlink", "native_install", "generated"]},
+    "destination": {"type": "string", "minLength": 1, "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+"},
     "configuration": {"type": "object"},
     "optional": {"type": "boolean"},
     "provenance": {"type": "object", "minProperties": 1},
@@ -22,6 +23,10 @@
     "conflicts": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
   },
   "allOf": [
+    {
+      "if": {"properties": {"delivery": {"const": "copy"}}},
+      "then": {"required": ["destination"]}
+    },
     {
       "if": {"properties": {"scope": {"const": "external"}}},
       "then": {"properties": {"delivery": {"const": "reference"}, "source": {"format": "uri"}}}

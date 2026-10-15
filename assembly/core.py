@@ -69,10 +69,13 @@ def assemble(recommendation, root=ROOT, generated_at=None, recommendation_source
                 "component_id": metadata["id"], "component_type": metadata["type"],
                 "source_capability": cid, "reason": reason, "scope": metadata["scope"],
                 "source": metadata["source"], "delivery": metadata["delivery"], "action": action,
+                "capability_version": record.get("version", "unspecified"),
                 "configuration_preview": metadata.get("configuration", {}),
                 "dependencies": metadata.get("dependencies", []),
                 "conflicts": metadata.get("conflicts", []),
             }
+            if "destination" in metadata:
+                component_items["destination"] = metadata["destination"]
             items.append(component_items)
 
     # A prerequisite absent from Recommendation is an unresolved issue; exclusions

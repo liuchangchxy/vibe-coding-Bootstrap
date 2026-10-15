@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/materialization-result.schema.json",
+  "title": "Materialization Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["assembly_source", "project_root", "global_root", "applied_at", "mode", "items", "manifest_path"],
+  "properties": {
+    "assembly_source": {"type": "string", "minLength": 1},
+    "project_root": {"type": "string", "minLength": 1},
+    "global_root": {"type": ["string", "null"]},
+    "applied_at": {"type": "string", "format": "date-time"},
+    "mode": {"enum": ["dry_run", "applied"]},
+    "items": {"type": "array", "items": {"$ref": "#/$defs/item"}},
+    "manifest_path": {"type": ["string", "null"]}
+  },
+  "$defs": {
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component_id", "source_capability", "capability_version", "scope", "delivery", "source", "result"],
+      "properties": {
+        "component_id": {"type": "string", "minLength": 1},
+        "source_capability": {"type": "string", "minLength": 1},
+        "capability_version": {"type": "string", "minLength": 1},
+        "scope": {"enum": ["global", "project", "external"]},
+        "delivery": {"enum": ["reference", "copy", "symlink", "native_install", "generated"]},
+        "source": {"type": "string", "minLength": 1},
+        "destination": {"type": "string", "minLength": 1},
+        "result": {"enum": ["copied", "unchanged", "reference_only", "skipped", "unsupported", "conflict"]},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "reason": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
