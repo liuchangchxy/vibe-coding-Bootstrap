@@ -20,5 +20,9 @@
     "reviewer": { "type": "string", "minLength": 1 },
     "reviewed_at": { "type": "string", "format": "date-time" },
     "review_notes": { "type": "string" }
-  }
+  },
+  "allOf": [{
+    "if": { "properties": { "review_status": { "enum": ["accepted", "rejected"] } }, "required": ["review_status"] },
+    "then": { "required": ["reviewer", "reviewed_at"] }
+  }]
 }

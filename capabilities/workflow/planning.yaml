@@ -1,4 +1,5 @@
 id: planning
+version: "1"
 name: Planning
 kind: workflow
 description: Make goals, scope, acceptance conditions, and work dependencies explicit before implementation.

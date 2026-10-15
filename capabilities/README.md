@@ -25,7 +25,7 @@ Classify by the principal outcome, not by Flutter, Python, React, vendor, or pac
 
 - `purpose` states the reusable outcome; `description` is a short discovery summary.
 - `applicability` states use cases and exclusions. It does not assert universal suitability.
-- `kind` retains Phase 1 meanings; the initial composite abilities use `workflow`. `components[].kind` describes the referenced resource's actual form.
+- A Capability is the highest-level reusable development ability; one or more components express it. Top-level `kind` is retained only as a Phase 1 legacy primary-representation hint, not a taxonomy or component constraint. Composite Capabilities may use `workflow`; actual component types come from `components[].kind` and assembly metadata.
 - `component_sources` holds provenance once per source within a record; `components[].source_id` joins to it. `reference` means conceptual guidance, while `upstream` means a component supplied by that publisher. Neither means installed, executable, or vendored.
 - Source and component IDs are record-local; Capability IDs are catalog-wide. Shared external resources may be referenced by multiple abilities without duplicating their content.
 - `source` describes the origin of the authored capability definition. Local relative references resolve from the record's directory; source URIs are locators, not fetch instructions.

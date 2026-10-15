@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://vibe-coding-bootstrap.local/schemas/capability.schema.json",
   "title": "Capability",
-  "description": "A reusable development ability described by metadata and references to components; it does not own or execute those resources.",
+  "description": "A reusable development ability and the highest-level reuse abstraction. One or more components express it; kind is a Phase 1 compatibility field, not a taxonomy or authoritative description of component types.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -32,7 +32,7 @@
         "documentation",
         "workflow"
       ],
-      "description": "Primary representation of the capability. Composite records may use workflow; component kinds describe the referenced assets. Not a purpose category."
+      "description": "Legacy primary-representation hint retained for Phase 1 compatibility. It is not a Capability taxonomy, does not identify the sole component type, and does not constrain components. Composite Capabilities may use workflow; actual component types come from components and assembly metadata. New logic must not infer component types from this field."
     },
     "description": {
       "type": "string",

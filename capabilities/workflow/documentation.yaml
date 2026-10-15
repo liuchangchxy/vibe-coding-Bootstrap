@@ -1,4 +1,5 @@
 id: documentation
+version: "1"
 name: Documentation
 kind: workflow
 description: Organize explanations, reference material, tutorials, and task guidance around reader needs.

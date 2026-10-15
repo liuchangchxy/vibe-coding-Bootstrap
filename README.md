@@ -23,7 +23,7 @@ The [registry](capabilities/catalog.yaml) indexes eight authored capability desc
 - [Discovery input/output contract](docs/capability-discovery.md)
 - [Profile boundary](profiles/README.md) and [Experience boundary](experiences/README.md)
 
-The original Capability schema remains compatible with Phase 1 records. The catalog-entry schema adds admission requirements, and the catalog schema describes the registry. Profile and Experience schemas are unchanged.
+The original Capability schema remains compatible with Phase 1 records. The catalog-entry schema adds admission requirements, and the catalog schema describes the registry. Profile schema remains unchanged; Experience retains the Phase 1 shape for records without lifecycle status and requires structured Evidence for lifecycle records.
 
 Phase 2 delivered data and documentation only; its historical discovery contract remains documented above.
 
@@ -44,3 +44,7 @@ Phase 4 adds a human-governed [Experience lifecycle](docs/experience-lifecycle.m
 The [Assembly planner](assembly/) resolves a Recommendation Plan through the selected Capabilities into registered components and produces an inspectable [Assembly Plan](schemas/assembly-plan.schema.json). Components retain explicit Global, Project, or External scope; external resources remain references. See [Environment Assembly](docs/environment-assembly.md) and the [scope model](docs/scope-model.md).
 
 Preview without writing a file with `python -m assembly examples/assembly/agent-project/recommendation.yaml --preview`, or write a plan with `--output assembly-plan.yaml`. Assembly is local-only and never installs resources or modifies a target project. All plans require human confirmation.
+
+## Integrity guarantees
+
+Repository tests validate Catalog paths and references, lifecycle Experience records use structured Evidence, and `verified` requires reviewed checked evidence. Capability proposals bind to the target's current version. GitHub Actions runs the repository integrity, Composer, and Assembly tests.

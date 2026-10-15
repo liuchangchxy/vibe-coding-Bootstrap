@@ -10,7 +10,7 @@ The long-term learning loop is: initialize a project, select and assemble capabi
 
 ### Capability
 
-A Capability is a reusable development ability described through references to development assets. Its `kind` identifies its primary representation: Skill, MCP, Rule, Prompt, Template, Documentation, or Workflow. Metadata describes its intended fit, provenance, status, prerequisites, conflicts, and review history. Capability records describe assets; they do not download, install, execute, or manage them. Phase 2 makes composite abilities explicit with `components`: a Skill can be a component without being the ability itself.
+A Capability is a reusable development ability and the highest-level reuse abstraction. One or more components express it, such as Skills, MCPs, Rules, Prompts, Templates, Documents, or Workflow references. Components are the concrete development resources a Capability uses or references. The top-level `kind` remains for Phase 1 backward compatibility as a legacy primary-representation hint: it is not a Capability taxonomy, is not the only component type, and does not constrain composite Capabilities (which may use `workflow`). Component types come from `components` and their assembly metadata; new logic must not infer them from `kind`. Capability records describe resources; they do not download, install, execute, or manage them.
 
 Only the catalog owner can mark a Capability `validated`. That status indicates the asset has been reviewed for use; it does not promise success in every project.
 

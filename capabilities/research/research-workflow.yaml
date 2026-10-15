@@ -1,4 +1,5 @@
 id: research-workflow
+version: "1"
 name: Research workflow
 kind: workflow
 description: Preserve methods, inputs, and evidence so research findings can be examined and reproduced.

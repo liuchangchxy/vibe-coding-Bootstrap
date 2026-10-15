@@ -8,6 +8,8 @@ An Experience is local to a project and describes an observed event and its limi
 
 Keep source facts, interpretation, evidence, confidence, scope, and risk visible. AI-generated summaries or suggestions can help form a candidate, but they are not proof. Evidence should identify its source and verification method. Stronger evidence can support review; it does not guarantee causality or transfer to every project.
 
+Lifecycle Experience records use the structured Evidence schema. A `verified` record requires a named reviewer, review date, and at least one moderate or strong non-AI, non-single-attempt evidence item whose source was checked or independently confirmed. Project results, CI results, reviewer confirmation, and measured benefit are suitable types. This means the project observation was checked; it does not prove causality or that every project should use the same practice.
+
 ## Incorrect experiences remain useful records
 
 The lifecycle allows `raw`, `candidate`, `verified`, `rejected`, and `archived` records. Retaining the original account and review outcome makes the path of a claim inspectable. Rejected records help prevent a known overgeneralization from resurfacing as if it were confirmed. Rejection does not erase what happened in the project.

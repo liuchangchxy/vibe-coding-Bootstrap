@@ -8,11 +8,13 @@ Experience describes what happened in a particular project. Capability describes
 | --- | --- | --- |
 | `raw` | A project observation captured close to its source, without generalization. | Source project and original observation are retained. |
 | `candidate` | A person or AI has organized the observation into a possible lesson. | Source facts and the reasoning that connects them to the lesson are retained; evidence and limits are explicit. |
-| `verified` | The experience has been checked against real project use. | At least one real use, an observed result, and traceable evidence; reviewer records the basis. This does not prove causality or universal applicability. |
+| `verified` | There is a real project-level observation with checked evidence that confirms what happened in that project. | At least one moderate or strong non-AI, non-single-attempt evidence item (such as project result, CI result, reviewer confirmation, or measured benefit) with checked or independently confirmed verification, plus accepted review by a named reviewer and date. This does not prove causality or universal applicability. |
 | `rejected` | Review found the proposed lesson incorrect, misleading, or too context-bound to reuse as stated. | Preserve the reason and source record. |
 | `archived` | Retained for history but no longer active for new consideration. | Preserve prior state and review history in the record or linked history. |
 
-Records use `schemas/experience.schema.json`. Phase 1 fields remain valid; Phase 4 lifecycle fields are optional at the schema level so existing records continue to validate. New lifecycle records should provide `identity`, `source`, `context`, `observation`, `solution`, `scope`, `reasoning`, and `status`. Do not invent missing source facts. `verified` records should include a completed review and evidence that meets the entry criteria above.
+Records use `schemas/experience.schema.json`. Phase 1 records without lifecycle `status` retain the legacy evidence shape. Any record with a lifecycle status must use `schemas/evidence.schema.json` for each evidence item. Lifecycle records provide `identity`, `source`, `context`, `observation`, `solution`, `scope`, `reasoning`, and `status`. Do not invent missing source facts. `verified` also requires named reviewer and review date, and at least one qualifying checked evidence item; AI judgment and a single attempt alone cannot meet this gate.
+
+`verified` confirms what was observed in one project. It does not establish that a practice caused the outcome, applies to every project, or automatically promotes a Capability.
 
 ## Review path
 

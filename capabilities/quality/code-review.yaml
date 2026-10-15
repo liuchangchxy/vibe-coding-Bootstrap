@@ -1,4 +1,5 @@
 id: code-review
+version: "1"
 name: Code review
 kind: workflow
 description: Assess a proposed change for correctness, clarity, and maintainability before acceptance.

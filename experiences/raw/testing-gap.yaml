@@ -12,8 +12,11 @@ outcome:
   summary: The example records a validation gap; it asserts no real project result.
   result: inconclusive
 evidence:
-  - description: Illustrative source observation; not evidence from a real project.
+  - type: other
     source: examples/experience-lifecycle/testing-gap.yaml
+    description: Illustrative and hypothetical source observation; not evidence from a real project.
+    strength: weak
+    verification: {status: unverified}
 confidence: low
 identity: exp-testing-gap-001
 source:

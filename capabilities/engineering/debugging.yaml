@@ -1,4 +1,5 @@
 id: debugging
+version: "1"
 name: Debugging
 kind: workflow
 description: Reproduce a failure and inspect execution evidence to distinguish observations from hypotheses.

@@ -1,4 +1,5 @@
 id: testing
+version: "1"
 name: Testing
 kind: workflow
 description: Check observable behavior with focused, repeatable tests appropriate to the change.

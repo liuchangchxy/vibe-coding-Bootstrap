@@ -1,4 +1,5 @@
 id: engineering-baseline
+version: "1"
 name: Engineering baseline
 kind: workflow
 description: Keep development changes traceable and reviewable through explicit version-control practices.

@@ -1,4 +1,5 @@
 id: agent-development
+version: "1"
 name: Agent development
 kind: workflow
 description: Describe an agent system with explicit task boundaries and a way to check its observable

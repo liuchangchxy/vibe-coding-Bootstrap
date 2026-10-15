@@ -10,8 +10,11 @@ outcome:
   summary: Review found the universal claim unsupported by the single hypothetical context.
   result: inconclusive
 evidence:
-  - description: Hypothetical single-project observation only.
+  - type: single_attempt
     source: examples/experience-lifecycle/rejected-overgeneralization
+    description: Illustrative and hypothetical single-project observation only.
+    strength: weak
+    verification: {status: unverified}
 confidence: low
 identity: exp-testing-gap-rejected-example
 source:

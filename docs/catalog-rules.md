@@ -4,6 +4,8 @@
 
 `capabilities/catalog.yaml` determines catalog membership. Each listed path resolves relative to `capabilities/` and contains one canonical record, validated against `schemas/catalog-entry.schema.json`. That schema extends `capability.schema.json` without changing its Phase 1 required fields. `schemas/catalog.schema.json` describes the index. Profile and Experience records keep their own schemas and owning directories.
 
+A Capability is a reusable development ability and the highest-level reuse abstraction, expressed through one or more concrete resource components. Top-level `kind` is retained as a Phase 1 compatibility hint for legacy primary representation; it is not a taxonomy, does not constrain component types, and must not drive new component logic. Component types are recorded on components and assembly metadata. Composite Capabilities may use `workflow`. Catalog Capabilities carry a simple version string (`"1"` initially); proposals bind to that exact current version.
+
 A repository maintainer reviews each proposed addition in a normal version-controlled change. Admission requires:
 
 1. A unique stable ID, a clear purpose, and concrete applicability including exclusions.
@@ -40,7 +42,7 @@ Before committing a catalog change:
 2. Check that registry paths exist, match category/ID filenames, and list all Capability YAML records exactly once; check global ID uniqueness.
 3. Resolve every prerequisite, related, conflict, and Experience ID. Component IDs and source IDs must be locally unique; every component must resolve a source, and each declared source must be used. Relative authored-source links must resolve locally. Inspect external source URLs during human review; parsing a URI does not prove availability.
 4. Check the relationship invariants above and validation-state prerequisite rule. Schema validation alone cannot check a graph.
-5. Confirm legacy compatibility: the original required fields and every original property definition remain unchanged except explanatory descriptions; Profile and Experience schemas remain unchanged. Validate a minimal Phase 1 record against the extended schema.
+5. Confirm legacy compatibility: the original Capability required fields and property definitions remain unchanged except explanatory descriptions; Profile remains unchanged; Phase 1 Experience without lifecycle status still accepts legacy Evidence. Validate minimal Phase 1 Capability and Experience records.
 6. Review the diff for private data, copied third-party content, unsupported evidence claims, or executable behavior. No validator result replaces maintainer review.
 
 These are authoring checks, not a shipped CLI, service, runtime validator, or automatic admission system. Updates to identity, purpose, component origin, or relationships require deliberate review; deprecate obsolete entries while preserving referenced IDs until consumers are deliberately migrated.

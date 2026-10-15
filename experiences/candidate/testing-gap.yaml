@@ -10,10 +10,13 @@ outcome:
   summary: Candidate hypothesis derived from the illustrative raw record; not yet tried.
   result: inconclusive
 evidence:
-  - description: The source record is illustrative and supplies no validation result.
+  - type: other
     source: ../raw/testing-gap.yaml
+    description: Illustrative and hypothetical; the source record supplies no validation result.
+    strength: weak
+    verification: {status: unverified}
 confidence: low
-capability_ids: [quality/testing]
+capability_ids: [testing]
 identity: exp-testing-gap-candidate-001
 source:
   project: illustrative-maintained-web-application

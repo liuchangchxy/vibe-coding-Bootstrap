@@ -35,16 +35,7 @@
     "evidence": {
       "type": "array",
       "minItems": 1,
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["description"],
-        "properties": {
-          "description": { "type": "string", "minLength": 1 },
-          "source": { "type": "string", "format": "uri-reference" },
-          "observed_at": { "type": "string", "format": "date-time" }
-        }
-      }
+      "items": { "anyOf": [{ "$ref": "evidence.schema.json" }, { "$ref": "#/$defs/legacyEvidence" }] }
     },
     "confidence": { "enum": ["low", "medium", "high"] },
     "lesson": { "type": "string", "description": "A cautious, reusable takeaway, including known limits." },
@@ -87,6 +78,10 @@
   },
   "allOf": [
     {
+      "if": { "required": ["status"] },
+      "then": { "properties": { "evidence": { "items": { "$ref": "evidence.schema.json" } } } }
+    },
+    {
       "if": { "properties": { "status": { "const": "candidate" } }, "required": ["status"] },
       "then": { "required": ["identity", "source", "context", "observation", "solution", "scope", "reasoning"] }
     },
@@ -94,11 +89,30 @@
       "if": { "properties": { "status": { "const": "verified" } }, "required": ["status"] },
       "then": {
         "required": ["identity", "source", "context", "observation", "solution", "scope", "reasoning", "review"],
-        "properties": { "review": { "properties": { "review_status": { "const": "accepted" } } } }
+        "properties": {
+          "review": { "required": ["reviewer", "reviewed_at"], "properties": { "review_status": { "const": "accepted" } } },
+          "evidence": { "contains": {
+            "type": "object",
+            "required": ["type", "strength", "verification"],
+            "properties": {
+              "type": { "not": { "enum": ["ai_judgment", "single_attempt"] } },
+              "strength": { "enum": ["moderate", "strong"] },
+              "verification": { "properties": { "status": { "enum": ["checked", "independently_confirmed"] } } }
+            }
+          } }
+        }
       }
     }
   ],
   "$defs": {
+    "legacyEvidence": {
+      "type": "object", "additionalProperties": false, "required": ["description"],
+      "properties": {
+        "description": { "type": "string", "minLength": 1 },
+        "source": { "type": "string", "format": "uri-reference" },
+        "observed_at": { "type": "string", "format": "date-time" }
+      }
+    },
     "measure": {
       "type": "object",
       "additionalProperties": false,
