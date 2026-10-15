@@ -1,0 +1,534 @@
+{
+  "project": {
+    "name": "dayspark",
+    "project_type": "cross-platform application",
+    "description": "开源、自托管优先的日历与待办应用（对标 Todo清单 的执行向体验）。Flutter 全平台运行，数据同步与 AI 接口由你自己的服务器掌控。",
+    "technologies": [
+      "Dart",
+      "Flutter"
+    ],
+    "platforms": [
+      "Android",
+      "Desktop",
+      "Web",
+      "iOS"
+    ],
+    "development_signals": [
+      "AI development tooling",
+      "GitHub Actions",
+      "MCP",
+      "server component",
+      "tests"
+    ]
+  },
+  "baseline_report_source": "examples/adoption/dayspark/semantic-review-input.json#baseline_coverage (fresh deterministic discovery)",
+  "baseline_coverage": [
+    {
+      "capability_id": "agent-development",
+      "status": "unknown",
+      "evidence": [],
+      "reason": "AI or MCP tooling alone does not show that the project develops an agent product. The catalog applies when a project is intentionally developing agent behavior and needs behavioral acceptance cases."
+    },
+    {
+      "capability_id": "code-review",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": ".github/vccp/reviewer-task-prompt.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": ".opencode/skills/dayspark-code-review/SKILL.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/ROADMAP.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/REVIEWING.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Assess a proposed change for correctness, clarity, and maintainability before acceptance.'; paths are listed below."
+    },
+    {
+      "capability_id": "debugging",
+      "status": "unknown",
+      "evidence": [],
+      "reason": "No sufficiently specific evidence for catalog signals: An observed failure, reproducible input, or discrepancy is available.. Applicable when a concrete failure or discrepancy needs a bounded investigation."
+    },
+    {
+      "capability_id": "documentation",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": "CLAUDE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "DECISIONS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "README.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "SPEC.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/CONSTRAINTS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/ROADMAP.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/START_HERE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-16-calendar-ui.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-16-project-foundation.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-16-todo-ui.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-17-caldav-sync.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-18-remaining-phases.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/ARCHITECTURE_REVIEW.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/caldav-sync-plan.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/mcp-setup.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/ARCHITECTURE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/EXECUTION.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/LOCALIZATION.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/REVIEWING.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/qa/TEST_EVIDENCE_TEMPLATE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/qa/p3-mcp-qa.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-22-master-refactor-plan.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-23-p2-sync-backend.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-23-p3-mcp-cli.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-d2-event-seam.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-p4-platform-ux.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-01-p5-background-sync.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-04-recurring-todo-design-spike.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-04-recurring-todo.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-04-task-allocation.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-06-action-loop-foundation.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Organize explanations, reference material, tutorials, and task guidance around reader needs.'; paths are listed below."
+    },
+    {
+      "capability_id": "engineering-baseline",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "CLAUDE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/EXECUTION.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-22-master-refactor-plan.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-23-p2-sync-backend.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Keep development changes traceable and reviewable through explicit version-control practices.'; paths are listed below."
+    },
+    {
+      "capability_id": "planning",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": "DECISIONS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/CONSTRAINTS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/ROADMAP.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/START_HERE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-16-calendar-ui.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-16-todo-ui.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-22-master-refactor-plan.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-23-p2-sync-backend.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-23-p3-mcp-cli.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-d2-event-seam.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-p4-platform-ux.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-01-p5-background-sync.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-04-recurring-todo-design-spike.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-04-recurring-todo.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-04-task-allocation.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-06-action-loop-foundation.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Make goals, scope, acceptance conditions, and work dependencies explicit before implementation.'; paths are listed below."
+    },
+    {
+      "capability_id": "research-workflow",
+      "status": "unknown",
+      "evidence": [],
+      "reason": "No sufficiently specific evidence for catalog signals: Claims depend on experiments, datasets, or reproducible methods.. Applicable when an investigation or experiment must report provenance, outcomes, and limitations."
+    },
+    {
+      "capability_id": "testing",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": ".claude/skills/release-prep/SKILL.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "AGENTS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "CLAUDE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/TESTING.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Check observable behavior with focused, repeatable tests appropriate to the change.'; paths are listed below."
+    }
+  ],
+  "semantic_coverage": [
+    {
+      "capability_id": "engineering-baseline",
+      "status": "satisfied",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "claim": "Requires SPEC-first changes, preservation of protected data and Git history, and full analyze/test gates before commit."
+        },
+        {
+          "path": "CLAUDE.md",
+          "claim": "Defines traceable change rules, root-cause-first fixes, evidence-based validation, and platform-aware implementation."
+        },
+        {
+          "path": "docs/process/EXECUTION.md",
+          "claim": "Defines task briefs, implementation reports, review diffs, independent review, bounded fix cycles, and delivery rulings for multi-task work."
+        }
+      ],
+      "reason": "Current governing instructions and the execution process provide a coherent, traceable and reviewable change workflow. The historical plans are not needed to establish this coverage.",
+      "recommended_action": "keep_existing"
+    },
+    {
+      "capability_id": "testing",
+      "status": "satisfied",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "claim": "Requires dart analyze and the complete Flutter test suite as evidence before commits."
+        },
+        {
+          "path": "docs/process/TESTING.md",
+          "claim": "Requires defect reproduction, a regression test that fails before the fix, successful rerun, relevant validation and explicit completion criteria."
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "claim": "Runs the project's automated CI validation on repository changes."
+        }
+      ],
+      "reason": "The active policy combines repeatable tests, regression evidence, change validation and CI gates; its purpose is substantively covered.",
+      "recommended_action": "keep_existing"
+    },
+    {
+      "capability_id": "code-review",
+      "status": "satisfied",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "docs/process/REVIEWING.md",
+          "claim": "Requires specification and quality verdicts, reproducible findings, evidence references and reviewers to rerun gates."
+        },
+        {
+          "path": ".opencode/skills/dayspark-code-review/SKILL.md",
+          "claim": "Provides an active adversarial review checklist with severity levels and concrete defect categories."
+        },
+        {
+          "path": ".github/vccp/reviewer-task-prompt.md",
+          "claim": "Separates a formal reviewer from the implementer and binds decisions to the exact current PR head and frozen scope."
+        }
+      ],
+      "reason": "The repository has both project-level adversarial review guidance and an exact-head formal reviewer contract, with acceptance kept separate from implementation.",
+      "recommended_action": "keep_existing"
+    },
+    {
+      "capability_id": "documentation",
+      "status": "satisfied",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "claim": "Assigns distinct authority and audiences to SPEC, CLAUDE, CONSTRAINTS, ROADMAP, START_HERE and process documentation."
+        },
+        {
+          "path": "docs/START_HERE.md",
+          "claim": "Provides a current continuation entry and directs readers to the live project state and next work."
+        },
+        {
+          "path": "docs/ROADMAP.md",
+          "claim": "Acts as the current project status and roadmap source."
+        },
+        {
+          "path": "SPEC.md",
+          "claim": "Defines the product contracts and core behavior as the business source of truth."
+        }
+      ],
+      "reason": "The active documentation set has explicit reader roles, authoritative sources, current status and stable product reference. Historical documents are distinguished by path and are not counted as current authority.",
+      "recommended_action": "keep_existing"
+    },
+    {
+      "capability_id": "planning",
+      "status": "satisfied",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "SPEC.md",
+          "claim": "Defines product scope, behavioral contracts, phased work and out-of-scope items."
+        },
+        {
+          "path": "docs/ROADMAP.md",
+          "claim": "Tracks current phases, status and pending work."
+        },
+        {
+          "path": "docs/process/EXECUTION.md",
+          "claim": "For multi-task work, requires briefs with acceptance criteria and dependency/interface review before implementation."
+        }
+      ],
+      "reason": "The active specification, roadmap and execution process cover scope, acceptance and dependencies at a depth suited to the project; they do not require ceremony for every small edit.",
+      "recommended_action": "keep_existing"
+    },
+    {
+      "capability_id": "debugging",
+      "status": "partial",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "path": "CLAUDE.md",
+          "claim": "Requires identifying a failure's root cause before changing code and validating the correction with evidence."
+        },
+        {
+          "path": "docs/process/TESTING.md",
+          "claim": "Uses reproduced failures and regression tests to distinguish an observed defect from an unverified fix."
+        },
+        {
+          "path": "docs/CONSTRAINTS.md",
+          "claim": "Records concrete incident symptoms, root-cause chains, fixes and verification for selected technical incidents."
+        }
+      ],
+      "reason": "Root-cause-first diagnosis, reproduction and incident records are present, but the inspected active guidance does not define a general bounded debugging process for collecting execution evidence across failures. This is partial coverage, not a missing capability.",
+      "recommended_action": "review_gap"
+    },
+    {
+      "capability_id": "research-workflow",
+      "status": "unknown",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "path": "SPEC.md",
+          "claim": "Defines a calendar and task product with synchronization and an AI/MCP interface; it does not establish research experiments or dataset-based claims as a project need."
+        },
+        {
+          "path": "docs/START_HERE.md",
+          "claim": "Describes product development and pending project work rather than a research or experiment workflow."
+        }
+      ],
+      "reason": "The catalog's applicability condition—investigations or experiments that must report provenance, outcomes and limitations—is not established for this product. Absence of a research keyword is not treated as a gap.",
+      "recommended_action": "no_action"
+    },
+    {
+      "capability_id": "agent-development",
+      "status": "partial",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "path": "CLAUDE.md",
+          "claim": "Describes a user-facing AI assistant using a user-supplied model key, so the repository develops AI-assisted product behavior in addition to coding-tool instructions."
+        },
+        {
+          "path": "SPEC.md",
+          "claim": "Defines MCP operations and a stdio wrapper for a local Agent, including action constraints and protocol behavior."
+        },
+        {
+          "path": "docs/qa/p3-mcp-qa.md",
+          "claim": "Provides concrete MCP feature QA evidence, but does not by itself define task-level behavioral acceptance cases for the AI assistant or an agent system."
+        }
+      ],
+      "reason": "The project does develop AI-assisted behavior and an agent-facing tool surface, so applicability is established. The inspected material specifies tool contracts and feature QA, but does not show a systematic set of behavioral acceptance cases for the assistant/agent behavior; MCP presence alone is insufficient for satisfied.",
+      "recommended_action": "review_gap"
+    }
+  ],
+  "semantic_delta": [
+    {
+      "capability_id": "agent-development",
+      "baseline": "unknown",
+      "semantic": "partial",
+      "change": "status_changed"
+    },
+    {
+      "capability_id": "debugging",
+      "baseline": "unknown",
+      "semantic": "partial",
+      "change": "status_changed"
+    }
+  ],
+  "conflicts": [],
+  "gaps": [],
+  "recommendations": [
+    {
+      "capability_id": "debugging",
+      "status": "partial",
+      "action": "review_gap",
+      "reason": "Root-cause-first diagnosis, reproduction and incident records are present, but the inspected active guidance does not define a general bounded debugging process for collecting execution evidence across failures. This is partial coverage, not a missing capability."
+    },
+    {
+      "capability_id": "agent-development",
+      "status": "partial",
+      "action": "review_gap",
+      "reason": "The project does develop AI-assisted behavior and an agent-facing tool surface, so applicability is established. The inspected material specifies tool contracts and feature QA, but does not show a systematic set of behavioral acceptance cases for the assistant/agent behavior; MCP presence alone is insufficient for satisfied."
+    }
+  ],
+  "explicitly_no_action": [
+    "engineering-baseline",
+    "testing",
+    "code-review",
+    "documentation",
+    "planning",
+    "research-workflow"
+  ],
+  "reviewed_at": "2026-10-15T17:05:42Z",
+  "reviewer": "host-ai"
+}

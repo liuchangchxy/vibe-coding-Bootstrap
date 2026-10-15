@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/semantic-review-input.schema.json",
+  "title": "Semantic Review Input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["project", "capability_catalog", "discovered_assets", "baseline_coverage", "baseline_report_source", "profile_constraints", "review_instructions"],
+  "properties": {
+    "project": {
+      "type": "object",
+      "required": ["name", "project_type", "description", "technologies", "platforms", "development_signals"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "project_type": {"type": "string"},
+        "description": {"type": "string"},
+        "technologies": {"type": "array", "items": {"type": "string"}},
+        "platforms": {"type": "array", "items": {"type": "string"}},
+        "development_signals": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "capability_catalog": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "purpose", "applicability", "selection_hints", "requires", "conflicts_with", "bootstrap_components"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "purpose": {"type": "string", "minLength": 1},
+          "applicability": {"type": "object", "required": ["use_when", "not_for"], "properties": {"use_when": {"type": "array", "items": {"type": "string"}}, "not_for": {"type": "array", "items": {"type": "string"}}}},
+          "selection_hints": {"type": "object", "required": ["signals", "constraints"], "properties": {"signals": {"type": "array", "items": {"type": "string"}}, "constraints": {"type": "array", "items": {"type": "string"}}}},
+          "requires": {"type": "array", "items": {"type": "string"}},
+          "conflicts_with": {"type": "array", "items": {"type": "string"}},
+          "bootstrap_components": {"type": "array", "items": {"type": "object", "required": ["id", "delivery", "scope"], "properties": {"id": {"type": "string"}, "delivery": {"type": "string"}, "scope": {"type": "string"}}}}
+        }
+      }
+    },
+    "discovered_assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "asset_type", "ownership", "summary", "relevant_excerpt", "baseline_candidate_capabilities", "authority_hint"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "asset_type": {"type": "string"},
+          "ownership": {"enum": ["project_owned", "bootstrap_managed", "external"]},
+          "summary": {"type": "string"},
+          "relevant_excerpt": {"type": "string", "maxLength": 2600},
+          "baseline_candidate_capabilities": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "authority_hint": {"enum": ["primary", "active", "historical", "reference"]}
+        }
+      }
+    },
+    "baseline_coverage": {"type": "array", "items": {"type": "object", "required": ["capability_id", "status", "evidence", "reason"], "properties": {"capability_id": {"type": "string"}, "status": {"enum": ["satisfied", "partial", "missing", "conflict", "unknown"]}, "evidence": {"type": "array", "items": {"type": "object", "required": ["path", "ownership"], "properties": {"path": {"type": "string"}, "ownership": {"type": "string"}}}}, "reason": {"type": "string"}}}},
+    "baseline_report_source": {"type": "string", "minLength": 1},
+    "profile_constraints": {"type": "object", "additionalProperties": false, "required": ["defaults", "exclusions", "explicit_preferences"], "properties": {"defaults": {"type": "array", "items": {"type": "string"}}, "exclusions": {"type": "array", "items": {"type": "string"}}, "explicit_preferences": {"type": "object"}}},
+    "review_instructions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  }
+}

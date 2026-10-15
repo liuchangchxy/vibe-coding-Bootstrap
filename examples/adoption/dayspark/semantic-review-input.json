@@ -1,0 +1,1016 @@
+{
+  "project": {
+    "name": "dayspark",
+    "project_type": "cross-platform application",
+    "description": "开源、自托管优先的日历与待办应用（对标 Todo清单 的执行向体验）。Flutter 全平台运行，数据同步与 AI 接口由你自己的服务器掌控。",
+    "technologies": [
+      "Dart",
+      "Flutter"
+    ],
+    "platforms": [
+      "Android",
+      "Desktop",
+      "Web",
+      "iOS"
+    ],
+    "development_signals": [
+      "AI development tooling",
+      "GitHub Actions",
+      "MCP",
+      "server component",
+      "tests"
+    ]
+  },
+  "capability_catalog": [
+    {
+      "id": "engineering-baseline",
+      "purpose": "Keep development changes traceable and reviewable through explicit version-control practices.",
+      "applicability": {
+        "use_when": [
+          "A software project needs a shared baseline for recording and inspecting changes."
+        ],
+        "not_for": [
+          "Repository hosting policy or a project-specific branching mandate."
+        ]
+      },
+      "selection_hints": {
+        "signals": [
+          "Change history and reviewability are required."
+        ],
+        "constraints": [
+          "Choose the actual branching policy with the project owner."
+        ]
+      },
+      "requires": [],
+      "conflicts_with": [],
+      "bootstrap_components": [
+        {
+          "id": "reference",
+          "delivery": "reference",
+          "scope": "external"
+        },
+        {
+          "id": "reviewable-changes",
+          "delivery": "copy",
+          "scope": "global"
+        }
+      ]
+    },
+    {
+      "id": "testing",
+      "purpose": "Check observable behavior with focused, repeatable tests appropriate to the change.",
+      "applicability": {
+        "use_when": [
+          "Behavior changes need regression evidence.",
+          "An executable project needs a test organization convention."
+        ],
+        "not_for": [
+          "A guarantee of correctness from coverage numbers alone."
+        ]
+      },
+      "selection_hints": {
+        "signals": [
+          "Regression risk or repeatable behavioral checks are relevant."
+        ],
+        "constraints": [
+          "The referenced pytest component applies to Python; other stacks need a suitable component reference.",
+          "Test effort must reflect change impact."
+        ]
+      },
+      "requires": [],
+      "conflicts_with": [],
+      "bootstrap_components": [
+        {
+          "id": "project-test-guidance",
+          "delivery": "copy",
+          "scope": "project"
+        }
+      ]
+    },
+    {
+      "id": "code-review",
+      "purpose": "Assess a proposed change for correctness, clarity, and maintainability before acceptance.",
+      "applicability": {
+        "use_when": [
+          "Changes need an explicit review by a person or a separately authorized reviewer."
+        ],
+        "not_for": [
+          "Automatic approval, merge authority, or a substitute for runtime evidence."
+        ]
+      },
+      "selection_hints": {
+        "signals": [
+          "A reviewable change and acceptance expectations exist."
+        ],
+        "constraints": [
+          "Who reviews and who accepts remain project decisions."
+        ]
+      },
+      "requires": [],
+      "conflicts_with": [],
+      "bootstrap_components": []
+    },
+    {
+      "id": "documentation",
+      "purpose": "Organize explanations, reference material, tutorials, and task guidance around reader needs.",
+      "applicability": {
+        "use_when": [
+          "Project knowledge needs a clear audience and a maintainable documentation structure."
+        ],
+        "not_for": [
+          "Promoting private project facts into global capability records."
+        ]
+      },
+      "selection_hints": {
+        "signals": [
+          "Readers need guidance or stable reference material."
+        ],
+        "constraints": [
+          "Project-specific content stays in the project; this catalog only describes the reusable ability."
+        ]
+      },
+      "requires": [],
+      "conflicts_with": [],
+      "bootstrap_components": [
+        {
+          "id": "project-documentation-outline",
+          "delivery": "copy",
+          "scope": "project"
+        }
+      ]
+    },
+    {
+      "id": "planning",
+      "purpose": "Make goals, scope, acceptance conditions, and work dependencies explicit before implementation.",
+      "applicability": {
+        "use_when": [
+          "Work has multiple steps or unresolved scope that benefits from a shared plan."
+        ],
+        "not_for": [
+          "Mandatory ceremony for every small edit or automatic task execution."
+        ]
+      },
+      "selection_hints": {
+        "signals": [
+          "Scope, dependencies, or acceptance conditions need clarification."
+        ],
+        "constraints": [
+          "GitHub issues are one possible component, not a required host.",
+          "Planning depth follows project complexity and user preference."
+        ]
+      },
+      "requires": [],
+      "conflicts_with": [],
+      "bootstrap_components": []
+    },
+    {
+      "id": "debugging",
+      "purpose": "Reproduce a failure and inspect execution evidence to distinguish observations from hypotheses.",
+      "applicability": {
+        "use_when": [
+          "A concrete failure or discrepancy needs a bounded investigation."
+        ],
+        "not_for": [
+          "Speculative fallback code without a reproduced failure or known requirement."
+        ]
+      },
+      "selection_hints": {
+        "signals": [
+          "An observed failure, reproducible input, or discrepancy is available."
+        ],
+        "constraints": [
+          "The pdb component applies to Python; use a suitable debugger for another runtime.",
+          "An investigation does not establish a root cause until evidence supports it."
+        ]
+      },
+      "requires": [],
+      "conflicts_with": [],
+      "bootstrap_components": []
+    },
+    {
+      "id": "research-workflow",
+      "purpose": "Preserve methods, inputs, and evidence so research findings can be examined and reproduced.",
+      "applicability": {
+        "use_when": [
+          "An investigation or experiment must report provenance, outcomes, and limitations."
+        ],
+        "not_for": [
+          "Automatic Experience extraction or copying private datasets into this catalog."
+        ]
+      },
+      "selection_hints": {
+        "signals": [
+          "Claims depend on experiments, datasets, or reproducible methods."
+        ],
+        "constraints": [
+          "A source reference is not evidence that this capability improved a real project.",
+          "Keep confidential inputs and project observations in their owning project."
+        ]
+      },
+      "requires": [],
+      "conflicts_with": [],
+      "bootstrap_components": []
+    },
+    {
+      "id": "agent-development",
+      "purpose": "Describe an agent system with explicit task boundaries and a way to check its observable behavior.",
+      "applicability": {
+        "use_when": [
+          "A project is intentionally developing agent behavior and needs behavioral acceptance cases."
+        ],
+        "not_for": [
+          "Creating an agent in Bootstrap Phase 2 or granting tools autonomous authority."
+        ]
+      },
+      "selection_hints": {
+        "signals": [
+          "The product includes agent behavior rather than merely using an AI coding assistant."
+        ],
+        "constraints": [
+          "Testing is a catalog prerequisite for checking agent behavior.",
+          "Tool permissions, evaluation cases, and runtime choices remain project-specific."
+        ]
+      },
+      "requires": [
+        "testing"
+      ],
+      "conflicts_with": [],
+      "bootstrap_components": []
+    }
+  ],
+  "discovered_assets": [
+    {
+      "path": ".claude/skills/release-prep/SKILL.md",
+      "asset_type": "skill",
+      "ownership": "project_owned",
+      "summary": "Dev-to-Release Pipeline / 开发到发版流水线",
+      "relevant_excerpt": "---\nname: release-prep\ndescription: 完整 dev-to-release 流水线 — 理解 → 实现 → 验证 → 确认 → 文档 → 推送 → 验收\nargument-hint: none\nallowed-tools: [Read, Write, Edit, Bash, Glob, Grep]\n---\n\n# Dev-to-Release Pipeline / 开发到发版流水线\n\n无论 feature 开发还是 bug fix，都按以下 7 阶段走。每阶段是卡口，不允许跳过。\n\n---\n\n## 0 — 理解\n\n- 读相关文件 + `docs/CONSTRAINTS.md`（改日历/DB/provider/通知前必读）\n- 如果需求模糊，先问清楚再动手\n\n## 1 — 实现\n\n- 按 `CLAUDE.md` 的代码风格、架构、UI 规则写代码\n- 改啥补啥：\n  - 改了 Drift table/DAO → `build_runner`\n  - 改了 `.arb` → `flutter gen-l10n`\n  - 改了 provider 结构 → 检查 `test/` 下对应测试\n  - 新增依赖 → 检查 macOS Xcode SDK 兼容性\n\n## 2 — 验证\n\n```\nflutter analyze    # 必须零 issue\nflutter test       # 必须全绿\n```\n\n如果失败：Fix code，不要 suppress。通过后再继续。\n\n## 2.5 — 代码审查\n\n加载 `dayspark-code-review` skill，对本次所有改动逐项检查。\n\n- **BLOCKER** 项必须修复才能继续\n- **WARNING** 项建议修复，至少确认已知悉\n- 修复后重新跑 `flutter analyze` + `flutter test`\n\n## 3 — 确认\n\n用户确认。没确认不推。\n\n## 4 — 文档\n\n- `pubspec.yaml` — version `0.x+N`（bump x 和 N）\n- `docs/ROADMAP.md` — 补齐当前版本条目 + 更新 Pending Items\n- `docs/changelog.md` — 顶部追加双语日志（feature 写新功能，bug 写问题+修复）\n- `docs/CONSTRAINTS.md` — 修 bug 或关键决策后有新约束就加\n- `CLAUDE.md` — Current version 行\n- 跑 `tool/check_version_consistency.sh` 自检（CI 同款门：pubspec / CLAUDE / changelog 含 Previous 行 / ROADMAP / `schemas.dart` 的 `mcpServerVersion` 必须一致；README 是动态徽章、START_HERE 不复制版本，均无需手改）\n\n## 5 — 推送\n\n```bash\ngit add -A\ngit commit -m \"release: v<version> — <brief summary>\"\ngit tag v<version>\ngit push origin main\ngit push origin v<version>\n```\n\n## 6 — CI\n\ntag push 自动触发 `release.yml`，构建所有 5 平台 release 产物，上传到 **Draft Release**（不公开）。\n\n验证：\n```bash\ngh run list --limit 2\n```\n\n## 7 — 验收 + 发布\n\n### 先下载 Draft Release 产物\n\n```bash\ngh release view v<version>\n# 确认是 Draft 状态\n# 去 GitHub Releases 页面下载产物\n```\n\n### 本地验证（至少跑得起来）\n\n- **Android**: APK 安装到手机/模拟器\n- **macOS**: DMG 挂载后打开\n- **Windows/Linux/Web**: 能启动即可\n- 重点测：本次改动涉及的功能 + 各平台 launch 不崩溃\n\n### 发布\n\n确认没问题后，在 GitHub Release 页面点击 **Publish release**。\n\n```bash\n# 发布后验证\ngh release view v<version> --json name,tagName,isDraft,isPrerelease,assets\n```\n\n确认四点：\n1. **版本号 + prerelease 标记** — `isPrerelease: true`\n2. **isDraft** — `false`（已发布）\n3. **Release 说明** — 自动生成或手动补充\n4. **构建产物** — 5 平台都在（android / macos / windows / linux / web）",
+      "baseline_candidate_capabilities": [
+        "testing"
+      ],
+      "authority_hint": "active"
+    },
+    {
+      "path": ".github/vccp/installation-lock.json",
+      "asset_type": "other",
+      "ownership": "project_owned",
+      "summary": "installation-lock.json",
+      "relevant_excerpt": "{\n  \"lock_schema_version\": 1,\n  \"vccp\": {\n    \"source\": \"liuchangchxy/vibe-coding-control-plane\",\n    \"revision\": \"93a9ca4250c562e1cbd6319204310b875f2d231f\"\n  },\n  \"artifacts\": [\n    {\n      \"path\": \".github/vccp/reviewer-task-prompt.md\",\n      \"component\": \"reviewer-task-prompt\",\n      \"component_revision\": \"93a9ca4250c562e1cbd6319204310b875f2d231f\",\n      \"sha256\": \"acead141f0f9f53112a5417e17b060e634fd2ebaa0431f9fb539579a98b5d6dd\"\n    },\n    {\n      \"path\": \".github/workflows/vccp-coordination-label-cleanup.yml\",\n      \"component\": \"coordination-label-cleanup-adapter\",\n      \"component_revision\": \"93a9ca4250c562e1cbd6319204310b875f2d231f\",\n      \"sha256\": \"a18f632b935d3551c4f22eeb72e802ee9d940c52ab6439dab6091cf521c2f339\"\n    }\n  ]\n}",
+      "baseline_candidate_capabilities": [],
+      "authority_hint": "active"
+    },
+    {
+      "path": ".github/vccp/reviewer-task-prompt.md",
+      "asset_type": "prompt",
+      "ownership": "project_owned",
+      "summary": "ChatGPT Work Reviewer Task — Canonical Prompt",
+      "relevant_excerpt": "# ChatGPT Work Reviewer Task — Canonical Prompt\n\n1. Rebuild current state from GitHub: event PR, PR state, base, author, draft flag, current head SHA, linked Issues, Issue labels and Frozen Spec, required check runs, existing formal reviews, and merge state. Never rely on chat history, memory from an earlier run, comments as authorization, or a marker.\n2. Identify the one PR relevant to this event. Exit if it is not open, is Draft, has the wrong base, or its author is not in `repository.implementer_authors`.\n3. Determine exactly one linked Issue. Exit if it is missing, ambiguous, lacks `issue_contract.frozen_spec_label`, or has any terminal coordination label.\n4. Read the Frozen Spec and review only that scope. Do not add requirements or reject for optional improvements.\n5. Capture the current PR head SHA. For each configured `reviewer.required_checks` entry, distinguish **not yet observed**, **observed but nonterminal** (`queued`, `in_progress`, or `pending`), and **terminal**. If a required check has not appeared yet, treat it as not-yet-terminal and continue waiting; absence on the first read does not mean it is missing. In this same event-triggered run, wait until each check appears and reaches a terminal conclusion for the captured exact SHA. A check for a different SHA does not count. After every wait and state re-read, verify the PR's current head SHA is still the captured SHA. If it changed, stop immediately without a formal decision for the old SHA; the `synchronize` event starts the run for the new SHA. If a check reaches a terminal conclusion outside its configured `accepted_conclusions`, stop without APPROVE. If a check remains absent until this run's reasonable waiting deadline or the platform execution limit, report `missing/timeout`, exit without formal approval, and do not claim a CI result. Do not start a separate polling service or wait for a future check event.\n6. Before either formal decision, re-read the PR and verify it is open and still has the captured head SHA. If not, exit without review.\n7. If every Frozen Spec acceptance criterion is met, enable native Auto-merge using the manifest's `merge.method`. If enabling Auto-merge fails or GitHub reports insufficient permission, stop without submitting APPROVE and report the exact observed failure. After Auto-merge is enabled, submit a native GitHub `APPROVE` review bound to the captured current head SHA. If criteria are not met, submit a native `REQUEST_CHANGES` review bound to that SHA and set the Issue coordination state to `changes-requested`.\n8. A formal `REQUEST_CHANGES` means on",
+      "baseline_candidate_capabilities": [
+        "code-review"
+      ],
+      "authority_hint": "active"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "asset_type": "workflow",
+      "ownership": "project_owned",
+      "summary": "ci.yml",
+      "relevant_excerpt": "name: CI\n\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n\n- name: Version consistency guard / 版本一致性守卫\n        run: |\n          tool/check_version_consistency.sh\n          tool/check_version_consistency.sh --selftest\n      - uses: subosito/flutter-action@v2\n        with:\n          channel: \"stable\"\n          cache: true\n      - run: flutter pub get\n      - name: Resolve contracts package (root analyze scans its tests)\n        working-directory: packages/dayspark_contracts\n        run: dart pub get\n      - name: Resolve server package (root analyze scans its tests)\n        working-directory: server\n        run: dart pub get\n      - name: Resolve mcp_stdio_wrapper package (root analyze scans its tests)\n        working-directory: tool/mcp_stdio_wrapper\n        run: dart pub get\n      - name: Resolve dayspark_cli package (root analyze scans its tests)\n        working-directory: tool/dayspark_cli\n        run: dart pub get\n      - name: Recurrence package analyze + test\n        working-directory: packages/dayspark_recurrence\n        run: |\n          dart pub get\n          dart analyze .\n          dart test\n      - run: flutter gen-l10n\n      - run: flutter analyze\n      - run: flutter test\n\nbuild-web:\n    needs: test\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: subosito/flutter-action@v2\n        with:\n          channel: \"stable\"\n          cache: true\n      - run: flutter pub get\n      - run: flutter build web --release\n      - name: Web smoke — 白屏即红 / fail if the page renders blank\n        run: dart run tool/web_smoke.dart --dir build/web --screenshot build/web-smoke.png\n      - uses: actions/upload-artifact@v4\n        if: always()\n        with:\n          name: web-smoke-screenshot\n          path: build/web-smoke.png\n          if-no-files-found: ignore\n      - uses: actions/upload-artifact@v4\n        with:\n          name: web-build\n          path: build/web/\n\nbuild-linux:\n    needs: test\n    runs-on: ubuntu-22.04\n    steps:\n      - uses: actions/checkout@v4\n      - uses: subosito/flutter-action@v2\n        with:\n          channel: \"stable\"\n          cache: true\n      - run: |\n          sudo apt-get update\n          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsecret-1-dev\n      - run: flutter pub get\n      - run: flutter build linux --release\n      - run: tool/check_glibc_version.sh build/linux/x64/release/bundle/\n      - uses: actions/upload-artifact@v4\n        with:\n          name: linux-build\n          path: build/linux/x64/release/bundle",
+      "baseline_candidate_capabilities": [
+        "testing"
+      ],
+      "authority_hint": "active"
+    },
+    {
+      "path": ".github/workflows/release.yml",
+      "asset_type": "workflow",
+      "ownership": "project_owned",
+      "summary": "release.yml",
+      "relevant_excerpt": "name: Release\n\non:\n  push:\n    tags:\n      - 'v*'\n\njobs:\n  version-gate:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Version + tag guard / 版本与 tag 一致性门\n        run: tool/check_version_consistency.sh --tag \"$GITHUB_REF_NAME\"\n\nbuild-web:\n    needs: version-gate\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: subosito/flutter-action@v2\n        with:\n          channel: \"stable\"\n          cache: true\n      - run: flutter pub get\n      - run: flutter build web --release\n      - name: Web smoke — 白屏即红 / fail if the page renders blank\n        run: dart run tool/web_smoke.dart --dir build/web --screenshot build/web-smoke.png\n      - uses: actions/upload-artifact@v4\n        if: always()\n        with:\n          name: web-smoke-screenshot\n          path: build/web-smoke.png\n          if-no-files-found: ignore\n      - run: cd build/web && zip -r $GITHUB_WORKSPACE/dayspark-web.zip .\n      - uses: actions/upload-artifact@v4\n        with:\n          name: web-build\n          path: dayspark-web.zip\n\nbuild-android:\n    needs: version-gate\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: subosito/flutter-action@v2\n        with:\n          channel: \"stable\"\n          cache: true\n      - name: Setup Android signing\n        run: |\n          echo \"${{ secrets.ANDROID_KEYSTORE }}\" | base64 -d > android/app/release-keystore.jks\n          cat > android/app/key.properties << EOF\n          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}\n          keyPassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}\n          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}\n          storeFile=release-keystore.jks\n          EOF\n      - run: flutter pub get\n      - run: flutter build apk --release\n      - uses: actions/upload-artifact@v4\n        with:\n          name: android-apk\n          path: build/app/outputs/flutter-apk/app-release.apk\n\nbuild-macos:\n    needs: version-gate\n    runs-on: macos-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: subosito/flutter-action@v2\n        with:\n          channel: \"stable\"\n          cache: true\n      - run: flutter pub get\n      - run: flutter build macos --release\n      - name: Create DMG\n        run: |\n          APP=\"build/macos/Build/Products/Release/DaySpark.app\"\n          DMG=\"$GITHUB_WORKSPACE/dayspark-macos.dmg\"\n          hdiutil create -volname \"DaySpark\" -srcfolder \"$APP\" -ov -format UDZO \"$DMG\"\n      - uses: actions/upload-artifact@v4\n        with:\n          name: macos-dmg\n          path: dayspark-macos.dmg\n\nbuild-windows",
+      "baseline_candidate_capabilities": [],
+      "authority_hint": "active"
+    },
+    {
+      "path": ".github/workflows/vccp-coordination-label-cleanup.yml",
+      "asset_type": "workflow",
+      "ownership": "project_owned",
+      "summary": "vccp-coordination-label-cleanup.yml",
+      "relevant_excerpt": "name: Coordination Label Cleanup\n\non:\n  issues:\n    types: [closed]\n\npermissions:\n  contents: read\n  issues: write\n\njobs:\n  cleanup:\n    name: Remove active coordination labels after Issue close\n    runs-on: ubuntu-latest\n    steps:\n      - name: Remove active coordination labels and preserve terminal evidence\n        uses: liuchangchxy/vibe-coding-control-plane/.github/actions/coordination-label-cleanup@93a9ca4250c562e1cbd6319204310b875f2d231f\n        with:\n          github-token: ${{ secrets.GITHUB_TOKEN }}",
+      "baseline_candidate_capabilities": [],
+      "authority_hint": "active"
+    },
+    {
+      "path": ".opencode/skills/dayspark-code-review/SKILL.md",
+      "asset_type": "skill",
+      "ownership": "project_owned",
+      "summary": "DaySpark Code Review / 代码审查",
+      "relevant_excerpt": "---\nname: dayspark-code-review\ndescription: 对 DaySpark 代码进行领域特定审查 — 检查 CONSTRAINTS.md 硬约束、历史 bug 回归、Flutter 反模式、l10n 完整性、平台兼容性。改日历/DB/Provider/通知/同步相关代码时必须加载此 skill。\ncompatibility: opencode\n---\n\n# DaySpark Code Review / 代码审查\n\n修改任何文件后，在 review 阶段加载本 skill，按以下章节逐项检查。\n标记为 **BLOCKER** 的项目必须修复才能合并；**WARNING** 建议修复；**SUGGESTION** 可选。\n\n审查时源文件对照 `docs/CONSTRAINTS.md` 和 `docs/changelog.md`。\n\n- [ ] **A1 [BLOCKER] Schema 变更走 migration，不重建**\n  改了 Drift 表定义 → 必须提升 `schemaVersion` + 写 `MigrationStrategy`。\n  禁止直接改 schemaVersion 让 Drift 重建表（会丢用户数据）。\n  *(CONSTRAINTS.md: DB migration 是 P0 pending item)*\n\n- [ ] **A2 [BLOCKER] `emptyTrash` 级联删除子表**\n  删 todos 前必须先删 `todo_tags`、`attachments`、`reminders`。\n  *(CONSTRAINTS.md Database)*\n\n- [ ] **A3 [BLOCKER] ICS import 用 `insert` 不用 `insertOnConflictUpdate`**\n  `ics_service.dart` 里用 `insert(companion)` 直接插入。\n  不能用 `insertOnConflictUpdate(Event(id: -1, ...))`。\n  *(CONSTRAINTS.md Database)*\n\n- [ ] **A4 [BLOCKER] subtask `parentId` 不加外键约束**\n  `todos.parentId` 定义为 `integer().nullable()()`，不设置 `REFERENCES todos(id)`。\n  *(CONSTRAINTS.md Database (continued))*\n\n- [ ] **A5 [WARNING] `build_runner` 跑了吗？**\n  改了 Drift table/DAO 或 json_serializable 注解 → 必须跑 `dart run build_runner build --delete-conflicting-outputs`。\n\n- [ ] **B1 [BLOCKER] PageView 页面范围不能缩小**\n  Day: `_totalDays = 20000`, Week: `_totalWeeks = 4000`, Month: `_totalMonths = 800`。\n  当前日期 day index ≈ 19619，改小会 clamp 到 ~2004 年。\n  *(CONSTRAINTS.md Calendar / PageView 范围)*\n\n- [ ] **B2 [BLOCKER] `_calendarRange` 必须是静态的**\n  返回固定的 `DateTime(2000,1,1)` 到 `DateTime(2030,12,31)`，不能跟 `_calendarAnchor` 联动。\n  动态 range 会改变 provider key → 重建 CalendarSection → 丢失滑动状态。\n  *(CONSTRAINTS.md Calendar / _calendarRange)*\n\n- [ ] **B3 [BLOCKER] `_isAnimating` 防循环反馈**\n  week/day/month 视图 `onPageChanged` 里检查 `if (!_isAnimating)`。\n  `didUpdateWidget` 里 `animateToPage` 前后设置 true/false。\n  否则形成 `onPageChanged → setState → didUpdateWidget → animateToPage → onPageChanged` 循环。\n  *(CONSTRAINTS.md Calendar / _isAnimating)*\n\n- [ ] **B4 [BLOCKER] 每个 PageView 页面需要独立 ScrollController**\n  用单独的 `StatefulWidget`（`_DayScrollablePage` / `_ScrollablePage`）持有各自的 `ScrollController`。\n  *(CONSTRAINTS.md Calendar / 独立 ScrollController)*\n\n- [ ] **B5 [BLOCKER] 月导航日期必须规范化**\n  `_navigateForward` month case 用 `DateTime(year, month+1, 1)`，day 固定为 1。\n  如果 anchorDate.day = 31，`DateTime(year, month+1, 31)` 会跳月。\n  *(CONSTRAINTS.md Calendar / 月导航)*\n\n- [ ] **B6 [BLOCKER] `CalendaEventAdapter ==` 必须包含所有字段**\n  equality 和 hashCode 必须覆盖全部字段（目前 12 个）。漏字段会导致 widget diffing 不更新。\n  *(CONSTRAINTS.md Calendar / CalendaEventAdapter)*\n\n- [ ] **B7 [WARNI",
+      "baseline_candidate_capabilities": [
+        "code-review"
+      ],
+      "authority_hint": "active"
+    },
+    {
+      "path": "AGENTS.md",
+      "asset_type": "agent_instruction",
+      "ownership": "project_owned",
+      "summary": "AI 助手行为准则 (AGENTS.md)",
+      "relevant_excerpt": "# AI 助手行为准则 (AGENTS.md)\n\n本文件是 DaySpark (灵光) 仓库的**跨工具 AI 入口**（Claude Code、Codex、Cursor、Windsurf、Aider、Copilot 等均原生/兼容读取 `AGENTS.md`）。\n任何 AI 助手在本仓库开始工作前，必须先读本文件；工程规则细节见 [CLAUDE.md](CLAUDE.md)，业务规则见 [SPEC.md](SPEC.md)。\n\n---\n\n## 三大底线 (Hard Constraints)\n\n1. **SPEC 先行**：任何业务改动的最终标准以 [SPEC.md](SPEC.md) 为准。改需求 / 新功能 / 行为变更，必须**先修订 SPEC.md 对应章节**，再改测试，最后改实现；代码只是 Spec 的具象化体现。禁止只改代码不落文档。\n2. **非破坏性操作**：严禁未经用户明确许可物理删除已有数据或覆盖受保护的配置（数据库、用户配置、签名密钥、git 历史等）。删除/覆盖前必须获得用户确认。\n3. **交付全绿**：改动代码后必须跑 `dart analyze .`（零 issue）与 `flutter test`（全绿）并以输出为证，杜绝\"带病提交\"。pre-commit 钩子会物理拦截非零 analyze 退出码；测试全量靠流程卡口（钩子不跑全量测试）。`.git/hooks` 不随仓库版本化——**fresh clone 后必须跑 [`scripts/setup-hooks.sh`](scripts/setup-hooks.sh)** 安装（可重复执行重装）。\n\n---\n\n## 文件分工（互相引用，不重复）\n\n| 文件 | 职责 | 谁读 |\n| :--- | :--- | :--- |\n| [SPEC.md](SPEC.md) | **业务规则**真理源（做什么、规则契约、功能矩阵） | 所有 AI，改业务前必读 |\n| [CLAUDE.md](CLAUDE.md) | **工程规则**（代码风格、架构分层、工作流卡口、版本/CI 规则） | 所有 AI，写代码前必读 |\n| [DECISIONS.md](DECISIONS.md) | **为什么**（轻量 ADR 时间线，重大决策留痕） | 决策存疑时查 |\n| [docs/CONSTRAINTS.md](docs/CONSTRAINTS.md) | **坑**（技术约束/避坑清单） | 改日历/DB/Provider/通知/同步前必读 |\n| [docs/ROADMAP.md](docs/ROADMAP.md) | **状态唯一源**：功能全景、需求/阶段状态、待办 | 判断功能现状时查 |\n| [docs/changelog.md](docs/changelog.md) | **反馈**日志（原文→todo→代码 溯源） | 处理用户反馈时查 |\n| [docs/START_HERE.md](docs/START_HERE.md) | **接续入口**：新会话“从哪开始”的唯一清单 | 会话开工前必读 |\n| [docs/process/](docs/process/) | **流程五件**（vendored）：执行工序 / 审查配方 / 测试与 DoD / 架构方法 / 本地化与主题 | 多任务开工、审查、收口前读 |\n| [docs/GATES.md](docs/GATES.md) | **门禁总账**：每条门禁守什么、挂在哪、红过没（变异实证） | 加/改门禁时读 |\n| [docs/l10n-outlets.md](docs/l10n-outlets.md) | **用户可见文案出口清单**：新增出口必须登记并接上刷新路径 | 动文案/通知/小组件前读 |\n\n**分工边界**：领域技术坑 → `docs/CONSTRAINTS.md`（纠错追加处）；AI 行为与工作习惯 → 本文件【教训】区；业务规则 → `SPEC.md`；执行工序与裁定披露 → `docs/process/EXECUTION.md`。同一内容只写一家，互相引用不复制。\n\n---\n\n## 阶段收尾：Rulings 裁定披露（强制）\n\n用户授权“自动执行整段流程 / 失败才停”时，阶段收尾除交付结论外**必须附裁定清单**：本阶段 AI 替用户拍板的决定，一行一条，格式 `裁定 → 判错的代价`；只收**行为/范围/代价级**决定，纯实现细节不收；需长期留存的写入 `DECISIONS.md`。**禁止静默裁定。**（详见 [docs/process/EXECUTION.md](docs/process/EXECUTION.md) §3）\n\n---\n\n## 规则：用户纠错 → 追加避坑清单\n\n当用户对 AI 的行为进行**纠正、批评或提出开发习惯偏好**时（例如：\"不要动我的某个配置\"、\"命令别用全屏\"、\"别用 flutter analyze\"）：\n\n1. AI 必须**主动编辑 [docs/CONSTRAINTS.md](docs/CONSTRAINTS.md)**，在对应领域章节追加一条带 **Why / Date** 的避坑条目（负面约束）；\n2. 从下一次交互起，该条目即为红线，新会话不可再犯；\n3. 若纠错涉及业务规则本身，同步修订 SPEC.md；若涉及重大架构走向，顺手在 DECISIONS.md 追加一条时间戳记录。\n\n## 附：初始化预设教训\n\n1. 改需求严禁只改业务代码，必须第一时间同步修改 SPEC.md。\n2. 代码交付前必须确保 `dart analyze .` 零 issue 且 `flutter test` 全绿，杜绝\"修了 A 破坏了 B\"。",
+      "baseline_candidate_capabilities": [
+        "engineering-baseline",
+        "testing"
+      ],
+      "authority_hint": "primary"
+    },
+    {
+      "path": "CLAUDE.md",
+      "asset_type": "agent_instruction",
+      "ownership": "project_owned",
+      "summary": "DaySpark (灵光) — Project Rules",
+      "relevant_excerpt": "# DaySpark (灵光) — Project Rules\n\n1. **溯源法则**：每个用户反馈必须建立\"原文 → todo → 代码\"的可追踪链路。完成检查时，验证依据是**原文**，不是 todo 列表。→ 可避免：漏改、假完成。\n2. **根因法则**：修复任何失败前，必须先定位根因。不做猜测式修复。→ 可避免：修多次修不对、引入新问题。\n3. **正交验证法则**：验证一件事的手段必须独立于做这件事的手段。修代码的人不独自验证、验证清单不来自 todo 而来自原文、CI 配置变更先普通 push 验证再打 tag。→ 可避免：自己骗自己。\n4. **平台感知法则**：任何 UI/交互改动，必须显式考虑所有目标平台的差异（桌面鼠标 vs 移动触摸），而不是只在一个平台上验证。→ 可避免：跨平台不兼容。\n\n- 开源日历待办 App + AI 助手（BYO key 客户端 AI）；自托管同步后端（P2, v0.22.0 落地）与服务端 MCP（P3, v0.23.0 落地）\n- GitHub: https://github.com/liuchangchxy/dayspark\n- Package: `dayspark`, Android: `com.dayspark.app`\n- Current version: `0.27.0+28`\n- 项目功能状态：`docs/ROADMAP.md`\n- **接续入口（新会话说\"从哪开始\"先读它）：`docs/START_HERE.md`**\n- 技术约束记录：`docs/CONSTRAINTS.md`\n- 完整工作流详见本文件下方\n\n- 多任务执行工序（简报/报告/diff 审查包、Fix 循环 ≤5、**Rulings 裁定披露**、预检接缝扫描）→ `docs/process/EXECUTION.md`\n- 本地化与视觉主题三层强制（封闭类型 / 键对齐+裸文案门禁 / **伪语言冒烟 + 出口清单**）→ `docs/process/LOCALIZATION.md`\n- **门禁总账**（每条门禁守什么、挂哪、红过没）→ `docs/GATES.md`\n- 审查攻击配方（空转测试/边界数学/证据链倒挂/自证向量/跨端键一致性 + 审查者三律）→ `docs/process/REVIEWING.md`\n- 测试铁律、门禁、**DoD 收敛停止准则**（P0–P3 阶梯 + `skipped=0` 即收）→ `docs/process/TESTING.md`\n- 顶层架构推导法（七步 + 三判据 + 抄/造判据；产物写入 SPEC §2）→ `docs/process/ARCHITECTURE.md`\n- DaySpark 专属差异（发版流程、版本规则、平台法则、改表/l10n/UI 规则）**只写在本文件**，不写入 vendored 文件\n\n- Single quotes, trailing commas, explicit return types\n- `debugPrint` not `print`；**No comments** unless WHY is non-obvious\n- No emojis in code, no docstrings\n\n- 信息密度优先，不大圆角、不渐变、不 AI 味\n- `CupertinoIcons` 而非 `Icons`；Material 3；FilledButton 主操作\n- 新增文本必须加 l10n key（中英双语），禁止硬编码\n- 触摸目标 ≥ 48x48\n- 桌面端可交互元素加 `MouseRegion(c\n\n改完跑 `tool/check_version_consistency.sh` 自检（CI 同款门，别等 push 后才发现漂移）。\n\n- `ci.yml`：全平台 `--release` 构建（非 `--debug`），每次 push/PR 触发\n- `release.yml`：打 tag 触发，build 5 平台 + 上传 Draft Release（不公开）\n- Linux CI 锁定 `runs-on: ubuntu-22.04`（GLIBC 2.35）\n- 新增原生依赖后必须跑 `tool/check_glibc_version.sh`\n- **版本一致性守卫**：`tool/check_version_consistency.sh` 以 `pubspec.yaml` 为 SSOT，校验 `CLAUDE.md` / `docs/changelog.md` / `docs/ROADMAP.md` 的版本标记 + `server/lib/src/mcp/schemas.dart` 的 `mcpServerVersion`（对外 `serverInfo.version`）—— `ci.yml` `test` job 首步（含 `--selftest` 自证可失败），`release.yml` `version-gate` 门（`--tag` 要求 tag = `v<pubspec semver>`）。README 徽章是 shields.io 动态徽章（读 GitHub Releases，无手同步点）；`docs/START_HERE.md` **不在门内**（版本一律指向 pubspec/ROADMAP，不复制）\n- 禁用 `dart format --set-exit-if-changed`，禁用 `--no-fatal-infos`\n- **分支保护现状（2026-10-01 拍板保持）**：`main` 上 PR 必需 + 必需检查 `[\"test\"]`，但 **`enforce_admins` 未开** → 直推 main 会**绕过**必需检查，CI 属**事后验证**。故：**推送前本地必须跑完 `dart analyze .` + `flutter test` 并以输出为证**，且**每次推送后回看该次 CI 结论**（`gh run list --branch main --limit 1`）。理由与否决记录见 `DECISIONS.md` [2026-10-01]",
+      "baseline_candidate_capabilities": [
+        "documentation",
+        "engineering-baseline",
+        "testing"
+      ],
+      "authority_hint": "primary"
+    },
+    {
+      "path": "DECISIONS.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "决策与演进时间线 (DECISIONS.md)",
+      "relevant_excerpt": "# 决策与演进时间线 (DECISIONS.md)\n\n### [2026-09-24] MCP 转正手写版：官方 SDK spike 实测不能承载（关闭「换官方 SDK」指令）\n- **触发背景**：用户指令「先限时 spike 评估 `dart_mcp` server 端成熟度 → 能承载 17 工具+OAuth+Streamable HTTP 则迁移（工具层不动只换协议壳），不能则写 DECISIONS 转正手写版；**禁止裸换**」。spike 两路：官方 SDK 外部调研 + 仓库内换壳影响面测绘（壳 / 接缝 / 工具层三层边界）。\n- **核心决策**：**不迁移，手写版转正**。证据（pub.dev API 与源码均一手核验）：\n  ① 已发布最新版 `dart_mcp` **0.5.2（2026-06-29）服务端 Streamable HTTP 尚未发版**，只存在于未发布的 main `0.6.0-wip`（issue #162 仍 open）；\n  ② main 的 HTTP handler `streamable_http.dart:921` 为 `_supportedVersions = {ProtocolVersion.v2026_07_28}`，而该修订**删除 initialize 握手与协议级 session**（官方 spec changelog 原文：「Make MCP stateless: remove the initialize/notifications/initialized handshake」「Remove protocol-level sessions and the Mcp-Session-Id header」）——DaySpark 跑 2025-06-18 + initialize；\n  ③ handler 只吃 `dart:io HttpRequest`，**无 shelf 适配**，接入即绕开既有 shelf 中间件与 401 挑战链；\n  ④ `README`「Authorization is not supported at this time」→ 自研 OAuth 2.1 AS（DCR/PKCE/token/双轨）**100% 仍需保留**。\n  净收益仅「工具/资源注册 API」（本已是最薄的一层），代价是未发版依赖 + 协议降级 + dart:io 耦合 + 0.2→0.6 每个 minor 均 BREAKING。内部测绘另证：壳↔工具接缝不是可插拔端口（一组 plain Dart 类型 + 函数值字段 `ScopeChecker`），故「只换壳」本就需新写适配层 + scope 门重找挂点。\n- **修正一条错误前提**：2026-09-23 条把「严格 SDK 会返回 −32602」列为阻塞理由，**实测推翻**——SDK 的参数校验失败、未知工具、以及工具实现抛出的异常都统一转成 `isError: true` 的 tool result（`tools_support.dart`，catch 处注释 \"converted into failed tool call responses\"），与本项目「业务错误走工具结果」同向。真正阻塞在**传输 / 协议版本 / OAuth**，将来重看勿再引用旧理由。\n- **复核触发条件**（四条同时满足才值得重开）：官方 Streamable HTTP **服务端**上 pub.dev 且稳定 → 支持 2025-06-18 或提供明确前向兼容路径 → 有 shelf 适配（或可注入自定义 401 挑战）→ 主流客户端普遍协商其支持的协议版本。\n- **对应 SPEC 章节**：SPEC.md 3.3 规则 4/6、4.2\n- **影响范围**：本条 + 2026-09-23 条的后续指针；`docs/START_HERE.md` 队列 3 收口；`server/lib/src/mcp/*`、`tool/mcp_stdio_wrapper`、`tool/dayspark_cli` 均**保持不动**。\n- **附带产出**：换壳测试兜底的精确边界 = 壳测试 `mcp_protocol_test` 16 例（随壳重写）/ 行为守卫 `mcp_tools_test` 47 + CLI 13 + e2e 5（e2e 是唯一真 socket，不可豁免）/ `oauth_test` 54 应原地绿；另修一处活漂移 `mcpServerVersion`（0.23.0 → 0.24.0，并纳入版本守卫）。\n- **备查（不建议采用）**：第三方 `mcp_server` 2.2.3（依赖 shelf、覆盖 2024-11-05→2025-11-25）与 `mcp_dart` 2.4.2 更贴近需求，但均不做授权服务器、均属 pre-1.0 第三方依赖（与钉 kalender 同类风险）。\n\n### [2026-09-24] 派生态失效统一到\"记录缝\"：显式 scope（非 Zone 缓冲 / 非执行器拦截）+ 允许物化回写\n- **触发背景**：闹钟/小组件的派生态失效靠三条临时通道（provider 内联手调、UI save 后手写补丁、小组件 `tableUpdates`），合起来仍留 7 处盲区，其中 3 处是用户可见缺陷——远端改期不重挂（P2.5 #1）、远端删除不撤已排队通知（幽灵响铃）、事件回收站恢复不重挂。根因不是\"少调了几次\"，而是没有单一失效机制。\n- **核心决策**：把失效统一到 **post-commit 领域事件**，发点唯一 = `RecordScope.run`（`lib/domain/records/record_scope.dart`，写入即登记、`db.transaction` 返回后才 `publish`；回滚 = 零发布）。\n  - **为何选 A 显式 scope（`tx` 随 body 传入）而非 B Zone 环境缓冲**：B 漏调 `record()` 完全静默（与当年淘汰 tableUpdates-only 是同一个错误的一半）；A 的漏传**不编译",
+      "baseline_candidate_capabilities": [
+        "documentation",
+        "planning"
+      ],
+      "authority_hint": "reference"
+    },
+    {
+      "path": "README.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "DaySpark / 灵光",
+      "relevant_excerpt": "# DaySpark / 灵光\n\n[![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)\n[![Flutter](https://img.shields.io/badge/Flutter-3.41+-02569B?logo=flutter)](https://flutter.dev)\n[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20macOS%20%7C%20Web%20%7C%20Windows%20%7C%20Linux-green)](#)\n[![Status](https://img.shields.io/github/v/release/liuchangchxy/dayspark?include_prereleases&label=Status&color=orange)](https://github.com/liuchangchxy/dayspark/releases)\n\n**灵光一闪，日程了然。**\n*A flash of insight, your schedule at a glance.*\n\n开源、自托管优先的日历与待办应用（对标 Todo清单 的执行向体验）。Flutter 全平台运行，数据同步与 AI 接口由你自己的服务器掌控。\nAn open-source, calendar & todo app with self-hosted sync and first-class AI control. Built with Flutter, runs everywhere.\n\n---\n\n## 功能 / Features\n\n- **日历 / Calendar** — 月/周/日视图（kalender 库），RRULE 重复日程，节气/调休标记，点日期直接建事件 / Month/week/day views, recurring events, solar-term & work-shift markers\n- **待办 / Todos** — 子任务、标签、优先级、回收站、**六件事收敛视图**（Ivy Lee）、隐藏已完成 / Subtasks, tags, priorities, trash, six-things convergence view\n- **自托管同步 / Self-hosted Sync** — 自研 Dart 同步后端（Docker 单容器），多设备一致：幂等推送、字段级冲突合并、断线重连 / Own Dart sync backend in Docker: idempotent push, field-level merge, auto-reconnect\n- **AI 接口 / MCP Server** — 后端内置 MCP：18 个日历/任务工具（含有界 recurring occurrence 查询），OAuth 2.1 双轨（本地 Agent 走登录令牌，ChatGPT/Codex 走 OAuth）；配套 stdio 桥与 `dayspark` CLI / Built-in MCP with 18 tools including bounded recurring occurrence discovery, OAuth 2.1, stdio bridge and CLI\n- **桌面小组件 / Widgets** — Android 三变体（今日/近七日/月点阵）+ iOS/macOS WidgetKit，勾选与快速添加 / Three Android variants + iOS/macOS widgets with quick-add\n- **提醒 / Reminders** — 本地通知与精确闹钟，完成/改期/恢复全生命周期调度 / Full lifecycle scheduling (complete, reschedule, restore)\n- **标签与搜索 / Tags & Search** — 彩色标签组织，全文搜索 / Colored tags, full-text search\n- **ICS 导入/导出 / Import/Export** — 日历数据交换 / Calendar data interchange\n- **国际化 / i18n** — 中文 + English（欢迎贡献更多语言）\n- **离线优先 / Offline-first** — Drift 本地 SQLite 为权威存储，联网后增量同步 / Local SQLite is the source of truth; incremental sync when online\n- **跨平台 / Cross-platform** — Android、iOS、macOS、Windows、Linux、Web\n\n## 架构 / Architecture\n\n```\nFlutter 客户端（六平台）  ⇄  DaySpark 同步后端（NAS Docker）\n  ├ 本地 SQLite（离线优先）      ├ 同步：游标 + 幂等 push + 字段级 LWW + SSE\n  ├ kale\n\n契约包 `dayspark_contracts` 是客户端与服务端共享的协议唯一真相源。详细设计见 [SPEC](SPEC.md)、[ROADMAP](docs/ROADMAP.md)、[约束与踩坑](docs/CONSTRAINTS.md)。\n\n## 开始使用 / Getting Started\n\n### 前置条件 / Prerequisites\n\n### 运行 / Run\n\n### 构建 / Build\n\n## 配置 / Configuration\n\n## 文档 / Documentation\n\n## 贡献 / Contributing\n\n## 更新日志 / Changelog\n\n## 致谢 / Acknowledgments\n\n## 许可证 / License",
+      "baseline_candidate_capabilities": [
+        "documentation"
+      ],
+      "authority_hint": "reference"
+    },
+    {
+      "path": "SPEC.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "DaySpark (灵光) 核心功能规范 (SPEC.md)",
+      "relevant_excerpt": "# DaySpark (灵光) 核心功能规范 (SPEC.md)\n\n### 核心模块划分\n1. **客户端层**：Flutter（Riverpod + Drift + go_router），本地 SQLite 权威存储，离线可用；日历视图基于 kalender 库\n2. **同步后端**：Dart（shelf + drift + SQLite），服务器游标 + 幂等 push + 字段级 LWW + SSE 信号；与客户端共享 `dayspark_contracts` 契约 package\n3. **AI 接口层**：MCP server 长在后端同进程同数据源；既有 Event/Todo 工具保持兼容（Phase 2 新增 `list_task_occurrences` 达 18 工具；工具总数本身不作为冻结契约），Phase 3 以工作流工具（`schedule_task`、`reschedule_task_allocation`、`cancel_task_allocation`、`list_task_allocations`）接入 TaskAllocation 领域模型；工作流工具优先于裸 CRUD；无物理删除接口（cancel 走 `cancelledByUser` 状态变迁，对应回收站/软注销语义）\n4. **小组件层**：versioned JSON 快照（home_widget + App Group / AppWidgetProvider），单写入路径\n5. **派生态失效层**：客户端单写入口（`RecordScope`）+ post-commit 领域事件（`record-applied` / `record-removed`）驱动闹钟重排与小组件快照刷新；事件只携带\"重读拿不回来\"的信息（写前参考时间、硬删前的 reminder id）\n\n### 3.2 核心功能 B：跨设备同步（P2）\n- **业务描述**：自托管后端的双向同步\n- **业务规则契约**：\n  - 规则 1：记录 `{id, type, payload, rev, deleted(tombstone), serverTs}`；`type` 包含 `event`、`todo`、`task_allocation`、`task_instance_state`。Instance state ID 是 `todoSyncId + occurrenceId` 的稳定确定性 ID。\n  - 规则 2：push 幂等（opId 唯一约束），逐条结果返回，绝不整批回滚\n  - 规则 3：pull 走服务器单调不透明 cursor（禁用时间戳当游标）；tombstone 走 pull，保留 ≥45 天\n  - 规则 4：冲突 = 服务器时间戳字段级 LWW；同秒用 opId 字典序破平。TaskAllocation 的生命周期状态以一个字段同步；Calendar 与 busy-time 投影还必须校验父 Todo 回收站/取消状态及 `completedAt` 边界，不能仅凭 Allocation 行判定有效。\n  - 规则 5：SSE 只发 `{cursor}` 信号，不发载荷\n  - 规则 6：新增 RecordType 必须有显式客户端 capability / protocol contract。服务端只能向声明支持类型的客户端返回 `task_allocation` 与 `task_instance_state`；未声明支持的旧客户端继续同步 `event` / `todo`，不得收到无法解析的类型，也不得创建或修改这些记录。能力及 wire contract 定义在 `dayspark_contracts` 并由测试校验。新能力启用时客户端必须 cursor-0 backfill。发布顺序为：先发布能解析新记录的客户端，再启用服务端按 capability 下发，最后开放 MCP 或其他外部完成入口。禁止以要求所有旧客户端全量升级代替兼容门控。\n\n### 3.3 核心功能 C：MCP AI 读写（P3）\n- **业务规则契约**：\n  - 规则 1：MCP 工具保持向下兼容；Phase 2 新增 `list_task_occurrences` 达 18 工具，Phase 3 增加 4 个工作流工具（`schedule_task`、`reschedule_task_allocation`、`cancel_task_allocation`、`list_task_allocations`），工具总数本身不作为冻结契约。\n  - 规则 2：时间 ISO 8601 + IANA timezone；RRULE 结构化对象；TaskAllocation 的 `startAt`/`endAt` 为 UTC instant。\n  - 规则 3：`get_events` 范围默认 now→+7d，上限 366 天；`find_free_time` 的 busy 集合由时间窗内的 Event occurrence 与有效 TaskAllocation 构成。\n  - 规则 4：错误以工具结果 `{isError, {code, message, hint}}` 返回，不是 JSON-RPC error。\n  - 规则 5：不提供 `delete_task`（archive 姿态），与回收站语义对齐；不提供物理删除 Allocation 接口（`cancel_task_allocation` 写入 `cancelledByUser` 状态）。\n  - 规则 6：传输双形态：`POST /mcp` Streamable HTTP + OAuth 2.1（DCR + PKCE-S256 + token 轮换）；stdio wrapper 喂本地 Agent。\n  - 规则 7（Phase 3 冻结裁定 A–I，Issue #7）：\n    - **Ruling A（工作流工具面）**：提供 `schedule_task`（新增区间）、`reschedule_task_allocation`（修改指定 active 区间）、`cancel_task_",
+      "baseline_candidate_capabilities": [
+        "documentation"
+      ],
+      "authority_hint": "primary"
+    },
+    {
+      "path": "docs/CONSTRAINTS.md",
+      "asset_type": "development_rule",
+      "ownership": "project_owned",
+      "summary": "Technical Constraints / 技术约束记录",
+      "relevant_excerpt": "# Technical Constraints / 技术约束记录\n\n### 重复事件只按可见窗口展开\n- `expandRecurringEvents` 用 `before/after` 窗口参数（`home_page` 传 viewedDate ±45 天），禁止回到 2000–2030 全量展开\n- **Why**: 全量展开是性能 bug；±45 天覆盖月视图 6 周网格（anchor 前 7 天、后 34 天）\n- **Date**: 2026-09-22\n\n### 版本标记由 CI 守卫，SSOT 是 pubspec.yaml\n- `tool/check_version_consistency.sh` 校验 `CLAUDE.md`（Current version）、`docs/changelog.md`（`Latest` + 顶部 `## v` 节 + `Previous` 行必须等于第二节版本）、`docs/ROADMAP.md`（`Last updated` + `Current` + `Version` 行）、`server/lib/src/mcp/schemas.dart`（`mcpServerVersion` = pubspec 的 major.minor.patch）\n- 门的位置：`ci.yml` `test` job 首步（`test` 是所有构建 job 的 `needs`，不一致即全红）+ `release.yml` `version-gate`（`--tag` 要求 tag = `v<pubspec semver>`，防止打错 tag 发出标注错误的产物）\n- **README 徽章与 `docs/START_HERE.md` 不在门内**：徽章已改 shields.io 动态徽章（`github/v/release?include_prereleases`，读 GitHub Releases，无手同步点）；START_HERE 的版本一律指向 `pubspec.yaml` / `docs/ROADMAP.md`，不复制（其自身第 3 行的防漂移原则）\n- **`releases/latest` 对本仓库无效**：全部 release 都是 prerelease，GitHub 的 `/releases/latest` 只认非 prerelease → 302 回 `/releases` 列表。徽章靠 `include_prereleases` 参数绕开，文档链接一律用 `/releases`\n- **Why**: 四处版本号靠人同步，发布提交漏改一处即静默漂移；tag 与 pubspec 不一致时 `release.yml` 仍会照常出包\n- **Date**: 2026-09-24\n\n### file_reader 属于 data 层\n- `lib/data/file_reader.dart` + `_native.dart` + `_web.dart`\n- 不在 `core/utils/`，因为文件 I/O 是数据访问操作\n- **Date**: 2026-05-14\n\n### `build-ios-simulator`：无证书 iOS 编译门（首跑未验）\n- `ci.yml` 新增 `build-ios-simulator` job（`needs: test` → `runs-on: macos-latest` → `flutter build ios --simulator --debug`），是个人/无证书 team 下的 iOS 编译门；对 `ci.yml` 的改动 insertion-only（只新增 job/步骤，不动既有逻辑）\n- **首跑未证实**：job 本地同命令跑绿过，但 CI 运行时行为要到首次普通 push 才验证——按正交法则，首次 push 必须盯该 job 首跑\n- 与上条互补：sim 编译绿 **≠** entitlement 已嵌入（Xcode 27 对 `iphonesimulator` 的 `codesign -d` 打空 `{}` 属平台策略；嵌入验证见上条 `Runner.entitlements` 的 `__TEXT,__entitlements` 段检查）\n- **Why**: 个人 team 无证书、device `flutter build ios` 在 provisioning 阶段 fail-closed，没有此门则 iOS 编译回归只能靠手工冒烟兜底；同时防止把「sim 编译门」误当 entitlements 验收门（旧「sim build 绿 = 门禁空」教训）\n- **Date**: 2026-09-24\n\n### shell 脚本的字面替换不要用 sed（2026-09-24）\n- `\\+` 在 BRE 里 **GNU sed 解释为「一个或多个」、BSD sed 解释为字面 `+`** → 同一句 `sed 's/0\\.24\\.0\\+24/…/'` 在 macOS 生效、在 Linux **静默不替换**\n- 字面替换一律用 `awk` 的 `index`/`substr`（见 `tool/check_version_consistency.sh` 的 `replace_literal`）；需要字面 `+` 时写 `[+]`\n- **本机 macOS 绿 ≠ CI 绿**：shell 脚本改动必须用 Linux 容器验一遍 —— `docker run --rm -v \"$PWD:/work:ro\" -w /work ubuntu:24.04 bash -c './tool/<script>'`（CI 是 Ubuntu 24.04 + bash 5 + GNU sed + mawk）\n- **Why**: 2026-09-24 版本守卫首跑 CI 红（run 35985658477），根因即此；由脚本自身 selftest 抓出，**未静默通过**\n- **Date**: 2026-09-24\n\n### home_widget 必须 ≥0.9.2（钉住浮动 Android 依赖）\n- home_widg",
+      "baseline_candidate_capabilities": [
+        "documentation",
+        "planning"
+      ],
+      "authority_hint": "primary"
+    },
+    {
+      "path": "docs/ROADMAP.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "DaySpark Feature Evolution / 功能演进全景图",
+      "relevant_excerpt": "# DaySpark Feature Evolution / 功能演进全景图\n\n> 2026-10-06 update: recurring per-instance completion is implemented on `fix/recurring-task-instance-completion`; PR #2 tracks delivery and current Hosted CI evidence. The Todo UI remains a series row with an occurrence selector.\n\n### CalDAV Sync / CalDAV 同步 — Removed in v0.21.0 / 已于 v0.21.0 移除\n> Replaced by the planned self-hosted sync backend (P2: `dayspark_contracts` + push/pull/SSE). History below is archival. / 由 P2 自托管同步后端替代，以下为历史存档。\n- Multi-account management (add/delete) / 多账户管理\n- Calendar list discovery (PROPFIND) / 日历列表发现\n- Full sync + incremental sync (sync-token / ctag) / 全量同步 + 增量同步\n- VEVENT + VTODO sync / VEVENT + VTODO 同步\n- Two-way sync + ETag conflict detection (server priority) / 双向同步 + ETag 冲突检测\n- Offline sync queue / 离线同步队列\n- Delete sync (local soft delete + push remote + remote delete detection) / 删除同步\n- Background periodic sync (workmanager 15 min) / 后台定时同步\n- App foreground auto-sync (>5 min triggers incremental) / App 回前台自动同步\n- Network recovery auto-sync / 网络恢复自动同步\n- Credential secure storage (FlutterSecureStorage) + password migration / 凭证安全存储 + 密码迁移\n- Enforce HTTPS / 强制 HTTPS\n\n### Security / 安全\n- Credential SecureStorage (AI API key) / 凭证 SecureStorage（AI API key）\n- ~~Biometric lock (Face ID / Touch ID) / 生物识别锁~~ — removed; `local_auth` no longer a dependency / 已移除\n- ~~Enforce HTTPS / 强制 HTTPS~~ — CalDAV-era Dio interceptor removed with sync layer / 随 CalDAV 同步层移除\n- ~~Password migration from DB plaintext to SecureStorage / 密码从 DB 明文迁移~~ — accounts table dropped in schema v8 / accounts 表已随 schema v8 移除\n\n### P0 — Must Do Before Release / 发布前必须做\n\n| # | Item / 项 | Note / 说明 |\n|---|------|------|\n| 1 | **`reminders.triggerTime` 是\"派生态存进了表\"** | 行内时刻只是重排器算出的派生结果，却是所有写入路径必须携带的\"写前旧值\"之源（`previousReference` 之所以必须存在，正是因为它）。改存 `offsetMinutes`（相对父行参考时刻的偏移）可让全部写入路径无需带旧值、也让跨进程写天然可重算；与 D1（载荷 schema 版本化）一并收敛。 / Derived state stored in a table; storing `offsetMinutes` removes the need for every writer to carry the pre-write value. Conve\n\n### 1. DB migration before real users / 数据库迁移要在有用户之前做好\nDB schema v8, every table change modifies schemaVersion + rebuilds. Once real users exist, migrations are required. / DB schema 现在是 v8，每次改表都是直接改 schemaVersion + 重建。一旦有真实用户，改表就必须走 migration。\n\n### 3. CI/CD is now functional / CI/CD 已经可用\n- CI（ci.yml）全平台已改为 `--release` 构建，release-only bug 在 CI 阶段即暴露 / CI now builds all platforms in release mode, catching release-only bugs early\n- Release（release.yml）默认为 Draft，人工验收后再 Publish / Releases are draft by default, requiring manual review before publishing\n- Keep maintaining. / 持续维护即可。",
+      "baseline_candidate_capabilities": [
+        "code-review",
+        "documentation",
+        "planning"
+      ],
+      "authority_hint": "primary"
+    },
+    {
+      "path": "docs/START_HERE.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "START HERE — DaySpark 接续工作唯一入口",
+      "relevant_excerpt": "# START HERE — DaySpark 接续工作唯一入口\n\n**最后更新：2026-10-07 · 当前版本以 `pubspec.yaml` 为准（全景见 `docs/ROADMAP.md`，发布记录见 https://github.com/liuchangchxy/dayspark/releases ）**\n\n| # | 事项 | 一句话说明 | 详情来源 |\n|---|------|-----------|---------|\n| **0** | ~~**⚠️ P1：Web 端白屏 — v0.25.0 已发布产物在浏览器里不可用**~~ ✅ 2026-09-26 | 交付：`lib/core/utils/platform_target.dart` 成为 `Platform.*` 全仓唯一读点（`alarm_service.dart` 5 处 + `notification_service.dart` 3 处收敛，设置页补 `!kIsWeb` 守卫）；静态守卫 `test/architecture/web_platform_guard_test.dart`；CI 冒烟断言 `tool/web_smoke.dart`（零依赖 headless 截图，纯白即红，`ci.yml` 与 `release.yml` 的 `build-web` 都挂）。反证已跑通（抽掉守卫 → 守卫红 + 产物冒烟判白屏，复现 `main.dart.js` minified 堆栈）；本地实测约 400 色 / 着墨比约 15.5%（多次复跑 402–405 色，唯一颜色数有浮动；实测截图见项目根 `web-shots-2026-09-26/` desktop/mobile）。已随 **v0.25.1** 发布（tag 已打、远端已同步） | 已实现 / DECISIONS 事故条目 + ROADMAP v0.25.1 |\n| 1 | ~~**债务2：统一事件缝**~~ ✅ 2026-09-24 | 派生态失效已收敛为 post-commit 领域事件（`record-applied`/`record-removed`）：三条临时通道 → 一条缝；远端改期重挂本机提醒（关 P2.5#1）、远端删除撤销已排队通知（幽灵响铃）、事件回收站恢复重挂；守卫 + 棘轮基线（已收敛为空）落地。文档与版本 0.25.0+25 已同步 | 已实现 / `docs/ROADMAP.md` v0.25.0 + `docs/CONSTRAINTS.md` 架构章节 |\n| 2b | ~~**视觉重设计（taste + impeccable）**~~ ✅ 2026-09-30 | 方向：从 Linear 式冷淡高密度转向 **Apple 日历式温和清晰**。交付：`DESIGN.md` 重写（iOS 系统色板 / 6 级字阶含 1.7 倍层次硬规矩 / 圆角 8-10-12-16 / 分层阴影 / 锁死的 5 套预设主题色）+ 全项目 token 清剿（36 处硬编码字号、10 处隐形输入框边框、越界圆角）+ \n\n| 要查什么 | 去哪 |\n|---------|------|\n| **前端设计诊断工具** | **`Impeccable` 已装**在 `.claude/skills/impeccable/`（**已 gitignore，不入公开仓库**；重装：`npx impeccable install --providers=claude --scope=project --no-hooks`）。诊断流程见其 `reference/critique.md`（A/B 两个隔离子代理）；**严禁运行 `/document`**——它会覆盖 `DESIGN.md`，那是本项目的设计令牌 SSOT。**已备好 5 张真实渲染截图**（`/`·`/settings`·`/trash`·`/search`·`/todo/new`）+ 零依赖 CDP 截图器 ；**该工作区目录已被清理**——其中的「零依赖 CDP 截图器 + 白屏判据」已在队列第 0 项任务里重写并提升为 `tool/web_smoke.dart`（`ci.yml` 的 `build-web` job 调用，纯白即红）|\n| 冻结需求8条 / 规则契约 / 架构实例(§2) | `SPEC.md`（**状态一律看 ROADMAP**） |\n| 版本 / 工作流红线 / 架构分层 / 文档地图 | `CLAUDE.md` |\n| 流程五件：执行工序·Rulings / 审查六配方 / 测试DoD / 架构七步 / 本地化三层强制 | `docs/process/{EXECUTION,REVIEWING,TESTING,ARCHITECTURE,LOCALIZATION}.md`（vendored 自 vibe-coding-starter@0cae2f4，定制规则见 CLAUDE 工作流开头） |\n| **门禁总账**：每条门禁守什么、挂在哪、红过没 | `docs/GATES.md` |\n| **用户可见文案出口清单** | `docs/l10n-outlets.md` |\n| 踩坑防回归（签名、同步、小组件、时区…） | `docs/CONSTRAINTS.md` |\n| 为什么这样决定 | `DECISIONS.md` |\n| 进度全景 / P2.5 / follow-ups（**状态唯一源**） | `docs/ROADMAP.md` |\n| 用户可见变更史 | `docs/changelog.md` |\n| 设计令牌（颜色/字阶/间距/圆角） | `DESIGN.md`；**规范 vs 代码差距表** `docs/design-token-gap.md`（设计走查任务的输入） |\n| 各Phase实施计划（含主计划） | `docs/superpowers/plans/` |\n| 手工验收清单 | `docs/qa/` |\n| AI 跨工具入口（Codex 等） | `AGENTS.md` |\n| 归档（CalDAV 旧文档、旧外部评审） | `docs/archive/` |",
+      "baseline_candidate_capabilities": [
+        "documentation",
+        "planning"
+      ],
+      "authority_hint": "active"
+    },
+    {
+      "path": "docs/archive/2026-04/2026-04-16-calendar-ui.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "Calendar UI Implementation Plan",
+      "relevant_excerpt": "# Calendar UI Implementation Plan\n> ⚠️ **已过时（2026-09-27 标注，正文原样保留仅供考古）**：本文是 2026-04 项目早期的方案讨论，CalDAV 路线已被自研同步后端替代（v0.22.0 落地），内容不再维护。现行状态唯一源：`calendar_todo_app/docs/START_HERE.md`（接续入口）、`calendar_todo_app/docs/ROADMAP.md`（功能全景）。\n\n> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.\n\n**Architecture:** 使用 `kalender` 包渲染日历视图。通过自定义 `CalendaEvent` 子类桥接 Drift `Event` 数据模型和 kalender 的 `CalendarEvent`。Riverpod providers 负责从数据库读取事件并注入 kalender 的 `EventsController`。\n\n## Task 1: Add kalender Dependency\n\n**Files:**\n- Modify: `pubspec.yaml`\n\nAdd `kalender: ^0.16.0` under `dependencies:` in `pubspec.yaml`.\n\nAlso add `timezone` and `intl` packages which kalender needs:\n\n## Task 2: Calendar Event Adapter\n\n**Files:**\n- Create: `lib/domain/models/calendar_event_adapter.dart`\n- Test: `test/domain/models/calendar_event_adapter_test.dart`\n\nThis is the bridge between Drift's `Event` model and kalender's `CalendarEvent`.\n\nCalendaEventAdapter({\n    required this.drifId,\n    required this.calendarId,\n    required this.uid,\n    required this.title,\n    required DateTime start,\n    required DateTime end,\n    this.description,\n    this.location,\n    this.color,\n    this.isAllDay = false,\n    this.rrule,\n    this.isDirty = false,\n  }) : super(dateTimeRange: DateTimeRange(start: start, end: end));\n\nNote: The `drift.Value` import is needed. Add `import 'package:drift/drift.dart' show Value;` or import the database file with a prefix.\n\n## Task 3: Riverpod Providers (Database + Events)\n\n**Files:**\n- Create: `lib/domain/providers/database_provider.dart`\n- Create: `lib/domain/providers/events_provider.dart`\n- Test: `test/domain/providers/events_provider_test.dart`\n\n/// Utility to create a new event.\nfinal createEventProvider = Provider<Future<int> Function({\n  required int calendarId,\n  required String uid,\n  required String summary,\n  required DateTime startDt,\n  required DateTime endDt,\n  required bool isAllDay,\n  String? description,\n  String? location,\n})>((ref) {\n  final db = ref.watch(databaseProvider);\n  return ({\n    required calendarId,\n    required uid,\n    required summary,\n    required startDt,\n    required endDt,\n    required isAllDay,\n    description,\n    location,\n  }) async {\n    return db.into(db.events).insert(\n          EventsCompanion.insert(\n            calendarId: calendarId,\n        \n\nNote: Need to import `AppColors` — add `import 'package:calendar_todo_app/core/theme/app_colors.dart';` at the top.",
+      "baseline_candidate_capabilities": [
+        "documentation",
+        "planning"
+      ],
+      "authority_hint": "historical"
+    },
+    {
+      "path": "docs/archive/2026-04/2026-04-16-project-foundation.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "Project Foundation Implementation Plan",
+      "relevant_excerpt": "# Project Foundation Implementation Plan\n> ⚠️ **已过时（2026-09-27 标注，正文原样保留仅供考古）**：本文是 2026-04 项目早期的方案讨论，CalDAV 路线已被自研同步后端替代（v0.22.0 落地），内容不再维护。现行状态唯一源：`calendar_todo_app/docs/START_HERE.md`（接续入口）、`calendar_todo_app/docs/ROADMAP.md`（功能全景）。\n\n> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.\n\n## Task 1: Create Flutter Project + Directory Structure\n\n**Files:**\n- Create: Flutter 项目骨架\n- Create: `lib/core/`, `lib/data/local/database/tables/`, `lib/data/local/database/daos/`, `lib/data/local/secure_storage/`, `lib/domain/`, `lib/ui/pages/home/`, `lib/ui/pages/settings/`, `lib/ui/widgets/`, `test/helpers/`, `test/data/local/database/daos/`, `test/data/local/database/tables/`\n\nExpected: 项目创建成功，目录 `calendar_todo_app/` 出现\n\n## Task 2: DESIGN.md + NOTICE\n\n**Files:**\n- Create: `DESIGN.md`\n- Create: `NOTICE`\n\n---\nFull license texts are available in the respective package repositories.\nThis file will be auto-updated by `flutter_oss_licenses` in CI.\n```\n\n## Task 3: Dependencies (pubspec.yaml)\n\n**Files:**\n- Modify: `pubspec.yaml`\n\nReplace the default `pubspec.yaml` with:\n\n## Task 4: Theme System — Color Tokens\n\n**Files:**\n- Create: `lib/core/theme/app_colors.dart`\n- Test: `test/core/theme/app_colors_test.dart`\n\nCreate `test/core/theme/app_colors_test.dart`:\n\nExpected: FAIL — `app_colors.dart` not found\n\nCreate `lib/core/theme/app_colors.dart`:\n\n## Task 5: Theme System — Typography + AppTheme\n\n**Files:**\n- Create: `lib/core/theme/app_typography.dart`\n- Create: `lib/core/theme/app_theme.dart`\n- Test: `test/core/theme/app_theme_test.dart`\n\nCreate `test/core/theme/app_theme_test.dart`:\n\nCreate `lib/core/theme/app_typography.dart`:\n\nCreate `lib/core/theme/app_theme.dart`:\n\n## Task 6: App Constants\n\n**Files:**\n- Create: `lib/core/constants/app_constants.dart`\n\nCreate `lib/core/constants/app_constants.dart`:\n\n## Task 7: Database Tables — Core (calendars, events, todos)\n\n**Files:**\n- Create: `lib/data/local/database/tables/calendars_table.dart`\n- Create: `lib/data/local/dat\n\n- **Secure storage** (`credential_storage.dart`) is deferred to Phase 3 (CalDAV Sync) since it's only needed when connecting to servers\n- **Domain layer** is intentionally empty — it will be populated in Phase 2-3 with sync services and business logic\n- **Web platform** is immediately testable; iOS/Android/macOS need Xcode/Android Studio installed separately\n- All code generation uses `build_runner` — must be re-run after any table/DAO change",
+      "baseline_candidate_capabilities": [
+        "documentation"
+      ],
+      "authority_hint": "historical"
+    },
+    {
+      "path": "docs/archive/2026-04/2026-04-16-todo-ui.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "Todo UI Implementation Plan",
+      "relevant_excerpt": "# Todo UI Implementation Plan\n> ⚠️ **已过时（2026-09-27 标注，正文原样保留仅供考古）**：本文是 2026-04 项目早期的方案讨论，CalDAV 路线已被自研同步后端替代（v0.22.0 落地），内容不再维护。现行状态唯一源：`calendar_todo_app/docs/START_HERE.md`（接续入口）、`calendar_todo_app/docs/ROADMAP.md`（功能全景）。\n\n> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.\n\n## Task 1: Todos Riverpod Providers\n\n**Files:**\n- Create: `lib/domain/providers/todos_provider.dart`\n- Test: `test/domain/providers/todos_provider_test.dart`\n\n### Step 2: Create `lib/domain/providers/todos_provider.dart`\n\n/// Create a new todo.\nfinal createTodoProvider = Provider<Future<int> Function({\n  required int calendarId,\n  required String uid,\n  required String summary,\n  required int priority,\n  required String status,\n  DateTime? dueDate,\n  String? description,\n})>((ref) {\n  final db = ref.watch(databaseProvider);\n  return ({\n    required calendarId,\n    required uid,\n    required summary,\n    required priority,\n    required status,\n    dueDate,\n    description,\n  }) async {\n    return db.into(db.todos).insert(\n          TodosCompanion.insert(\n            calendarId: calendarId,\n            uid: uid,\n            summary: summary,\n            priority: priority,\n            status: status,\n            dueDate: dueDate != null ? Value(dueDate) : null,\n            description: description != null ? Value(description) : null,\n          ),\n        );\n  };\n});\n\n## Task 2: TodoListTile Widget\n\n**Files:**\n- Create: `lib/ui/widgets/todo/todo_list_tile.dart`\n- Test: `test/ui/widgets/todo/todo_list_tile_test.dart`\n\n### Step 2: Create `lib/ui/widgets/todo/todo_list_tile.dart`\n\nconst TodoListTile({\n    super.key,\n    required this.summary,\n    required this.isCompleted,\n    required this.priority,\n    this.dueDate,\n    required this.onToggle,\n    required this.onTap,\n  });\n\n## Task 3: TodoCreatePage\n\n**Files:**\n- Create: `lib/ui/pages/todo/todo_create_page.dart`\n\n## Task 4: TodoEditPage\n\n**Files:**\n- Create: `lib/ui/pages/todo/todo_edit_page.dart`\n\n## Task 5: Search Page + Provider\n\n**Files:**\n- Create: `lib/domain/providers/search_provider.dart`\n- Create: `lib/ui/pages/search/search_page.dart`\n\nAdd to `EventsDao`:\n```dart\nFuture<List<Event>> searchEvents(String query);\n```\n\nAdd to `TodosDao`:\n```dart\nFuture<List<Todo>> searchTodos(String query);\n```\n\n## Task 6: Update HomePage — Dual Tab Layout\n\n**Files:**\n- Modify: `lib/ui/pages/home/home_page.dart`\n\n## Task 7: Update Router + Verification\n\n**Files:**\n- Modify: `",
+      "baseline_candidate_capabilities": [
+        "documentation",
+        "planning"
+      ],
+      "authority_hint": "historical"
+    },
+    {
+      "path": "docs/archive/2026-04/2026-04-17-caldav-sync.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "Phase 3: CalDAV Sync Engine Implementation Plan",
+      "relevant_excerpt": "# Phase 3: CalDAV Sync Engine Implementation Plan\n> ⚠️ **已过时（2026-09-27 标注，正文原样保留仅供考古）**：本文是 2026-04 项目早期的方案讨论，CalDAV 路线已被自研同步后端替代（v0.22.0 落地），内容不再维护。现行状态唯一源：`calendar_todo_app/docs/START_HERE.md`（接续入口）、`calendar_todo_app/docs/ROADMAP.md`（功能全景）。\n\n**Goal:** 实现 CalDAV 同步引擎——连接 CalDAV 服务器，双向同步日历事件和待办。\n\n**Architecture:** 自建 CalDAV 客户端基于 Dio，用 `enough_icalendar` 解析/生成 iCalendar 数据，`xml` 包处理 CalDAV XML 响应。离线优先：本地 Drift 为数据源，同步服务协调上下行。\n\n**Tech Stack:** Dio / enough_icalendar / xml / Drift / Riverpod\n\n---\n\n## Task 1: Add Dependencies\n- Add `enough_icalendar: ^0.17.0` and `xml: ^6.5.0` to pubspec.yaml\n- Run `flutter pub get`\n\n## Task 2: CalDAV Client\n- Create `lib/data/remote/caldav/caldav_client.dart`\n- HTTP methods: PROPFIND (calendar discovery), REPORT (query events/todos), PUT (create/update), DELETE\n- Basic auth support via Dio headers\n- Parse XML multistatus responses using `xml` package\n- Methods: discoverCalendars, getEvents, getTodos, createObject, updateObject, deleteObject\n\n## Task 3: iCalendar Converter\n- Create `lib/data/remote/caldav/ical_converter.dart`\n- Convert Drift Event → iCalendar VEVENT string\n- Convert Drift Todo → iCalendar VTODO string\n- Convert iCalendar VEVENT → Drift EventsCompanion\n- Convert iCalendar VTODO → Drift TodosCompanion\n- Handle RRULE, DTSTART, DTEND, DUE, PRIORITY, STATUS, etc.\n\n## Task 4: Sync Service\n- Create `lib/data/remote/caldav/sync_service.dart`\n- Full sync: pull all events/todos from server, push local dirty ones\n- Incremental sync: use sync-token / ctag to detect changes\n- Conflict resolution: server wins (simplest)\n- Track sync state in Calendars table (syncToken, lastSyncedAt)\n\n## Task 5: Sync Providers\n- Create `lib/domain/providers/sync_provider.dart`\n- Providers: syncStatusProvider, syncServiceProvider\n- Trigger sync manually or on app start\n- Update events/todos providers after sync\n\n## Task 6: CalDAV Settings UI\n- Update `lib/ui/pages/settings/settings_page.dart`\n- Add CalDAV account configuration: URL, username, password\n- Use flutter_secure_storage for credentials\n- Add sync status display (last sync time, sync button)\n\n## Task 7: Router & Integration\n- Update router if needed for new settings sub-pages\n- Wire sync into app lifecycle (sync on app start)\n\n## Task 8: Tests\n- Test CalDavClient XML parsing\n- Test IcalConverter (Drift ↔ iCalendar)\n- Test SyncService (with mock CalDavClient)\n- Test providers\n\n## Task 9: Verification\n- Run all tests\n- Verify web build",
+      "baseline_candidate_capabilities": [
+        "documentation"
+      ],
+      "authority_hint": "historical"
+    },
+    {
+      "path": "docs/archive/2026-04/2026-04-18-remaining-phases.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "Remaining Implementation Plan",
+      "relevant_excerpt": "# Remaining Implementation Plan\n> ⚠️ **已过时（2026-09-27 标注，正文原样保留仅供考古）**：本文是 2026-04 项目早期的方案讨论，CalDAV 路线已被自研同步后端替代（v0.22.0 落地），内容不再维护。现行状态唯一源：`calendar_todo_app/docs/START_HERE.md`（接续入口）、`calendar_todo_app/docs/ROADMAP.md`（功能全景）。\n\n**Goal:** 完成 Phase 5-7 所有剩余功能，从高级功能到 AI 集成到发布准备。\n\n**Architecture:** 继续沿用 Clean Architecture 三层分离。AI 集成通过 Dio 调用 Claude/OpenAI API，流式输出用 SSE。桌面小组件用 home_screen_widget (Android) + WidgetKit (iOS)。ics 导入导出复用 enough_icalendar。\n\n**Tech Stack:** Dio (AI API) / enough_icalendar (ics) / flutter_local_notifications (alarm) / home_screen_widget / WidgetKit\n\n---\n\n## Task 1: Sync Queue 离线模式\n- 同步服务写入 sync_queue 表，离线时队列堆积，联网后批量执行\n- 修改 sync_service.dart 中 pushDirty 逻辑，失败时写 sync_queue\n- 文件: `lib/data/remote/caldav/sync_service.dart`, `lib/data/local/database/daos/sync_queue_dao.dart`\n\n## Task 2: .ics 文件导入/导出\n- 导出: 选中日历 → 生成 .ics 文件 → 保存到文件系统\n- 导入: 选 .ics 文件 → 解析 VEVENT/VTODO → 写入数据库\n- 文件: `lib/domain/services/ics_service.dart`, 导入导出 UI 入口\n\n## Task 3: 附件管理\n- 附件表已有，创建附件选择/上传 UI\n- 支持图片和文件附件\n- 文件: `lib/domain/providers/attachments_provider.dart`, 附件 UI 组件\n\n## Task 4: 键盘快捷键 (桌面端)\n- 常用快捷键: Ctrl+N 新建, Ctrl+S 保存, Ctrl+F 搜索, Esc 返回\n- 文件: `lib/ui/widgets/keyboard_shortcuts.dart`\n\n## Task 5: AI API 配置\n- 设置页 AI 配置区域: API Key, Base URL, 模型选择\n- 用 flutter_secure_storage 存储 API Key\n- 文件: `lib/domain/providers/ai_provider.dart`\n\n## Task 6: 自然语言输入\n- 在事件/待办创建页添加 AI 解析按钮\n- 输入自然语言文本 → AI 返回结构化数据 → 填充表单\n- 文件: `lib/domain/services/ai_parser_service.dart`\n\n## Task 7: AI 聊天界面\n- 内置聊天页面，流式对话\n- AI 可查询日历和待办数据\n- 文件: `lib/ui/pages/ai_chat/ai_chat_page.dart`, 路由注册\n\n## Task 8: AI 自动排程\n- 分析待办列表，推荐时间安排\n- 一键将待办排入日历空闲时段\n- 文件: `lib/domain/services/ai_scheduler_service.dart`\n\n## Task 9: 多语言支持 (i18n)\n- 中文和英文\n- 用 Flutter 内置 ARB 方案\n- 文件: `l10n.yaml`, `lib/l10n/`\n\n## Task 10: 全平台构建验证\n- Web: flutter build web\n- macOS: 构建配置\n- Android: 构建配置\n- 更新 README 和使用文档\n\n## Task 11: 完整测试 + 修复\n- 为所有新功能写单元测试\n- 运行全量测试套件\n- 修复所有 analyze 警告\n\n## Task 12: 最终验证\n- flutter analyze 0 error\n- 全部测试通过\n- Web 构建成功",
+      "baseline_candidate_capabilities": [
+        "documentation"
+      ],
+      "authority_hint": "historical"
+    },
+    {
+      "path": "docs/archive/ARCHITECTURE_REVIEW.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "DaySpark 结构设计评审报告",
+      "relevant_excerpt": "# DaySpark 结构设计评审报告\n\n> 撰写人：opencode（AI 第三方独立分析）\n> 日期：2026-05-14\n> 范围：项目整体目录结构、分层架构、模块边界\n> 说明：本文档为独立外部审查，不反映项目当前开发者的设计意图，仅基于代码现状做结构分析。\n\n---\n\n## 一、总体印象\n\n## 二、核心问题\n\n### 2.1 分层承诺了抽象，但没付出抽象的成本\n\n名义上采用 Clean Architecture（`data` / `domain` / `ui` 三层），实际依赖方向没有严格约束：\n\n1. **Domain 层不可单独测试** — 任何 provider 测试都需初始化完整数据库\n2. **数据源不可替换** — 无法将本地 SQLite 替换为远程 API 而不改 domain 代码\n3. **Domain 层没有自己的模型** — `domain/models/` 下只有一个 `calendar_event_adapter.dart`，所有实体都是 data 层的 Drift 生成类\n\n### 2.2 基础设施服务散落在 domain 层\n\n`lib/domain/services/` 的 8 个文件中，大部分不属于 domain：\n\n| 文件 | 实际职责 | 推荐归属 |\n|------|---------|---------|\n| `mcp_server_service.dart` + `_native.dart` + `_web.dart` | TCP server，监听 socket | `lib/infrastructure/mcp/` |\n| `alarm_service.dart` | 平台闹钟 API 调用（alarm plugin） | `lib/infrastructure/platform/` |\n| `notification_service.dart` | 本地通知调度（flutter_local_notifications） | `lib/infrastructure/platform/` |\n| `home_widget_service.dart` | 桌面小组件更新 | `lib/infrastructure/platform/` |\n| `ai_scheduler_service.dart` | AI 排程逻辑 | 可保留在 domain/services |\n| `ics_service.dart` | ICS 导入/导出（格式转换） | `lib/data/` 或保留 domain/services |\n\n### 2.3 `core/utils/` 混入平台代码\n\n```\nlib/core/utils/\n  ├── \n\n`file_reader` 的职责是\"读文件\"，是数据访问操作，放在 `core/` 不合适。`core/` 应该是没有任何平台依赖的纯跨切面关注点（主题、路由、通用工具）。\n\n### 2.4 l10n 目录分家\n\n生成产物（`app_localizations.dart`、`app_localizations_en.dart`、`app_localizations_zh.dart`）与源文件（`.arb`）混在同一个目录。建议要么 gitignore 生成文件，要么把生成文件放到独立的 `lib/generated/` 目录。\n\n此外 l10n 相关逻辑分散在两个目录，`rrule_text_delegate.dart` 单独在 `core/l10n/` 下，增加了认知负担。\n\n## 三、次要问题\n\n### 3.1 废弃文档未清理\n\n`docs/REQUIREMENTS.md` 和 `docs/PLAN.md` 仍然存在，但 `docs/ROADMAP.md` 明确声明\"replaces the archived REQUIREMENTS.md and PLAN.md\"。这会误导新贡献者。\n\n### 3.2 双份集成测试入口\n\n- `integration_test/app_test.dart`\n- `test/integration/app_flow_test.dart`\n\n### 3.3 测试覆盖面不均\n\n- provider 层有 8 个测试文件，覆盖较全\n- page 层完全无测试（10 个页面目录，0 个测试文件）\n- DAO 层测试目录存在但文件稀疏\n- `test/core/` 只有 theme 测试，router/utils/l10n 无测试\n\n### 3.4 没有 barrel 文件\n\n没有 `lib/data/local/database/database.dart` 这样的 barrel 做统一出口。重构时（比如移动 `app_database.dart`）需要改所有引用处。\n\n### 3.5 未受控的生成文件\n\n`app_database.g.dart`、各 `*_dao.g.dart` 文件被提交到版本控制。虽然这在 Drift 社区有争议，但当前 workflow 描述（\"build_runner 后必须重新运行\"）暗示它们被视为产物。建议统一策略：要么全部 gitignore + CI 中生成，要么接受并保持。\n\n### 3.6 MCP 依赖全平台拉取\n\n`pubspec.yaml` 中 `mcp_dart: ^2.1.1` 是无条件依赖，但代码已通过文件级条件导入（`_native.dart` / `_web.dart`）区分平台。Web 构建虽然通过 `dart:io` 保护修了，但所有平台仍会下载 mcp_dart 及其传递依赖。\n\n## 四、建议优先级\n\n```\nP0（开源前必须处理）\n├── 废弃文档清理（REQUIREMENTS.md / PLAN.md）\n└── 明确生成文件策略（gitignore vs 保留）\n\n## 五、总结\n\n1. **清理明显的杂物**（废弃文档、双份测试入口）\n2. **为基础设施服务划一块独立的地盘**（`lib/infrastructure/`），避免领域层持续膨胀\n3. **在进入开源前制定好结构公约**，让后续 PR 能遵循一致的目录规则",
+      "baseline_candidate_capabilities": [
+        "documentation"
+      ],
+      "authority_hint": "historical"
+    },
+    {
+      "path": "docs/archive/caldav-sync-plan.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "Cross-Platform Calendar & Todo Sync Plan / 跨平台日历 & 待办同步方案",
+      "relevant_excerpt": "# Cross-Platform Calendar & Todo Sync Plan / 跨平台日历 & 待办同步方案\n\n## 一、Background / 背景\n\n### User Scenario / 用户场景\nMultiple devices (OPPO Android + Windows + Mac + iPad), need a unified calendar and todo sync system, direct connection in China without proxy.\n多台设备（OPPO安卓 + Windows + Mac + iPad），需要一个统一的日历和待办同步系统，国内直连不用代理。\n\n### Core Constraints / 核心约束\n- China environment, cannot always rely on proxy / 国内环境，不能始终依赖代理\n- Need China-direct-connect solutions / 需要国内能直连的方案\n- Hermes (AI assistant) needs to read/write calendar and todo data / Hermes（AI助手）需要能读写日历和待办数据\n- User can view and input from any device at any time / 用户随时随地在任何设备能查看和录入\n\n## 二、Test Findings (2026-04-16) / 实测结论\n\n### Key Discoveries / 关键发现\n\n#### 1. QQ Mail has no CalDAV calendar, only CardDAV contacts / QQ邮箱没有CalDAV日历，只有CardDAV通讯录\nVerified via system account database (Accounts4.sqlite):\n通过查系统账户数据库（Accounts4.sqlite）确认：\n- Account 7 = iCloud CalDAV (p205-caldav.icloud.com.cn) → Calendar + Reminders / 日程+提醒事项\n- Account 17 = QQ account (1344967911@qq.com) → QQ services only / 仅QQ服务\n- Account 19 = QQ CardDAV (dav.qq.com) → Contacts sync only / 仅通讯录同步\n- **No QQ Mail CalDAV calendar account exists** / **不存在QQ邮箱CalDAV日历账户**\n- Previous assumption of \"QQ Mail CalDAV calendar\" was wrong / 之前\"已有QQ\n\n#### 3. OPPO System Calendar Built-in CalDAV is Castrated (Read-only) / OPPO系统日历自带CalDAV是阉割版（只读）\n- OPPO Calendar shows \"Subscribed calendar, cannot move\" after adding CalDAV / OPPO系统日历添加CalDAV后显示\"订阅日历，无法移动\"\n- Only implemented CalDAV subscription (reading), no write / 只实现了CalDAV的订阅（读取），没有实现写入\n- **Need to install DAVx5** for full iCloud CalDAV read/write / **需要安装DAVx5**才能获得iCloud CalDAV的读写能力\n- DAVx5 download requires VPN (F-Droid/Play Store), daily use doesn't / DAVx5下载需梯子，日常运行不需梯子\n\n### Setup Steps / 配置步骤\n1. Delete the read-only CalDAV account previously added in OPPO Calendar / 删除OPPO系统日历里之前加的只读CalDAV账户\n2. Open DAVx5 → Add Account / 打开DAVx5 → 添加账户\n3. Select \"Login with URL\" / 选择「Login with URL」\n4. Base URL: `https://icloud.com`\n5. User name: Apple ID (phone number) / Apple ID（手机号）\n6. Password: Generate App-Specific Password at appleid.apple.com / 去 appleid.apple.com 生成App专用密码\n7. After connection, select calendars to sync / 连接成功后选择要同步的日历\n8. OPPO Calendar can now view and edit iCloud events / OPPO系统日历就能正常查看和编辑iCloud日程了\n\n### Notes / 注意事项\n- China iCloud: calendar uses `https://icloud.com`, contacts use `https://contacts.icloud.com.cn` / 中国区iCloud区分地址\n- App-Specific Password cannot be replaced with Apple ID login password / App专用密码不能用Apple ID登录密码代替\n- DAVx5 auto-syncs in background, sync frequency is adjustable / DAVx5在后台自动同步，同步频率可调",
+      "baseline_candidate_capabilities": [
+        "documentation"
+      ],
+      "authority_hint": "historical"
+    },
+    {
+      "path": "docs/mcp-setup.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "MCP Setup Guide / MCP 服务器配置教程",
+      "relevant_excerpt": "# MCP Setup Guide / MCP 服务器配置教程\n\nDaySpark 的 MCP（Model Context Protocol）服务器**内建于自托管后端**（与同步服务同进程、同数据源），让 Claude Code、ChatGPT、Codex 等 AI 直接读写你的日历与任务。\nDaySpark's MCP server lives **inside the self-hosted backend** (same process, same data as sync), letting Claude Code / ChatGPT / Codex read and manage your events and tasks.\n\n> 本文替代旧版“应用内 localhost MCP”（v0.13 删除，v0.23 以服务端形态重建）。/ Replaces the removed in-app localhost MCP (deleted in v0.13, rebuilt server-side in v0.23).\n\n## 能力 / Capabilities\n\n- **18 个工具 / 18 tools** — 包含有界 recurring occurrence 查询（`list_task_occurrences`），用返回的 canonical `occurrence_id` 精确完成或重开；其余包含事件与任务读写、找空档、回收站只读等\n- **3 个资源 / 3 resources** — `dayspark://today`、`dayspark://overdue`、`dayspark://inbox`\n- **安全姿态** — 无永久删除工具（trash 软删=可恢复，与回收站一致）；读工具 `mcp:read`、写工具 `mcp:write` 分域授权；错误以工具结果返回并带 hint（不吐堆栈）\n\n## 前置 / Prerequisites\n\n1. 部署 DaySpark 后端并可从 Agent 访问（本机或 NAS）→ 见 [DEPLOY.md](DEPLOY.md)\n2. ChatGPT 远程接入需公网 HTTPS（反代/Tailscale，见 DEPLOY §3/§4）\n\n## 双轨认证 / Two Auth Tracks（不可混用）\n\n| 使用者 | 轨道 | 取得令牌 |\n|--------|------|---------|\n| **本地 Agent**（Claude Code / Codex / Hermes 经 stdio 桥） | 登录轨 | `tool/dayspark_cli` 执行 `dayspark login --server URL --email you`（密码交互输入，存 `~/.dayspark/credentials.json` 0600）→ 取 access token |\n| **ChatGPT Connector 等远程客户端** | OAuth 轨 | 走标准 OAuth 2.1（PKCE-S256、动态注册、浏览器同意页）；Bearer 访问令牌**不能**调同步 API，反之亦然（双轨互斥，设计如此） |\n\n## Claude Code 配置 / Claude Code\n\n**方式 A（推荐，stdio 桥）：**\n\n```json\n{\n  \"mcpServers\": {\n    \"dayspark\": {\n      \"command\": \"dart\",\n      \"args\": [\"run\", \"tool/mcp_stdio_wrapper/bin/mcp_stdio_wrapper.dart\"],\n      \"env\": {\n        \"DAYSPARK_MCP_URL\": \"http://localhost:8787/mcp\",\n        \"DAYSPARK_MCP_TOKEN\": \"<你的 access token>\"\n      }\n    }\n  }\n}\n```\n\n**方式 B（HTTP 直连）：** `c\n\n## Codex 配置 / Codex\n\n`~/.codex/config.toml`：\n\n（stdio 桥需要 `DAYSPARK_MCP_URL` + `DAYSPARK_MCP_TOKEN` 环境变量。）\n\n## ChatGPT Connector / OpenAI\n\n1. 后端需公网 HTTPS（DEPLOY.md：nginx 反代**必须**设置 `proxy_set_header X-Forwarded-Proto $scheme;`，否则 OAuth 元数据会错报 http）\n2. 在 ChatGPT → Settings → Connectors → Add custom connector，填入你的服务器 MCP 地址，完成浏览器内 OAuth 同意\n3. 需要 Developer Mode 才暴露全量读写工具（OpenAI 侧要求）\n\n## 验证 / Verify\n\n1. MCP Inspector：`npx @modelcontextprotocol/inspector` → 传输选 HTTP → URL `http://<host>:8787/mcp` → 填 Bearer → `tools/list` 应见 18 个工具\n2. 完整手工清单（含各客户端连通、OAuth 全链路、双轨互斥）见 [docs/qa/p3-mcp-qa.md](../qa/p3-mcp-qa.md)\n\n## 硬性约束 / Hard Rules（详见 CONSTRAINTS.md「MCP / AI 接口」）\n\n- 日期参数：ISO 8601 + 必要处 `timezone`（IANA）；拒收无时区裸时间串\n- RRULE 必须结构化对象 `{freq, interval, ...}`，不收裸字符串\n- `get_events` 默认 now→+7 天，窗口上限 366 天\n- 业务错误一律 `isError` 工具结果（带 code/message/hint），绝不走 JSON-RPC error",
+      "baseline_candidate_capabilities": [
+        "documentation"
+      ],
+      "authority_hint": "reference"
+    },
+    {
+      "path": "docs/process/ARCHITECTURE.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "顶层架构推导法 (ARCHITECTURE.md)",
+      "relevant_excerpt": "> **来源 / Provenance**：vendored from [`liuchangchxy/vibe-coding-starter`](https://github.com/liuchangchxy/vibe-coding-starter) @ `d339922`（2026-09-24）。\n> **DaySpark 定制规则**：本文件保持与上游逐字一致，**不在此文件内写 DaySpark 专属内容**；DaySpark 差异一律写在 `CLAUDE.md`。更新方式：从上游重取本文件 + 重加本头。\n\n# 顶层架构推导法 (ARCHITECTURE.md)\n\n> **定位**：本文件教**方法**——如何从零推出一份优秀的架构设计；推导的**产物**写进 `SPEC.md` 第 2 节（系统架构与数据流转）。SPEC 第 2 节是“这个项目长什么样”，本文是“怎么想出它该长这样”。\n> 适用对象： vibecoding 开发者——你不需要会画 UML，需要会回答下面七个问题。\n\n---\n\n## 七步推导（严格按序，前一步不落纸不进下一步）\n\n1. **先写“力”，不先画图**\n   架构 = 约束下的取舍。先列：给谁用 / 多大规模 / 几人维护 / 什么绝对不能丢。\n   → 这四行直接淘汰 90% 的技术选项（个人工具不配集群，单人维护不配微服务）。\n\n2. **数据模型先行——先定“名词”**\n   定义核心实体、它们的平等关系与不变式（谁能改谁、什么必须同时成立）。\n   → 系统的坚固程度 ≈ 实体与不变式的清晰程度；界面、API、同步都只是这个模型的投影。**这一步定错了，后面全是返工。**\n\n3. **划“一致性边界”**\n   标出哪里必须原子（事务内），哪里允许暂时不一致、靠什么收敛（队列/游标/重试）。\n   → 这是后端的灵魂问题；“单写入路径”这类黄金纪律往往就是这条边界的产物。\n\n4. **选“无聊的技术”——规模决定技术，不是品味**\n   每引入一个组件都问：我的规模配得上它吗？能用文件解决的不上数据库，能用单机的不上分布式。\n   → “没用高级货”通常是判断正确，不是落后。\n\n5. **接口先于实现——先冻结“接线图”**\n   先写数据结构与接口契约（前后端/模块间共用的那份），再写实现。\n   → 契约冻结后各方才能并行、才能互相验收，而不是互相踩。\n\n6. **为删除而设计**\n   自问：半年后想拆掉某块，能不能干净地切下来？（依赖单向、逻辑圈定在目录内、测试能自动告诉你伤了什么）\n   → 好架构的隐藏标准：**删除成本低**。\n\n7. **决策留痕 + 验证架构是一体的**\n   关键取舍当场记入 `DECISIONS.md`（背景/决策/影响）；设计里必须包含**验收方式**（e2e 矩阵、契约测试），验证不是写完代码后补的，是设计的一部分。\n\n---\n\n## “好架构”的三判据（忘掉“优雅/先进”这类空词）\n\n> **改起来便宜 · 用起来难错 · 坏了能看见**\n\n- 改起来便宜：分层清晰、契约冻结、删除干净；\n- 用起来难错：默认拒绝/单写入口/类型与约定在类型系统或测试里强制，而非靠自觉；\n- 坏了能看见：错误上浮有通道、派生状态有统一失效机制、监控/日志在设计里而不是补丁。\n\n交付前用这三句各打一次分，比任何架构图都诚实。\n\n---\n\n## “抄 / 造”判据（防止重复造轮子与盲从）\n\n| 层 | 策略 |\n|----|------|\n| **商品层**（框架、数据库、通用 UI、工具库） | **用现成的开源**，不自研 |\n| **规范层**（HTTP/OAuth/协议类） | **照抄公开 RFC/标准**，标准就是全世界共用的轮子 |\n| **差异层**（你的核心数据模型 + 独有体验） | **必须自己写**——它是产品本身 |\n\n调研候选项目时的纪律见 AGENTS 避坑清单（务实调研、代码级实证、拒绝 Star 数教条）：**抄的是“决策与标准”，不是整仓代码；整仓 fork 前先查它的协议兼容与许可证。**",
+      "baseline_candidate_capabilities": [
+        "documentation"
+      ],
+      "authority_hint": "active"
+    },
+    {
+      "path": "docs/process/EXECUTION.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "多代理执行工序守则 (EXECUTION.md)",
+      "relevant_excerpt": "> **来源 / Provenance**：vendored from [`liuchangchxy/vibe-coding-starter`](https://github.com/liuchangchxy/vibe-coding-starter) @ `0cae2f4`（2026-10-01）。\n> **DaySpark 定制规则**：本文件保持与上游逐字一致，**不在此文件内写 DaySpark 专属内容**；DaySpark 差异一律写在 `CLAUDE.md`。更新方式：从上游重取本文件 + 重加本头。\n\n> **定位**：本文件补全“意图 → 提交”之间的**执行工序**。分工：`AGENTS.md` 管意图与红线，`TESTING.md` 管测试、门禁与**停止准则（DoD）**，本文件管**任务如何被分解、交付、审查与收敛**。\n> 三者冲突时：红线以 AGENTS 为准，停止以 DoD 为准，工序以本文为准。\n\n- **规模旋钮**：单文件小改 / 单任务 = 只做一轮审查即可收敛，禁用完整闭环；**多任务成链或跨文件重构**才启用下述全流程。\n- **宿主适配**：支持多子代理的宿主（如 Claude Code）走“派发模式”（实现者/审查者分角色）；单代理宿主（Cursor 等）降级为“自查清单模式”——同一套检查项，由同一个 AI 顺序自问自答，**不可跳过任何检查项**。\n- **严重度统一（防两套阶梯混用）**：一切分级以 AGENTS/TESTING 的 **P0–P3** 为准。若工具/审查输出 Critical/Important/Minor，必须映射：`Critical→P0/P1（一票否决）`、`Important→P1（必须清零）`、`Minor→P2/P3（记待办，严禁内耗）`。\n\n| 步 | 动作 | 产物（必须落文件，不靠对话记忆） |\n|---|------|-------------------------------|\n| 1 | **预检接缝扫描**：开工前扫“任务×共享文件/接口”表，标出每个接缝的生产者→消费者，逐条给裁定 | 写入进度账本 |\n| 2 | **任务简报**：每个任务的需求写成独立 brief 文件（精确值、接口签名、验收标准原样在内） | `task-N-brief.md` |\n| 3 | **实现**：实现者只读 brief；完成后写**报告文件**（做了什么、测试证据、偏差与顾虑） | `task-N-report.md` |\n| 4 | **审查包**：生成 `BASE..HEAD` 的 commit+stat+diff 单文件，审查者只读三件套（brief/报告/diff 包） | `review-*.diff` |\n| 5 | **双裁决审查**：必须同时输出 ① 规格符合 ✅/❌ ② 质量 Approved/分级发现；**审查者亲手重跑门禁，禁止只信报告** | 审查结论 |\n| 6 | **Fix 循环 ≤5 轮**：R1–R3 唤醒原实现者带发现原文修；R4–R5 换更强模型新人接手；**每轮修完必须做一次范围收窄的复审**；到 5 轮未清 → 上级逐条裁定（修/记档驳回/记待办），禁止无限转 | 逐轮记录 |\n| 7 | **阶段终审**：整段 diff 对抗审查 + 把全部延后项做 **a/b/c 三级裁决**（a=合并前必修 b=进待办 c=作废） | 终审报告 |\n| 8 | **Rulings 披露 + 交付菜单**：见 §3；随后给出 Merge/Push/Keep 选项由用户拍板 | 用户确认 |\n\n**停止准则不自造**：任何阶段的“能不能收”一律执行 `TESTING.md` §三 DoD——**P0/P1 清零 + 测试 100% 且 `skipped=0` → 必须明确宣布通过，严禁借 P2/P3 理论风险无限发散**。\n\n## 2. Carry-forward（审查发现不得蒸发）\n\n- 审查发现但本轮不修的 → **写入进度账本**（分级+一句话），并**原文携带进下一个相关任务的派发指令**；\n- 跨阶段的发现 → 升级写入 `ROADMAP.md` 待办行，由终审在阶段收尾**核对原文确实在档**；\n- 实现者报告里的“顾虑”与“偏差”必须被审查者逐条裁决（接受/升级/驳回），不许沉默跳过。\n\n当用户授权“自动做完/失败才停”的整段流程时，收尾必须交付**裁定清单**：本阶段 AI 替用户拍板的决定，一行一条，格式 `裁定 → 判错的代价`。\n- **收录阈值**：只收改变**行为/范围/代价**的决定；纯实现细节不收。\n- **分工**：需要长期留存的按 AGENTS 引擎1.4 写入 `DECISIONS.md`（持久账本）；本清单是**面向用户的阶段汇总**，两者不互相替代。\n- **禁止静默裁定**：没有披露的决定视为流程违规。\n\n- **代码快照**：大重构前 `python tool/checkpoint.py save \"说明\"`（AGENTS 引擎“微快照”）——管**代码状态**可回滚；\n- **进度账本**：多任务链期间维护一个 `progress.md`（当前任务、已完成行、延后项、裁定）——管**流程状态**，防止长对话失忆重复干活；阶段收尾随工作区清理，承重内容已沉淀进 DECISIONS/ROADMAP。\n- 两者不可互替：账本不能回滚代码，快照不记审查结论。\n\n格式：`症状 → 根因链（几级） → 最小修复 → 如何验证 → 如何防复发`。\n\n> **范例**：CI 发布工作流“启动即死、0 job” → 根因链：secret 存了二进制原文 → GitHub 要求 UTF-8 → 工作流引用即校验失败 → 修复：`base64 < 文件 | gh secret set` 重设 → 验证：重跑 run 出现全部 job → 防复发：模板 README 注明“secret 只存文本（base64），永不存二进制”。\n\n| 反模式 | 正解 |\n|--------|------|\n| 静默替用户做范围级决定 | 进 §3 Rulings 清单 |\n| 审查者只",
+      "baseline_candidate_capabilities": [
+        "documentation",
+        "engineering-baseline"
+      ],
+      "authority_hint": "active"
+    },
+    {
+      "path": "docs/process/LOCALIZATION.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "全生命周期本地化与视觉主题工程架构规约 (LOCALIZATION.md)",
+      "relevant_excerpt": "#### ① 状态层——语言状态是单一真理源\n- 全局语言状态（如 `zh-CN`、`en-US`）必须由**唯一一处**持有并持久化，所有消费端从它派生，**禁止各模块自行读系统语言**；\n- 语言切换必须**即时生效并扇出**到所有\"文案已被烘焙进系统\"的出口（已排期的通知、已渲染的桌面小组件、缓存的页面），而不是等下次重建；\n- **排版弹性预算**：拉丁语系文字通常比中文多占 **30%~50%** 水平宽度，禁止把按钮、输入框、表头宽度硬编码成固定像素。\n\n#### ② 展示层——零裸文本\n- 所有展示文案必须通过翻译函数或字典查表提取，**严禁在业务逻辑里散落自然语言**；\n- 字典按模块分片，**主语言字典是真理源**（新 key 先落主语言），目标语言与之镜像；\n- **缺 key 降级**：运行期缺 key 时回退显示 key 本身（不崩溃、不空白），并在开发环境输出警告。\n\n#### ③ 通信/服务层——语言与数据分离\n1. **统一标头**：客户端全局 HTTP Client 在每次请求携带语言标头（示例格式，`q` 为权重）：\n   ```http\n   Accept-Language: zh-CN,en-US;q=0.9\n   ```\n2. **后端严禁拼接面向人类的自然语言句子**\n   - ❌ **绝对禁止**：`raise HTTPException(detail=\"用户不存在或密码错误\")`\n   - ✅ **强制要求**：返回结构化错误码与元数据，由展示层查表翻译：\n     ```json\n     { \"error_code\": \"AUTH_INVALID_CREDENTIALS\", \"params\": { \"field\": \"username\" } }\n     ```\n3. **日期/时间/货币裸数据化**：后端返回 ISO-8601 UTC 字符串或纯数值，展示层用该语言的标准格式化工具渲染。\n\n#### ④ 领域数据层——数据不带语言\n1. **系统枚举入库必须 Code 化**：数据库里存的状态、类型必须是稳定中性 code（`in_progress`、`approved`、`single_choice`），**严禁向持久化字段写任何语言的文案**；否则切语言或跨端同步时，历史数据语言撕裂且**改不回来**。\n2. **内容多语言降级链**：用户产出或运营配置的多语言内容，按 `target_locale → default_locale → raw` 降级展示。\n3. **AI 提示词穿透**：所有让模型生成文本的 Prompt **必须透传用户当前 `locale`**，并在 System Prompt 强制约束 \"Respond strictly in {target_language}\"。\n\n#### ⑤ 门禁层——物理拦截，不靠自觉\n- **键对齐门禁**：CI 双向比对字典键集，任一方向缺键或残留废弃键即红灯（实现见第二部分 ②）；\n- **静态无死文案扫描**：一条源码扫描守卫，拦截新写的裸文案（三件套见 `TESTING.md` §一.6「规范即测试」）。\n\n### 1. Web 前端适配（Vue / React / Svelte / 原生 DOM）\n- **文案提取**：`t('module.key')`；\n- **文档语言标记**：语言状态必须实时同步到根文档属性（`<html lang=\"zh-CN\">`），供屏幕阅读器与搜索引擎识别；\n- **防闪烁实现**：在入口 `<head>` 内联零依赖脚本，首屏渲染前完成主题锁定：\n  ```html\n  <script>\n    (function() {\n      try {\n        var t = localStorage.getItem('app_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');\n        if (t === 'dark') document.documentElement.classList.add('dark');\n      } catch (e) {}\n    })();\n  </script>\n  ```\n- **静态扫描门禁**：Vue 推荐 `eslint-plugin-vue-i18n` 的 `no-raw-text: error`（属性覆盖 `title` / `placeholder` / `aria-label` / `alt`）；React 推荐 `eslint-plugin-i18next`；亦可自写源码扫描测试。\n\n### 2. 移动端与跨平台 GUI 适配（Flutter / React Native / SwiftUI / Compose）\n- **文案提取**：走平台标准方案（Flutter `flutter gen-l10n` + ARB、RN `i18next`、Apple `String Catalog`、Android `strings.xml`）；\n- **字典键对齐门禁**：主语言与目标语言字典键集必须镜像；例如 Flutter 可用 `untranslated-messages-file` 输出漏译清单，再由 CI 断言该文件为空；\n- **系统级出口**：通知、桌面小组件、快捷指令等“文案已被烘焙进系统”的出口，必须在语言切换时**重新下发**，否则会一直显示旧语言；\n- **原生资源**：平台侧字符串资源（通知渠道名、应用名、权限说明、小组件描述）需按语言分别提供，不能只给主语言一份。\n\n### 3. CLI 命令行项目适配（Python / Go / Rust / Node CLI）\n- **参数控制**：统一支持 `--lang [zh|en]` 参数及读取 `LANG` 环境变量；\n- **输出格式**：控制台输出统一通过内部国际化 catalog 格式化打印，严禁在执行函数中 `print(\"中文错误\")`。\n\n### 4. 纯后端与 API 项目适配（Fas",
+      "baseline_candidate_capabilities": [
+        "documentation"
+      ],
+      "authority_hint": "active"
+    },
+    {
+      "path": "docs/process/REVIEWING.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "对抗性审查配方 (REVIEWING.md)",
+      "relevant_excerpt": "> **来源 / Provenance**：vendored from [`liuchangchxy/vibe-coding-starter`](https://github.com/liuchangchxy/vibe-coding-starter) @ `0cae2f4`（2026-10-01）。\n> **DaySpark 定制规则**：本文件保持与上游逐字一致，**不在此文件内写 DaySpark 专属内容**；DaySpark 差异一律写在 `CLAUDE.md`。更新方式：从上游重取本文件 + 重加本头。\n\n# 对抗性审查配方 (REVIEWING.md)\n\n> **定位**：审查 = **发现期**。修复期必须回到 `TESTING.md` §一.5「1 变 4 根因发散」——发现一处，修复时全局清扫同类，严禁孤立改单行。\n> 输出纪律：审查者**必须亲手重跑门禁**（analyze/test），禁止只读实现者的报告就下结论；diff 范围之外发现的问题标注“⚠️ 范围外”，交上级裁决，不许自行扩权修改。\n\n---\n\n## 输出格式（双裁决，缺一不可）\n\n1. **规格符合**：逐条对照 brief/SPEC → ✅ / ❌（附证据 file:line）\n2. **质量结论**：`Approved` 或按 **P0–P3** 分级的发现清单（Critical→P0/P1、Important→P1、Minor→P2/P3，映射见 EXECUTION §0）\n每条发现必须带：`文件:行号` + “错在哪” + “为什么要紧”；禁止“改得好一点”式空话。\n\n---\n\n## 六种攻击配方（每轮审查逐条过）\n\n### 1. 空转测试识别\n测试断言无实质约束即为“空转”。查法：删掉被测实现/替换为恒等实现，测试是否仍绿？断言是否只在复读实现（如 `expect(f(x), f(x))`）？**测试必须能在实现错误时变红，才算存在。**\n\n### 2. 边界与量化数学\n对时间、金额、索引、序列号亲手算边界：`±1`、空集合、零长度、进位/跨日、浮点精度地板。**例**：SQL 用浮点日期比较、Dart 用微秒整数比较，两侧在同一边界可能分歧——必须用同一规范形式（如定宽字符串）或补边界测试钉死。\n\n### 3. 证据链倒挂检测（“不可能失败的门禁”）\n问：**这个验收门在实现错误时能不能红？** 若门禁依赖的文件根本没被构建引用（配置写了没接线）、或验证与被验证物无关 → 门禁是**空转的仪式**。多层取证：配置文件 → 构建设置 → 产物二进制，三层都见才算“生效”。\n\n### 4. 自证向量陷阱\n测试用**与实现相同的公式**计算期望值 = 循环自证，实现改坏也全绿。必须钉**外部字面值**（标准组织发布的测试向量、已知手算答案、上游 golden 文件）。\n\n### 5. 跨端键一致性\n同一契约被多处实现时（前后端字段、双端原生读取、配置键），全仓 grep 新旧键名，核对 **key-for-key + 类型一致 + 版本门**；任何一端漏改/类型不符 = 静默数据丢失。\n\n### 6. 缓存死水与交付穿透（Stale Cache & Delivery Penetration）\n- **静态入口强缓存死锁**：SPA 入口文件（HTML）若未在 Web 服务侧显式配置 `Cache-Control: no-cache, no-store, must-revalidate`，无论构建产物哈希如何变更，客户端均会因入口被强缓存而持续加载旧版本。\n- **内嵌容器与外壳内存驻留**：当系统运行于 Electron、桌面原生 WebView、平台 iframe 或移动端原生外壳中时，仅刷新或重新构建往往无法突破容器本身的内存 Web 视图缓存。\n- **指纹穿透验证律**：审查交付闭环时，禁止以“构建命令成功”或“后端端口 200”冒充端侧交付成功；必须从最终物理消费端的真实 DOM/运行时环境中，提取带有唯一变更特征的**物理指纹**（如版本号元数据、Git Commit SHA、构建时间戳标记或新增 DOM 节点的唯一样式签名），证明新产物已物理穿透至用户视口。\n\n---\n\n## 审查者三律\n\n1. **门禁亲手跑**：报告里的绿不算数，自己跑一遍再下结论；\n2. **红要能复现**：宣称修好的关键缺陷，优先“还原前的红 → 修复后的绿”实证，而非只看新测试绿；\n3. **对抗姿态**：每轮审查至少主动尝试一次“如何让这套实现出错”（换公式、塞畸形输入、并发、跨端不一致），找不到洞也要写明找过哪里。\n\n---\n\n## 与其它文档的衔接\n\n- 发现的缺陷如何修 → `TESTING.md` §一.1（缺陷即测试）+ §一.5（1 变 4 全局清扫）；\n- 何时停止审查 → `TESTING.md` §三 DoD（P0/P1 清零 + 测试 100% `skipped=0`）；\n- 审查发现的去向 → `EXECUTION.md` §2 carry-forward（账本 → 下任务 → ROADMAP 三级落点）。",
+      "baseline_candidate_capabilities": [
+        "code-review",
+        "documentation"
+      ],
+      "authority_hint": "active"
+    },
+    {
+      "path": "docs/process/TESTING.md",
+      "asset_type": "test_policy",
+      "ownership": "project_owned",
+      "summary": "工程规范与防退化（Regression）防线守则 (TESTING.md)",
+      "relevant_excerpt": "### 1. 缺陷即测试（Defect-Driven Testing）\n* **原则**：任何被确认的 Bug 或需求调整，**严禁直接修改业务代码**。\n* **标准流程**：\n  1. **先定位根因**——禁止猜测式修复。动手前先说清它为什么失败；对着症状下刀，必然要修第二次。\n  2. **先写失败测试**：在测试套件中编写针对该 Bug 或新规则的测试用例；\n  3. **验证必报错**：确保该测试在现有代码下**必定红灯报错**；\n  4. **修改业务代码**：调整实现逻辑，直至该测试变绿；\n  5. **终身防退化**：**该测试用例永久保留**，纳入日常全量自动化回归跑道。\n\n### 2. 防测试篡改物理铁律 (Anti-Test Tampering Gate)\n* **原则**：测试失败时修业务代码，**严禁为了造绿反向篡改既有测试的断言预期 (assert/expect/toBe)**！严禁删除旧用例、注释断言或标注跳过。\n* **物理防线**：\n  - 运行 `python tool/guard_test_tampering.py` 自动分析 Git Diff；\n  - 任何针对既有测试文件断言行的随意删除或放宽，直接视为质量事故拦截阻断。\n* **豁免**：确系合法的需求变更时，必须在提交说明中显式注明，并在 `DECISIONS.md` 中记录，不得静默篡改。\n\n### 3. 禁止硬编码物理绝对路径 (No Hardcoded Paths Gate)\n* **原则**：代码严禁与特定开发机的盘符或家目录绑定（如特定用户的本地目录）。\n* **物理防线**：\n  - 运行 `python tool/scan_hardcoded_paths.py` 扫描源码；\n  - 必须使用相对当前文件位置的动态推导（如 `Path(__file__).resolve().parent` / `import.meta.url` 等各语言原生写法）或环境变量注入，保障跨机器与 CI 环境的可移植性。\n\n### 4. 契约防线与禁止静默容错（Contract & Fail-Fast）\n* **原则**：拒绝“宽松容错导致的静默死锁或数据漂移”。宁可显式失败，也不要静默吞掉不一致。\n* **契约断言**：前后端字段、配置键名、函数返回结构必须通过测试强校验对齐（参见 `REVIEWING.md` 配方 5「跨端键一致性」）。\n* **适用**：存在跨进程/跨端契约（API、配置键、原生桥、双端读取）的项目；单一进程内的纯函数库可豁免。\n\n### 5. 1 变 4 根因发散与全局排查法则 (1-to-4 Bug Divergence Protocol)\n* **原则**：排查并修复缺陷时，严禁头痛医头只改孤立单行。\n* **动手前先 census**：任何“按清单改 N 处”的任务，动手前先全仓重扫一遍同类项，审计抽样结论默认视为下限（如报告说 15 处，实际可能 35 处），不经 census 直接开改视为假完成。\n* **发散动作**：针对每个确认的缺陷，必须强制排查 4 类共生问题并输出结论与证据：\n  1. **横向同类实现**：全仓搜索同类调用、相似结构、相同 API 模式；\n  2. **逆向与边界输入**：空值 / 超长 / 特殊字符 / 并发竞争 / 异步未决 / 网络抖动；\n  3. **契约与状态脱节**：字段命名与类型对齐、多语言 / 时区穿透、错误码结构化；\n  4. **生命周期与持久化**：缓存失效、本地脏数据、刷新还原、跨用户或注销后残留。\n\n### 6. 规范即测试（Style-as-Test 源码自扫描守卫）\n* **原则**：凡是“以后还会有人犯”的代码规范，必须写成一条**终身测试**去扫描自己的源码，让规范从建议变门禁。（`EXECUTION.md` 的“CI grep 版本号”只是本方法的一个特例。）\n* **三件套**：\n  1. 扫描对象是**源码文本**而非运行行为（如禁止的 API、非法字面量、必须成对出现的键名）；\n  2. 守卫**自带违规/合规样本自证**——先证明它能红能绿，再信任它的全仓结论；\n  3. 豁免走**白名单**且必须写 WHY；白名单匹配用**内容签名**而非行号（行号一改就漂移）。\n* **CLI 约定**：每条守卫都提供 `--selftest`，只跑自带样本并报告成败。红色实证由此变成任何人都能跑（含 CI）的动作，而不是报告里的一句声明。\n* **何时用**：同一规范**第二次**被违反时，就值得写成守卫，而不是第三次再修。\n\n### 7. 门禁即证据（新增门禁必须自带一次红色实证）\n* **原则**：**一条没红过的门禁视为不存在。** 每新增一条门禁（守卫测试、冒烟断言、CI 步骤），交付时必须附一次“变异实证”：怎么把它打坏的 + 红的原文输出 + 还原后变绿。\n* **红色控制必须署名**：文档里每个“已验证”必须指名是**哪条控制**验证的；引用错层（实际死在前一层却写成后一层拦下的）按证据链缺陷处理。\n* **为什么**：绿只能证明“这次没炸”，红才能证明“炸了会响”。没经过变异实证的门禁，99% 是“不可能失败的仪式”（见 `REVIEWING.md` 配方 3）。\n\n### 8. 正交验证（Orthogonal Verification）\n* **原则**：**验证**一件事的手段，必须独立于**做**这件事的手段。自我确认不算验证。\n* **三条常设实例**：\n  1. 写代码的人不独自验证——换一双眼睛，或换一个全新会话的 AI，亲手重跑门禁；\n  2. 验证清单来自**需求原文**，绝不来自从原文派生出的 todo 列表（todo 会原样继承实现者的误解）；\n  3. CI 配置变更先用普通 push 验证，验证通过后才打发布 tag。\n* **为什么**：当产物和它的验收出自同一个脑子，一个共同的误解会同时通过两边。只有独立性才拦得住。\n\n### 10. 测试层级与证据报告（层级不得互相冒充）\n* **原则**：测试层级必须**按项目实际边界选择**，低层证据不得冒充更高层的用户链路验收。\n* *",
+      "baseline_candidate_capabilities": [
+        "testing"
+      ],
+      "authority_hint": "active"
+    },
+    {
+      "path": "docs/qa/TEST_EVIDENCE_TEMPLATE.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "测试证据报告 / Test Evidence Report",
+      "relevant_excerpt": "# 测试证据报告 / Test Evidence Report\n\n> 套用自 vibe-coding-starter `docs/templates/TEST_EVIDENCE_TEMPLATE.md`。\n> **判据**：分层写清 pass / fail / skipped / 未运行原因。低层证据不得冒充更高层的用户链路验收。\n\n## 范围\n- 变更 / 需求：\n- 代码版本：\n- 环境：\n\n## 分层结果\n\n| 层级 | 命令 | pass | fail | skipped | 未运行原因 |\n|---|---|---:|---:|---:|---|\n| 单元 / 领域 | `flutter test test/domain` | | | | |\n| Widget / UI | `flutter test test/ui test/widget` | | | | |\n| 数据 / 文件物理链路 | `flutter test test/data` | | | | |\n| 集成 / 跨进程 | `flutter test test/integration`；`server` 侧 `dart test` | | | | |\n| 构建 / 部署冒烟 | `flutter build web --release` + `dart run tool/web_smoke.dart` | | | | |\n| 真机 / 客户端 E2E | | | | | |\n\n## 结论\n- 最高实际验证层级：\n- 是否存在未披露的失败或跳过：\n- 可声明的范围：\n- **不能**声明的范围：\n\n## 计数口径与重复采样（按需）\n- runner 汇总数与实际业务场景数不一致时，说明两种计数及关系：\n- 对已确认的偶发问题重复采样时，记录固定条件、总运行次数、通过数、失败数：",
+      "baseline_candidate_capabilities": [
+        "documentation"
+      ],
+      "authority_hint": "reference"
+    },
+    {
+      "path": "docs/qa/p3-mcp-qa.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "P3 MCP 手工验收清单 / P3 MCP Manual QA Checklist",
+      "relevant_excerpt": "# P3 MCP 手工验收清单 / P3 MCP Manual QA Checklist\n\n> 来源：SDD Task 5（Phase 3）。**对外声称 MCP 四客户端可用前必须人工过一遍（或按 P2 先例豁免并记录）。**\n> 自动化 e2e 矩阵（5 例）见 `server/test/mcp_e2e_test.dart`；部署步骤见 `docs/DEPLOY.md`；两条鉴权轨（login token / OAuth）语义见 `server/test/oauth_test.dart`。\n> Source: SDD Task 5 (Phase 3). Walk through manually before claiming four-client MCP support (or waive per the P2 precedent and record the waiver).\n> Automated e2e matrix (5 cases): `server/test/mcp_e2e_test.dart`; deployment: `docs/DEPLOY.md`; the two auth tracks (login token vs OAuth): `server/test/oauth_test.dart`.\n\n| 项 / Item | 方式 / How |\n|---|---|\n| AI 写 → 设备 pull/SSE 收敛、AI 完成待办收敛、同记录并发 LWW、OAuth 全链路（DCR→PKCE→call→refresh）、scope 降权 | 自动化 `server/test/mcp_e2e_test.dart`（5/5） |\n| 工具面/协议/OAuth 单元面、P2 双设备引擎矩阵 | 自动化 `mcp_tools_test` / `mcp_protocol_test` / `oauth_test` / `test/integration/two_device_sync_test.dart` |\n| Inspector / Claude Code / Codex / ChatGPT connector 接入、schema 2→3 文件库迁移 | **手工**（外部工具无法进 CI，本清单即交付物） |\n\n- [ ] 本地起服务：`cd server && JWT_SECRET=$(openssl rand -hex 32) DB_PATH=./data/qa.db dart run bin/server.dart` → 打印 `listening on :8787`；或按 `docs/DEPLOY.md` §1–2 起 Docker / Local boot: `cd server && JWT_SECRET=… DB_PATH=./data/qa.db dart run bin/server.dart` (or Docker per `DEPLOY.md` §1–2)\n- [ ] 取一个 login token（①–③ 用，15 分钟有效，过期重跑一次即可）：\n\n- [ ] 起 Inspector：`npx @modelcontextprotocol/inspector` → 浏览器打开它打印的地址（默认 `http://localhost:6274`）/ Launch: `npx @modelcontextprotocol/inspector`, open the printed URL\n- [ ] Connect 面板：Transport 选 **HTTP**，URL 填 `http://localhost:8787/mcp`；鉴权选 Bearer/Header，填 `Authorization: Bearer $TOKEN`（login-token 轨，**不是** OAuth 弹窗）/ Transport **HTTP**, URL `http://localhost:8787/mcp`, header `Authorization: Bearer $TOKEN` (login-token track — do **not** run the OAuth flow here)\n- [ ] 不带 token 连接 → 401，且 `WWW-Authenticate` 里 `resource_metadata` 指向 `/.well-known/oauth-protected-resource`（错误信息可读）/ Without a token → 401 with a readable challenge pointing at the protected-resource metadata\n- [ ] **initialize 成功 → Tools 列表出现 17 个工具**（`get_events`…`batch_create_tasks`）/ Initialize succeeds → 17 tools listed\n- [ ] 跑一次写工具 `create_event`，arguments：\n\n- [ ] 返回 `event.event_id` + `op.status = applied`；App 或 `GET /sync/pull?cursor=0`（带 login token）能拉到这条记录 / Result carries `event_id` + \n\n## 三、Codex（stdio wrapper，`~/.codex/config.toml`）\n\n# B) 没有生产库 → 用 main（P2，schemaVersion=2）现造一个\ngit worktree add /tmp/dayspark-p2 main\n(cd /tmp/dayspark-p2/server && JWT_SECRET=x DB_PATH=/tmp/p2-dayspark.db dart run bin/server.dart &)\nsleep 2 && pkill -f 'p2-dayspark.db'   # boot once, then stop / 起一次即停\n```",
+      "baseline_candidate_capabilities": [
+        "documentation"
+      ],
+      "authority_hint": "reference"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-09-22-master-refactor-plan.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "DaySpark 重生（重构）Implementation Plan",
+      "relevant_excerpt": "# DaySpark 重生（重构）Implementation Plan\n\n> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.\n\n- `flutter analyze`（本地用 `dart analyze .` 绕过中文路径 LSP 崩溃）零 issue；`flutter test` 全绿；禁止 `--no-fatal-infos` / `dart format --set-exit-if-changed`\n- 版本号 `0.x+N`，1.0 前不跳版；commit 后必须用户确认才可 tag/push\n- UI 文本必须 l10n 中英双语（app_en.arb + app_zh.arb 同步 + `flutter gen-l10n`），禁止硬编码；`CupertinoIcons`；圆角 6/8/12；信息密度优先、不大圆角不渐变\n- 改 Drift 表必须：schemaVersion 递增 + onUpgrade 迁移 + `build_runner build` + `drift_dev make-migrations` + migration_test 更新且绿\n- 代码风格：single quotes、trailing commas、显式返回类型、`debugPrint`、非显然处才写 WHY 注释、无 docstring/emoji\n- 日历相关改动必读 `docs/CONSTRAINTS.md`（PageView 范围、_isAnimating、静态 _calendarRange 等——换 kalender 后需同步修订该文档）\n- 每个 Phase 结束：analyze 零 + test 全绿 + 用户确认后才进入下一 Phase\n\n- [ ] 修复 Flutter 安装：brew cask 卡在 `3.41.7.upgrading`，执行 `brew upgrade flutter --cleanup`（或 `brew reinstall flutter`），确认 `flutter --version` 可用且 PATH 有 `flutter`；把实际版本号记入 `docs/CONSTRAINTS.md`，并核对 CI（ci.yml/release.yml）Flutter 版本与本地一致性\n- [ ] 审查未提交改动（13 文件）：保留 sync debugPrint、l10n 新 key（syncTooltip/justNow/minutesAgo/hoursAgo）、CupertinoIcons.checkmark、日/周视图 Semantics、新测试；`app_localizations_*.dart` 手改部分将被 `flutter gen-l10n` 重新生成覆盖（以 arb 为准）\n- [ ] `analysis_options.yaml`：保留 flutter analyze 自动追加的 `build/**`，**revert** 平台目录 excludes（android/ios/... 不应从分析中隐藏，CI 上可能与 3.41.7 行为不一致）；`pubspec.lock`：确认 CI 能复现，不能则 revert\n- [ ] 跑 `dart analyze .` + `flutter test`，全绿后 commit：`chore: 工具链修复 + 工作区基线`\n- [ ] **引入 Vibe Coding Starter 四资产**（来源 `liuchangchxy/vibe-coding-starter`，MIT，用户指定）：\n  - 建 `SPEC.md`：业务单一真理源，用模板结构初始化，填入冻结需求 8 条（日历+任务平权 / 统一五平台客户端 / 跨设备同步 / AI 可读写 MCP / 双端小组件 / 自托管 NAS 优先 / 开源 GPLv3 / 对标 Todo清单简洁体验）+ P1–P4 功能\n\n协议规格（五调研提炼，写死为契约）：\n- 记录：`{id: UUIDv7(客户端生成), type: task|event|…, payload, rev, deleted(tombstone), serverTs(服务器权威)}`\n- `POST /sync/push` `{ops:[{opId, type:upsert|delete, recordId, fields, baseRev}]}` → 逐条 `{status: applied|conflict|rejected}`（幂等 opId 唯一约束；**绝不整批回滚**；响应捎带远端变更 piggyback）\n- `GET /sync/pull?cursor=&limit=` → `{changes[], nextCursor, hasMore}`；cursor = 服务器单调不透明序号（**禁用时间戳当游标**）；tombstone 走 pull\n- `GET /sync/stream`（SSE）：只发 `{cursor}` 信号，不发载荷\n- 冲突：服务器时间戳 LWW，**事件字段级**（title/start/end 各自决胜，AllisWell 设计自实现）；同秒用 opId 字典序破平；tombstone 保留 ≥45 天 GC\n- Auth：注册/登录（argon2id hash）→ JWT access(15min) + refresh 轮换(哈希存储)；`devices` 表\n- 存储：Dart drift/SQLite 单文件，volume 挂载；表 `records/sync_ops(idempotency)/users/refresh_tokens/devices/rev(seq)`",
+      "baseline_candidate_capabilities": [
+        "documentation",
+        "engineering-baseline",
+        "planning"
+      ],
+      "authority_hint": "historical"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-09-23-p2-sync-backend.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "P2 — Sync Backend Implementation Plan",
+      "relevant_excerpt": "# P2 — Sync Backend Implementation Plan\n\n> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.\n\n- `dart analyze .` 零 issue；`flutter test` 全绿 + `server`/`contracts` 各自 `dart test` 全绿；禁止 suppress 类旗标\n- 版本 feature 只改 x：P1 结束于 `0.21.0+24` → P2 发布时 `0.22.0+24`；未过用户确认禁止 push/tag（SDD 分支开发期允许本地 commit，push 仅在 Phase 收尾用户点头后）\n- 协议硬规则（写死，违反即 bug）：**cursor = 服务器单调序号（禁时间戳）**；**LWW 只用服务器 `serverTs`**；**push 逐条结果绝不整批回滚**；**tombstone ≥45 天才 GC**；**SSE 只发 `{cursor}` 不发载荷**；opId 幂等 = DB 唯一约束\n- 契约包是协议唯一真相源：DTO/错误码/字段表只定义一次，server 与 app 共同 import；改契约必须同步两端测试\n- Dart 代码风格同 CLAUDE.md（single quotes、trailing commas、显式返回类型、debugPrint、无 docstring/emoji、WHY 注释仅非显然处）\n- 客户端 schema 若改表：schemaVersion 8→9 + onUpgrade + build_runner + make-migrations + migration_test 更新（Task 5 预计要加 outbox 表）\n\n**Interfaces（Produces — 后续任务依赖的精确形状）:**\n- `class SyncRecord { String id; RecordType type; // enum: event|todo\n  Map<String, dynamic> payload; int rev; bool deleted; DateTime serverTs; }`\n- `class PushOp { String opId; OpType op; // upsert|delete\n  String recordId; RecordType type; Map<String, dynamic>? fields; int? baseRev; }`\n- `class PushRequest { String deviceId; List<PushOp> ops; int? cursor; }`\n- `class OpResult { String opId; OpStatus status; // applied|conflict|rejected|duplicate\n  SyncRecord? serverRecord; String? code; }`\n- `class PushResponse { List<OpResult> results; List<SyncRecord> piggyback; int cursor; }`\n- `class PullResponse { List<SyncRecord> changes; int nextCursor; bool hasMore; }`\n- 错误码常量：`errUnauthorized/errValidation/errConflict/errRateLimited`\n- JSON 双向：`toJson/fromJson` 全部字段，DateTime = UTC ISO-8601\n\n**Files:**\n- Create: `server/pubspec.yaml`、`server/bin/server.dart`、`server/lib/server.dart`\n- Create: `server/lib/src/{config,db,schema,auth,routes/health,routes/auth}.dart`\n- Create: `server/Dockerfile`（本任务仅生成可跑的本地版，精化在 Task 7）\n- Test: `server/test/{health,auth}_test.dart`\n\n**Interfaces:**\n- Consumes: Task 1 的 DTO\n- Produces: `POST /health` → `{ok:true,version}`；`POST /auth/register|login|refresh`（argon2id 哈希；access JWT 15min；refresh 轮换 + family 撤销）；`Authorization: Bearer` 中间件 `requireAuth` → `AuthContext(userId, deviceId)`；DB 层 `Future<int> nextSeq(String userId)`（事务内行锁 +1）\n\n**协议实现要点（主计划权威，逐条落地）:**\n- `POST /sync/push`：逐 op 先查 `sync_ops(op_id)` → duplicate 直接回放旧结果；新 op 校验 → **字段级 LWW**：对 `fields` 每字段比较 `baseRev` 与当前 rev，记录级 delete vs update 用 `server_ts` 比较，同秒用 opId 字典序破平 → 写 `records`（`server_ts=now UTC`，rev=ol",
+      "baseline_candidate_capabilities": [
+        "documentation",
+        "engineering-baseline",
+        "planning"
+      ],
+      "authority_hint": "historical"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-09-23-p3-mcp-cli.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "P3 — MCP + CLI Implementation Plan",
+      "relevant_excerpt": "# P3 — MCP + CLI Implementation Plan\n\n> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.\n\n**Goal:** AI 可操控落地（冻结需求 P0-4）——同一后端进程内嵌 MCP server：本地 Agent（Claude Code/Hermes）经 stdio 桥、ChatGPT 经远程 Streamable-HTTP + OAuth 2.1、Codex 经 stdio wrapper，统一 CRUD 日历与任务；附 `dayspark` CLI（MCP 客户端形态，顺带 dogfood）。\n\n**工具冻结表（18 = 13 读 + 5 写；命名 snake_case 动词_名词）：**\n读：`get_events(from,to,timezone?,limit?)`（默认 now→+7d 上限 366d，rrule 展开）· `get_event(event_id)` · `list_tasks(filter?:today|overdue|upcoming|inbox,status?,due_before?,due_after?,limit?,cursor?)` · `get_task(task_id)` · `search(query,kind?:event|task|all,limit?)` · `find_free_time(from,to,duration_minutes,timezone,working_hours_start?,working_hours_end?,working_days?)`（日历+任务忙碌段求空档，ical 风格默认工作 9-18 周一至五）· `list_trash(kind?)`（回收站可见性，只读）\n写：`create_event(title,start,end,timezone?,all_day?,description?,location?,recurrence?,idempotency_key?)` · `update_event(event_id,...部分字段 PATCH 语义)` · `trash_event(event_id)`（软删=deletedAt→回收站，**非** tombstone） · `create_task(title,due?,priority?,description?,tags?,idempotency_key?)` · `update_task(task_id,...部分)` · `complete_task(task_id)` · `reopen_task(task_id)` · `snooze_task(task_id,until)`（until=ISO；落 payload 提醒字段或 completedAt 语义按 T5 payload 字段表对齐，报告写明） · `trash_task(task_id)` · `batch_create_tasks(tasks[])`（Todoist 批量哲学）\n**明确不做**：`delete_*`（永久删除留给 UI 回收站）、任何 calendar/tag/reminder 工具（未同步，P2.5 后补——报告注明）\n**资源（3）**：`dayspark://today`、`dayspark://overdue`、`dayspark://inbox`（list+read，返回该视图的任务/事件快照 JSON）\n**注解**：读 `readOnlyHint:true`；写 false；trash 类加 `destructiveHint:true`（可恢复但删数据）\n**协议子集**：`initialize`（协议版本声明，serverInfo name:`dayspark` version 取 0.23.0）、`ping`、`tools/list`（JSON Schema 全量）、`tools/call`、`resources/list`、`resources/read`；未知 method → JSON-RPC method-not-found（协议层错误≠业务错）\n**errors-as-tool-results**：校验失败/未找到 → `{isError:true,...{code,message,hint}}`（hint 引导如 `list_tasks`）；hint 用 contracts 错误码风格但 MCP 层可新增 `TASK_NOT_FOUND` 等（schemas.dart 集中定义）\n\n**Files:**\n- Test: `server/test/mcp_e2e_test.dart`：模拟两客户端矩阵——① AI 创建事件 → 设备 pull/SSE 可见（复用 P2 e2e 基建）② AI complete_task → 设备状态收敛 ③ AI 写与设备写同记录并发 → LWW 合并与 P2 语义一致 ④ OAuth 全链路（DCR→PKCE→call→refresh）⑤ scope 降权（read-o\n\n1. 五套 analyze/test 全零全绿（含新增 tool 包与 ci 解析步骤一致性——本地用 `git clean -xfd` 于临时 worktree 模拟 CI？不强制；至少人肉核对 ci.yml 步骤覆盖全部含 pubspec 目录）\n2. MCP e2e 五矩阵绿\n3. 用户可用 `docs/qa/p3-mcp-qa.md` 对 Inspector/Claude Code/Codex 手工连一次（豁免权同 P2：用户可免做，记录即可）\n4. push 后 ci.yml 全绿（含 tool 包解析新步骤）",
+      "baseline_candidate_capabilities": [
+        "documentation",
+        "planning"
+      ],
+      "authority_hint": "historical"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-09-24-d2-event-seam.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "债务2 — 统一事件缝（post-commit 领域事件 record-applied / record-removed）",
+      "relevant_excerpt": "# 债务2 — 统一事件缝（post-commit 领域事件 record-applied / record-removed）\n\n> 来源：`docs/START_HERE.md` 队列第 1 项（= §3 A 的 D2，2026-09-24 架构评审产出）。评审原文明细未入库；下面的事实全部**从代码重建并逐条核验**（含 drift 2.31.0 源码级核实）。\n\n| 方案 | 漏发风险 | 改动面 | fail-fast | 判定 |\n|---|---|---|---|---|\n| **A 显式 scope 随 body 传入** | 低（登记是写的副产品） | 24 处事务 + ~16 写方法 | **能**：漏传不编译；绕开写入口则守卫红 | **采用** |\n| B Zone 环境缓冲（零签名改动） | **高**：漏调 `record()` 完全静默 | 最小 | 不能 | 否决（与当年淘汰 tableUpdates-only 是同一个错误的一半，见 `docs/superpowers/research/alliswell-outbox-compar\n\n### 消费端 1：`ReminderReconciler`（`lib/domain/records/reminder_reconciler.dart`）\n\n### T1 — 缝与总线（无行为变化，基座）✅ 已完成（`fe3ba53`）\n新建 `lib/domain/records/{record_change,record_bus,record_scope}.dart` + `writers/`（本任务先做 `updateTodo` 一条纵向切片）+ `record_bus_provider.dart` + 两个守卫。\n**先红测试**：①发布在提交之后（body 内批次 0，await 后 1）②body 抛异常 → 零发布且行未写 ③嵌套 run 并入最外层、内层抛则零发布 ④`applied` 携带 `previousReference`、create 为 null ⑤`removed` 携带 `reminderIds`（无提醒行 → 空列表非 null）⑥`bulkChanged` 一条粗粒度无 localId；守卫 fixture 必须能命中。\n**验收**：`updateTodoProvider` 改经写入口；G1–G5 绿且 `--selftest` 能红；现有 `todos_provider_test.dart`(802 行) 全绿。\n\n### T2 — 两个消费端 ✅ 已完成（`c423693`）\n`reminder_reconciler.dart` + 装配 + 小组件换驱动源 + resume/midnight/locale/theme 触发。\n**先红测试**（10 条）：`nextTrigger` 表驱动（DST/负Δ/Δ=0/落在过去）；改 due date → **断言绝对时刻**；清空 due → cancel 全部；完成/取消完成；进回收站/恢复；`pastDue+applied 在未来 → cancel` 与 `pastDue+已过去 → 不动`（**成对**）；幂等 0 调用；reorder/文案编辑 0 调用；批量 5 条每父一次；payload 恒为 `parentType:parentId:reminderId` 且第三段为 reminder.id。\n**验收**：手工\"改 due date\"项通过；`home_widget_provider_test.dart` 三条全绿；删掉 `tableUpdates` 后组件仍刷新。\n\n### T3 — 本地写路径全量接入 ✅ 已完成（`130e78e`，含 T3b 撤除通道① + Fix R1）\n`events_provider`(6 事务) + `todos_provider`(余 10) + `moveOverdueToToday` + `account_provider`(→bulkChanged) + `ics_service`（包一次 `run`，仍 insert、不发 outbox，仅发 applied）+ 删 ②-1/②-2/②-3 三处 UI 补丁 + 更新 G1/G4 白名单与计数。\n**先红测试**：更新事件改 start → 重排；`moveOverdueToToday` 3 条 → 每条按时移重排；`restoreEventProvider` → 重挂；ICS 2 正常+1 畸形 → 2 行 2 applied 无 removed；ICS 导入 → 快照含新事件；身份重写 → bulkChanged 且 0 调度；`lib/ui/` 出现已删符号 → 红。\n\n### T4 — applier/engine 接入 + 关单 ✅ 已完成（本工作区，未提交：报告见 `.superpowers/sdd/2026-09-24-d2-event-seam/task-4-report.md`）\n引擎两处事务改 `RecordScope.run`；`_applyRemote`/`SyncApplier.apply` 加 `tx` 必填；applier 六个写点改走 writer；`_baselineSweep` 不登记；文档收口 + 版本号。\n**先红测试**：pull 改期 → 按新时间重排（**这就是 P2.5#1 的红**）；pull tombstone → cancel 全部提醒（幽灵响铃的红）；push conflict 走 serverRecord → 重排；piggyback → 重排；批次中途抛 → 零平台调用（发布边界）；baseline sweep → 0 调度。\n**验收**：`ROADMAP.md:578` 关单；手工\"远端改期\"项通过；`two_device_sync_test.dart` 全绿。\n\n### 裁定清单（`裁定 → 判错的代价`；需长期留存者已入 `DECISIONS.md` ADR 与 `ROADMAP.md` Pending）\n\n### 延后项（b 级，已入 `ROADMAP.md` Pending）",
+      "baseline_candidate_capabilities": [
+        "documentation",
+        "planning"
+      ],
+      "authority_hint": "historical"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-09-24-p4-platform-ux.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "P4 — Platform Completion + Todo清单 UX Implementation Plan",
+      "relevant_excerpt": "# P4 — Platform Completion + Todo清单 UX Implementation Plan\n\n> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.\n\n**Architecture:** 不引入新子系统：iOS/macOS 资产统一到 `com.dayspark.app` / `group.com.dayspark.app` 族并修 macOS keychain；小组件升 v2 快照契约（Swift/Kotlin 双端重定向 `widget_snapshot`、快速添加 deep link、Upcoming/月点阵变体、done-tap last-wins 队列）；日历/任务 UI 按 Todo清单 15 模式批改（六件事收敛、节气调休、隐藏已完成、设置 IA 终态）；通知按 P1 验收清单补代码缺口；卫生桶清偿跨 Phase 遗留。\n\n**Tech Stack:** 现有栈不变；WidgetKit/AppWidget 原生件、`home_widget`、节气/调休数据用 `lunar` 类纯 Dart 包（实现者验证选型，优先无原生依赖）、Simulator 构建作 iOS 编译门\n\n**Spec:** 主计划 P4 节 + ROADMAP Pending + `docs/qa/p1-manual-qa.md` 通知/小组件清单 + UX 报告 15 模式（存档于主计划研究引用）+ P1–P3 ledger 后备清单（终审 (b) 类）\n\n- 六套 analyze/test 全零全绿（root/flutter/server/contracts/wrapper/CLI）；构建冒烟：`flutter build web --release` + `apk --release` + **`ios --simulator --debug`（新增 iOS 编译门，无证书可跑）** + `macos --debug`（本机签名可用则跑，不行记 manual）\n- 版本 feature 只改 x：`0.23.0+24` → **`0.24.0+24`**；禁 push/tag（Phase 收尾用户确认）\n- 平台感知法则（CLAUDE 元法则4）：每个 UI 改动明确安卓/桌面/ iOS 差异；触摸 ≥48、桌面 MouseRegion+快捷键\n- l10n zh+en 成对（含**小组件原生文案**——P1 审计发现组件字符串硬编码英文，本阶段接入 l10n 或经快照预本地化二选一，写明）\n- Bundle/App-Group 改名 = **原子替换三处**（Dart `setAppGroupId`、entitlements、Swift `UserDefaults(suiteName:)`）+ Kotlin 读取端核对；签名失败降级路径：保留旧组名并记录（P1 先例）\n- 新增依赖：lunar/节气类 → 检查 macOS Xcode 兼容 + 纯 Dart 优先；CI 若动 → 先普通 push 验证规则不变\n- 代码风格同 CLAUDE.md；commit 常规格式\n\n### Task 1: Apple 资产统一 + iOS 编译门\n\n**Files:** `ios/Runner/*`（bundle id `dev.opencal.*`→`com.dayspark.app`、App Group→`group.com.dayspark.app`、signing 自动）、`ios/CalendarTodoWidget*`（同组）、`macos/*`（组名统一 + **keychain-access-groups 空数组修复**（P1 遗留：填 `$(AppIdentifierPrefix)com.dayspark.app` 或等价，WHY 注释）、`lib/main.dart` setAppGroupId 同步、`.github/workflows/ci.yml` **+iOS simulator job**（`flutter build ios --simulator --debug`，无证书；插在 test 后 needs:test）\n\n- [ ] 三处组名原子替换 + bundle id 统一 → `flutter build ios --simulator --debug` 绿 + `flutter build macos --debug` 绿（或记 manual）→ CI job 加入 → analyze/test 六门绿 → Commit `feat(platform): Apple 资产统一与 iOS 编译门`\n\n### Task 2: 小组件 v2 —— 契约补全 + 快速添加 + 新变体（数据+双端）\n\n**Files:** `lib/infrastructure/platform/home_widget_service.dart`（v2 快照：+`upcoming` 桶、勾选 pendingOps last-wins 队列段（SP 契约补全——`{pendingTaps[]}`，app 前台消费并落库为 complete op）、**widget 文案预本地化**进快照（消原生硬编码英文，记录选择）、dark 样式字段）、mutation 后 flush 已有 tableUpdates 通路核对、deep link 路由 `app://quick-add`（`app_links` 或 home_widget onClick 回调→Flutter 路由，双平台）\n- [ ] 快照契约升级 + 消费端测试（golden：v2 schema、pendingTaps 合并语义）→ Commit",
+      "baseline_candidate_capabilities": [
+        "documentation",
+        "planning"
+      ],
+      "authority_hint": "historical"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-01-p5-background-sync.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "P5 后台同步 + 设备注册 — 实施方案",
+      "relevant_excerpt": "# P5 后台同步 + 设备注册 — 实施方案\n\n> 2026-10-01 制定。**用户已拍板**：P5-a 先单独交付；P5-b 以 C+D 为主，A（FCM/APNs）做可选开关默认关。\n> 现状诊断与备选论证见本文件 §1–§2；执行按 §3 的顺序。\n\n## 1. 现状（实测，非推断）\n\n| 部件 | 状态 |\n|---|---|\n| 客户端 deviceId | ✅ 已生成+持久化（`loadOrCreateDeviceId`），且已在 push 请求体上报（`PushRequest.deviceId`） |\n| 服务端 `Devices` 表 | ✅ 已建（`id / userId / deviceId(unique) / name / lastSeen`） |\n| 服务端**写入** Devices | ❌ 零处——`applyInternalOp` 不接收 deviceId |\n| 设备注册接口 | ❌ 无 `/devices` 路由 |\n| `SyncOps` 表 | ❌ 无 `deviceId` 列——「这条变更哪台设备写的」查不到 |\n| `x-device-id` 头 | ⚠️ `requireAuth` 会读进 `AuthContext.deviceId`，但**客户端从不发** |\n| 前台同步 | ✅ SSE 流 + 15s 兜底轮询 + 连通性监听 + onResume 补一轮 |\n| 后台/关闭 | ❌ `poller.paused()` 直接停；pubspec 零推送/后台任务依赖 |\n\n**一句话**：同步地基（outbox / LWW / 幂等 / SSE / 单写缝 / 游标）全在，缺的只有「应用不在前台时，怎么知道远端变了」。\n\n## 2. P5-b 的四条路与选型\n\n| | 机制 | 可靠性 | 经过谁 | 结论 |\n|---|---|---|---|---|\n| A | FCM / APNs 无内容唤醒推 | 高 | Google + Apple | **做成可选开关，默认关**——不发数据，但「何时、哪台设备有变更」这类元数据会过第三方，该由用户自己决定 |\n| B | 自托管推送（UnifiedPush / ntfy） | Android 好，**iOS 无对应实现** | 自己的 NAS | 否——只覆盖一半平台，还要多维护一个通道 |\n| C | 后台拉取（WorkManager / BGAppRefreshTask） | 尽力而为（Doze / iOS 配额） | 无 | **✅ 主路径** |\n| D | 回前台即补同步 | 打开就同步 | 无 | **✅ 兜底** |\n\n**选定：C + D 为主，A 可选。**\n\n## 3. 执行顺序\n\n### P5-a 设备注册（先单独交付）\n\n**服务端**\n1. `SyncOps` 加 `deviceId` 列（`withDefault('')`，向后兼容）；`schemaVersion` 3 → 4 + 迁移\n2. `applyInternalOp` 增加 `deviceId` 透传，落在 `SyncOps.deviceId`\n   —— **为什么落 SyncOps 而不是 Records**：`Records` 是「当前状态」（已有 `lastOpId` 表达「谁最后写的」），设备归属是**逐 op 的历史**，SyncOps 本就是 append-only 的 op 账本\n3. `POST /devices/register`（auth）：body `{deviceId, name?}` → upsert + `lastSeen`\n   —— deviceId 已被别的账号占用 → 403，不做跨账号重绑（防劫持）\n4. `GET /devices`（auth）：列出本账号设备（供设置页）\n5. `/sync/push` 用 `x-device-id` 头（缺失则回退 body 的 `deviceId`）；顺带 touch `lastSeen`\n\n**契约**（`packages/dayspark_contracts`）\n6. `DeviceDto` + register 请求体\n\n**客户端**\n7. `_authHeaders()` 加 `x-device-id`\n8. 登录成功后 + 冷启动时各上报一次（幂等）\n9. 设备名：用现有 `platform_target` 派生（Android/iOS/macOS/Windows/Linux/Web），**不引新依赖**\n10. 设置页「已连接设备」：显示名称 + 最后活跃时间\n\n**验收**\n- 服务端：注册幂等、跨账号 deviceId 冲突被拒、push 后 SyncOps 有 deviceId、lastSeen 被 touch\n- 客户端：头真的发出去了、重复启动不重复建行\n\n### P5-b 后台同步（P5-a 交付后再开）\n1. 先做 D 的完善 + 测试（回前台补同步的边界：长时间后台、跨设备游标、断连恢复）\n2. 再做 C（各平台后台任务接入）\n3. A 最后做，且**必须先与用户确认告知文案**再动手\n\n## 4. 风险与边界（据实记录）\n\n- **P5-b 的 C 是\"尽力而为\"**：iOS `BGAppRefreshTask` 由系统决定何时给配额，可能数小时一次。**不能向用户承诺\"实时\"**，UI 文案不能这么写。\n- **A 一旦启用**，元数据（时间 + 设备标识）经过 Google/Apple。开关的说明文案必须写明这一点，不能含糊。\n- 桌面三平台（macOS/Windows/Linux）本来就常驻，D 基本够用；Web 标签页关闭同样只能靠 D。\n- 本方案不动 `Records` 表结构，因此不影响 LWW 与既有的 `lastOpId` 平局裁决。",
+      "baseline_candidate_capabilities": [
+        "documentation",
+        "planning"
+      ],
+      "authority_hint": "historical"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-04-recurring-todo-design-spike.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "Recurring Todo / occurrence identity / timezone / DST — Design Spike",
+      "relevant_excerpt": "# Recurring Todo / occurrence identity / timezone / DST — Design Spike\n\n- Client Todo table has `startDate`, `dueDate`, and nullable `rrule`, but no `recurrenceTimeZone` or recurrence schema/version marker: `lib/data/local/database/tables/todos_table.dart`.\n- Todo sync payload serializes `startDate`, `dueDate`, and `rrule` independently via UTC ISO strings: `lib/domain/sync/sync_payload.dart`. `dayspark_contracts` currently models the record envelope and TaskAllocation, not a recurrence object: `packages/dayspark_contracts/lib/src/record_dto.dart`.\n- Client Event expansion is `lib/domain/utils/recurring_event_helper.dart`; server Event expansion is `server/lib/src/data/rrule_window.dart`. Both use `rrule` independently. The server converts input windows and recurrence instances to UTC; existing event payloads do not preserve a local IANA DTSTART zone.\n- Server currently records invalid RRULE IDs but falls back to the raw event interval as a one-off event. That compatibility behavior is unsafe for a Todo operation that requires occurrence identity.\n- `TaskAllocationWriter.create` rejects recurring Todo today, so no current production path binds an Allocation to a recurring occurrence.\n- Locked package versions: client `rrule 0.2.18`, `timezone 0.11.0`, `enough_icalendar 0.17.0`; server `rrule 0.2.18`, `timezone 0.11.1`; `dayspark_contracts` has no runtime dependencies and supports pure Dart. Both timezone versions use IANA tzdata `2025c`. Library comparison found the sole `lib\n\n| Frozen statement | Current status |\n|---|---|\n| local anchor + RRULE + IANA zone as one series fact | Prototype keeps candidate fields local and requires an explicit zone |\n| stable local occurrence key separate from Allocation schedule | Gap, fold, viewer-zone and shared-package vectors pass |\n| fold resolves to first occurrence | Two candidates observed; constructor and prototype select 05:30Z EDT |\n| gap-before-offset and nominal identity | Constructor/prototype yield 07:30Z / displayed 03:30 EDT; identity remains nominal 02:30 |\n| DATE-only is not midnight instant | RRULE candidate adapter and `v1:DATE` identity pass; not sent through zone resolver |\n| requested RRULE subset | Representative frequency/part vectors pass; strict wrapper required because unknown parts are silently ignored |\n| ICS retains enough evidence | Four raw properties, DUE, RRULE and nested VTIMEZONE inspected at runtime; converter loss confirmed |\n| client/server shared engine feasible | Temporary package path dependency and same vectors pass under both package configs |\n\n## 13. Required document changes",
+      "baseline_candidate_capabilities": [
+        "documentation",
+        "planning"
+      ],
+      "authority_hint": "historical"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-04-recurring-todo.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "Recurring Todo — Implementation Plan",
+      "relevant_excerpt": "# Recurring Todo — Implementation Plan\n\nStatus: **R1–R4 committed locally; R4 independent delta review PASS. Windows GUI smoke remains pending.**\nContract: `SPEC.md` §3.1.1\nSource audit: `docs/superpowers/plans/2026-10-04-recurring-todo-design-spike.md`\n\n- Keep the Todo row as the series definition and keep the existing RecurrenceSpec/occurrence identity engine unchanged.\n- Persist only changed TaskInstance state under the stable `(todoSyncId, occurrenceId)` identity; virtualize unchanged instances.\n- Instance completion/reopen requires an explicit occurrenceId. The Todo series status is not changed by completing one instance.\n- Keep TaskAllocation as a separate entity. Completion invalidation only applies to active allocations with the matching parent and occurrenceId; ordinary Todo behavior is unchanged.\n- Existing recurring rows with `status=COMPLETED` remain explicit legacy series completions because their occurrence cannot be inferred. Do not fabricate a completion record; reopening the series is required before new instance completion.\n- Todo List may materialize a bounded, lazy window for actionable instances. Calendar continues to project Events and valid TaskAllocations, not bare recurrence instances as timed blocks.\n- Sync, server validation, BusyInterval, MCP complete/reopen, and migration must ship as one semantic closure behind explicit capability support.\n\n## Gate 0 — Resolve design and toolchain blockers (must pass first)\n\n1. Use `C:\\src\\flutter\\bin\\flutter.bat` and `dart.bat` directly; the SDK is installed but absent from PATH. Do not reins\n\n- Implemented sparse `TaskInstanceState` persistence (schema v14), explicit occurrence completion/undo, finite Todo-list selection, series-safe widget/notification behavior, matching Allocation invalidation, Calendar/Busy projections, capability-gated sync and server validation, and MCP occurrence arguments.\n- Migration preserves legacy recurring `COMPLETED` series without fabricating instance rows; schema v11 and fresh-database migration tests pass.\n- Local gates: `dart analyze .` and `flutter analyze` clean; root `flutter test` 469 passed; recurrence 20, contracts 53, server 236, wrapper 9, CLI 20 passed; whitespace/path scans clean. `git diff --check` clean after closeout edits.\n- Historical execution note superseded 2026-10-06: GitHub connectivity was restored by correcting the user-level Git proxy; PR #2 exists. The current remediation's gates and Hosted CI are tracked on the PR, not in this implementation-plan status note.\n- Manual UI/platform acceptance and all hosted build jobs remain NOT RUN.",
+      "baseline_candidate_capabilities": [
+        "documentation",
+        "planning"
+      ],
+      "authority_hint": "historical"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-04-task-allocation.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "TaskAllocation — 实施计划",
+      "relevant_excerpt": "# TaskAllocation — 实施计划\n\n> **状态**：Phase 1 已完成；产品契约见 `SPEC.md`，裁定依据见 `DECISIONS.md` [2026-10-04]。\n> **本阶段目标**：验证普通非重复 Todo 的本地 TaskAllocation 领域模型和 Calendar Projection。\n\n- Drift 新表及 additive schema migration；allocation 的本地 s\n\n| 接缝 | 当前状态 | Phase 1 处理 |\n|---|---|---|\n| 客户端数据库 | Drift schemaVersion 9；Todos/Events 分表 | additive 升至 10，仅新增 TaskAllocations 表；不增加 `recurrenceTimeZone` |\n| 记录写入 | Provider → `RecordScope` → Writer | 新增 AllocationWriter；所有 create/reschedule/cancel 写入走统一缝 |\n| Calendar | Event range provider、occurrence 展开与 kalender adapter | 保留 Event 行为，组合 active Allocation adapter，并使用独立 tap/change 路由 |\n| Reminder / Widget | 由现有 Event/Todo 投影刷新 | 不新增 Allocation reminder 或 Widget 字段；是否触发已有快照刷新只按现有记录总线机制处理 |\n| 同步 | 现有同步仅认识 Event/Todo | Phase 1 不发送、不接收 `task_allocation`，不改 contracts/server/outbox/applier |\n\n- **Phase 1 基线已补齐 — 本地完成生命周期 D6**：Todo 完成与未来 Allocation 失效在同一 RecordScope 事务执行；比较使用 UTC 毫秒边界；完成中的时段继续显示至原定结束，历史保留，用户取消状态不覆盖；取消完成不自动恢复。Todo 回收/恢复仍由父记录投影状态控制，本地永久删除明确清理 Allocation。Allocation 同步 tombstone 仍属后续同步前置项，见下方记录。\n- **后续 B — 重复 Todo**：`recurrenceTimeZone` IANA 持久化、旧数据未知时区的安全降级、本地 wall-clock occurrence identity、DST 与规则编辑兼容。不得以设备当前 timezone 静默填充旧数据。\n- **后续 C — 同步兼容**：contracts 明确 `task_allocation` capability；服务端只向声明支持的客户端返回 Allocation。旧客户端继续同步 Event/Todo。发布顺序为兼容新客户端、服务端 capability 下发、最后开放 MCP/外部 Allocation 写入。\n- **后续 D — busy-time**：将 active Allocation 纳入 `find_free_time`，并按状态、父 Todo 生命周期及完成边界过滤。\n- **后续 E — MCP**：评估并实现单条 schedule/reschedule/cancel 工作流工具。\n\n当前 `task_allocations.todo_id` 使用 SQLite `ON DELETE CASCADE`，但生产连接不保证开启 SQLite 外键执行。Phase 1 的 Todo 永久删除/清空回收站 writer 因此显式删除 Allocation 行，保证本地无孤儿记录；此处尚不生成 Allocation 自身的同步 tombstone。进入任何 TaskAllocation 同步实现前，必须把该删除传播扩展为显式同步领域操作：先捕获并登记每条 Allocation 的 tombstone，再删除父 Todo；不得把数据库 cascade 当作同步删除机制。Phase 1 不实现该同步路径，也不宣称已满足 Allocation tombstone 传播。\n\n- `RecordType.task_allocation` 与正式 payload DTO 进入 `dayspark_contracts`；payload 只包含 `todoSyncId`、可空 `occurrenceId`、`startAt`、`endAt`、`state`、`createdAt`、`updatedAt`。record UUID/rev/deleted/serverTs 仍属于同步 envelope。\n- capability 使用 `task_allocation_v1`。客户端先请求 `/sync/capabilities`；旧服务端 404 按不支持处理，仍可同步 Event/Todo，但 TaskAllocation outbox 留存。push body 与 pull query 均发送 capability；未知 capability 忽略。\n- Server 对旧客户端按原始 seq 有界分页，再过滤 TaskAllocation；pull cursor/hasMore 和 push piggyback watermark 根据原始扫描页推进，避免隐藏记录卡住 cursor。\n\n`active_parent_active`、`cancelled_allocation`、`invalidated_allocation`、`unresolved_parent`、`soft_deleted_parent`、`restored_parent`、`completed_before_start`、`completed_during_block`、`historical_block`、`allocation_tombstone`、`parent_tombstone`、`dueDate_only`。",
+      "baseline_candidate_capabilities": [
+        "documentation",
+        "planning"
+      ],
+      "authority_hint": "historical"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-06-action-loop-foundation.md",
+      "asset_type": "documentation",
+      "ownership": "project_owned",
+      "summary": "Phase 1 — Action Loop Foundation Implementation Plan",
+      "relevant_excerpt": "# Phase 1 — Action Loop Foundation Implementation Plan\n\n> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.\n\n**Architecture:**\n- A derived `ActionProjectionProvider` (no new DB entity) calculates today's events, active ordinary-Todo task allocations, due today ordinary todos, overdue ordinary todos, and compact unplanned inbox count.\n- `defaultTabProvider` and `HomePage` navigation extended to three projections: Action (default), Calendar, and Todos, preserving existing saved preferences.\n- Calendar empty time slot tap presents a choice between creating an Event or scheduling an existing ordinary Todo into a TaskAllocation.\n- `TodoCreatePage` initializes with `_dueDate = null` (no default to today). Startup bulk overdue deadline-mutation prompt is removed.\n- `TodoListTile` keeps the interactive Checkbox on pending rows even when an ordinal index is present.\n- Existing domain writers (`TodoWriter.toggleTodoCompletion`, `TaskAllocationWriter.create`) handle all mutations; Todo `dueDate` remains immutable across allocation lifecycles.\n\n- SPEC-first: Document changes in `SPEC.md`, `DECISIONS.md`, and `docs/ROADMAP.md` before implementation.\n- Preserve Frozen Product Rulings: Todo = obligation, TaskAllocation = planned execution interval, Event = independently occurring event, dueDate = deadline fact, Calendar / Action = projections.\n- No new persistent entity for Action / DailyPlan.\n- Invariant: TaskAllocation lifecycle operations (create, reschedule, cancel, complete) must NEVER mutate Todo.dueDate.\n- Zero issues on `dart analyze .` and all green on `flutter test`.\n- All user-facing strings localized in both `app_en.arb` and `app_zh.arb`.\n\n- [ ] **Step 2: Update DECISIONS.md with ADR entry**\nAdd lightweight ADR `[2026-10-06] Phase 1 — Action Loop Foundation`:\nRecord background, core decisions, SPEC section mappings, impact scope, and rulings with cost of wrong judgment.\n\n**Files:**\n- Modify: `lib/ui/pages/todo/todo_create_page.dart`\n- Modify: `lib/ui/pages/home/home_page.dart`\n- Test: `test/domain/records/task_allocation_deadline_invariant_test.dart`\n- Test: `test/ui/pages/todo/todo_create_deadline_test.dart`\n\n- [ ] **S\n\n- [ ] **Step 3: Create PR using gh pr create**\nInclude:\n- Frozen Issue #3 / Phase 1 references (`Refs #3`)\n- Base SHA: `ced2c0663d1f72da4a3dcf95ad8a081bdc4fb8ff`\n- Changed behavior\n- Preserved invariants\n- Explicit non-goals\n- Test verification results\n- Rulings disclosure",
+      "baseline_candidate_capabilities": [
+        "documentation",
+        "planning"
+      ],
+      "authority_hint": "historical"
+    }
+  ],
+  "baseline_coverage": [
+    {
+      "capability_id": "agent-development",
+      "status": "unknown",
+      "evidence": [],
+      "reason": "AI or MCP tooling alone does not show that the project develops an agent product. The catalog applies when a project is intentionally developing agent behavior and needs behavioral acceptance cases."
+    },
+    {
+      "capability_id": "code-review",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": ".github/vccp/reviewer-task-prompt.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": ".opencode/skills/dayspark-code-review/SKILL.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/ROADMAP.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/REVIEWING.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Assess a proposed change for correctness, clarity, and maintainability before acceptance.'; paths are listed below."
+    },
+    {
+      "capability_id": "debugging",
+      "status": "unknown",
+      "evidence": [],
+      "reason": "No sufficiently specific evidence for catalog signals: An observed failure, reproducible input, or discrepancy is available.. Applicable when a concrete failure or discrepancy needs a bounded investigation."
+    },
+    {
+      "capability_id": "documentation",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": "CLAUDE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "DECISIONS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "README.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "SPEC.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/CONSTRAINTS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/ROADMAP.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/START_HERE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-16-calendar-ui.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-16-project-foundation.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-16-todo-ui.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-17-caldav-sync.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-18-remaining-phases.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/ARCHITECTURE_REVIEW.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/caldav-sync-plan.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/mcp-setup.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/ARCHITECTURE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/EXECUTION.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/LOCALIZATION.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/REVIEWING.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/qa/TEST_EVIDENCE_TEMPLATE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/qa/p3-mcp-qa.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-22-master-refactor-plan.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-23-p2-sync-backend.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-23-p3-mcp-cli.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-d2-event-seam.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-p4-platform-ux.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-01-p5-background-sync.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-04-recurring-todo-design-spike.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-04-recurring-todo.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-04-task-allocation.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-06-action-loop-foundation.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Organize explanations, reference material, tutorials, and task guidance around reader needs.'; paths are listed below."
+    },
+    {
+      "capability_id": "engineering-baseline",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "CLAUDE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/EXECUTION.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-22-master-refactor-plan.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-23-p2-sync-backend.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Keep development changes traceable and reviewable through explicit version-control practices.'; paths are listed below."
+    },
+    {
+      "capability_id": "planning",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": "DECISIONS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/CONSTRAINTS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/ROADMAP.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/START_HERE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-16-calendar-ui.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/archive/2026-04/2026-04-16-todo-ui.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-22-master-refactor-plan.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-23-p2-sync-backend.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-23-p3-mcp-cli.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-d2-event-seam.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-p4-platform-ux.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-01-p5-background-sync.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-04-recurring-todo-design-spike.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-04-recurring-todo.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-04-task-allocation.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-06-action-loop-foundation.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Make goals, scope, acceptance conditions, and work dependencies explicit before implementation.'; paths are listed below."
+    },
+    {
+      "capability_id": "research-workflow",
+      "status": "unknown",
+      "evidence": [],
+      "reason": "No sufficiently specific evidence for catalog signals: Claims depend on experiments, datasets, or reproducible methods.. Applicable when an investigation or experiment must report provenance, outcomes, and limitations."
+    },
+    {
+      "capability_id": "testing",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": ".claude/skills/release-prep/SKILL.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "AGENTS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "CLAUDE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/process/TESTING.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Check observable behavior with focused, repeatable tests appropriate to the change.'; paths are listed below."
+    }
+  ],
+  "baseline_report_source": "deterministic discovery generated during semantic-package construction",
+  "profile_constraints": {
+    "defaults": [],
+    "exclusions": [],
+    "explicit_preferences": {}
+  },
+  "review_instructions": [
+    "Review asset meaning from relevant_excerpt and authority_hint; do not treat a path or filename as proof of capability.",
+    "Use only the supplied Capability Catalog IDs. Compare the existing assets with each Catalog purpose and applicability.",
+    "Judge satisfied by substantive coverage, not by the number of cited files. Judge missing only when applicability is established and the core purpose is not covered; otherwise use unknown.",
+    "Call conflict only when current authoritative requirements and an explicit Profile preference cannot both be satisfied on the same behavior dimension. Differences and historical references alone are not conflicts.",
+    "MCP or AI coding-tool use alone does not establish agent-development. Distinguish the product's actual behavior from development tooling.",
+    "Every evidence item must cite a discovered project-relative path and explain the supporting meaning. Use no absolute local paths.",
+    "Do not recommend installation, modification, activation, or automatic resolution. A component may be considered only for a confirmed missing capability and an applicable project-scoped copy component listed in the Catalog.",
+    "If worktree requirements appear, use authority_hint and surrounding excerpt to distinguish current rules from historical plans; the supplied Profile expresses no preference when its preference fields are empty."
+  ]
+}

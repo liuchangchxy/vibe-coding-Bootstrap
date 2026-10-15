@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/semantic-review-result.schema.json",
+  "title": "Semantic Review Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["project_name", "reviewer", "semantic_coverage"],
+  "properties": {
+    "project_name": {"type": "string", "minLength": 1},
+    "reviewer": {"const": "host-ai"},
+    "semantic_coverage": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability_id", "status", "confidence", "evidence", "reason", "recommended_action"],
+        "properties": {
+          "capability_id": {"type": "string", "minLength": 1},
+          "status": {"enum": ["satisfied", "partial", "missing", "conflict", "unknown"]},
+          "confidence": {"enum": ["low", "medium", "high"]},
+          "evidence": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["path", "claim"], "properties": {"path": {"type": "string", "minLength": 1}, "claim": {"type": "string", "minLength": 1}}}},
+          "reason": {"type": "string", "minLength": 1},
+          "recommended_action": {"enum": ["keep_existing", "review_gap", "review_conflict", "consider_bootstrap_component", "no_action"]}
+        }
+      }
+    }
+  }
+}
