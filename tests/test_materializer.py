@@ -26,6 +26,14 @@ class MaterializerTests(unittest.TestCase):
         plan["components"] = [item]
         return plan
 
+    def duplicate_copy_plan(self, scope="project", same_source=False):
+        first = self.plan(scope=scope, destination="components/shared.md")["components"][0]
+        first["component_id"] = "shared-a"
+        second = dict(first, component_id="shared-b", source_capability="documentation")
+        if not same_source:
+            second["source"] = "components/project/documentation-outline.md"
+        return self.plan(), [first, second]
+
     def test_dry_run_and_apply_then_idempotent_reapply(self):
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory) / "project"
@@ -148,7 +156,80 @@ class MaterializerTests(unittest.TestCase):
             repeated = materialize(plan, project, global_root, apply=True)
             self.assertTrue(all(item["result"] in {"unchanged", "reference_only"}
                                 for item in repeated["items"]))
+            manifest_path = project / ".vibe-coding-bootstrap/manifest.yaml"
+            manifest_items = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))["items"]
+            references = {(item["source_capability"], item["component_id"])
+                          for item in manifest_items if item["state"] == "reference_only"}
+            self.assertTrue({("testing", "reference"), ("documentation", "reference")}.issubset(references))
+            self.assertIn(("engineering-baseline", "pro-git-reference"), references)
+            count = len(manifest_items)
+            repeated_again = materialize(plan, project, global_root, apply=True)
+            self.assertEqual(count, len(yaml.safe_load(manifest_path.read_text(encoding="utf-8"))["items"]))
+            self.assertTrue(all(item["result"] in {"unchanged", "reference_only"}
+                                for item in repeated_again["items"]))
             validate(repeated, "materialization-result.schema.json")
+
+    def test_manifest_keeps_same_id_external_items_from_different_capabilities(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory) / "project"
+            project.mkdir()
+            plan = self.plan()
+            first = dict(plan["components"][0], component_id="reference", scope="external",
+                         delivery="reference", source="https://example.invalid/testing")
+            second = dict(first, source_capability="documentation", source="https://example.invalid/docs")
+            plan["components"] = [first, second]
+            materialize(plan, project, apply=True)
+            manifest = yaml.safe_load((project / ".vibe-coding-bootstrap/manifest.yaml").read_text(encoding="utf-8"))
+            identities = {(item["source_capability"], item["component_id"])
+                          for item in manifest["items"]}
+            self.assertTrue({("testing", "reference"), ("documentation", "reference")}.issubset(identities))
+            self.assertEqual(2, len(manifest["items"]))
+            self.assertTrue(all(item["destination"] == "" and item["state"] == "reference_only"
+                                and item["capability_version"] == "1" and "source" in item
+                                for item in manifest["items"]))
+
+    def test_duplicate_project_destination_conflicts_before_writes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory) / "project"
+            project.mkdir()
+            plan, components = self.duplicate_copy_plan()
+            plan["components"] = components
+            result = materialize(plan, project, apply=True)
+            self.assertEqual(["conflict", "conflict"], [item["result"] for item in result["items"]])
+            self.assertTrue(all("same destination" in item["reason"] for item in result["items"]))
+            self.assertFalse((project / "components/shared.md").exists())
+
+    def test_duplicate_global_destination_conflicts_before_writes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project, global_root = Path(directory) / "project", Path(directory) / "global"
+            project.mkdir()
+            plan, components = self.duplicate_copy_plan(scope="global")
+            plan["components"] = components
+            result = materialize(plan, project, global_root, apply=True)
+            self.assertEqual(["conflict", "conflict"], [item["result"] for item in result["items"]])
+            self.assertFalse((global_root / "components/shared.md").exists())
+
+    def test_same_relative_destination_in_project_and_global_roots_is_allowed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project, global_root = Path(directory) / "project", Path(directory) / "global"
+            project.mkdir()
+            plan, components = self.duplicate_copy_plan()
+            components[1]["scope"] = "global"
+            plan["components"] = components
+            result = materialize(plan, project, global_root, apply=True)
+            self.assertEqual(["copied", "copied"], [item["result"] for item in result["items"]])
+            self.assertTrue((project / "components/shared.md").is_file())
+            self.assertTrue((global_root / "components/shared.md").is_file())
+
+    def test_same_content_duplicate_plan_still_conflicts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory) / "project"
+            project.mkdir()
+            plan, components = self.duplicate_copy_plan(same_source=True)
+            plan["components"] = components
+            result = materialize(plan, project, apply=True)
+            self.assertEqual(["conflict", "conflict"], [item["result"] for item in result["items"]])
+            self.assertFalse((project / "components/shared.md").exists())
 
 
 if __name__ == "__main__":

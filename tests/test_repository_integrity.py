@@ -26,6 +26,7 @@ def check_repository(root=ROOT):
     conflicts = set()
     relative_sources = []
     assembly_references = []
+    copy_destinations = {}
     for relative_path in paths:
         path = (root / "capabilities" / relative_path).resolve()
         if not path.is_relative_to((root / "capabilities").resolve()) or not path.is_file():
@@ -73,6 +74,11 @@ def check_repository(root=ROOT):
                             or PureWindowsPath(destination).is_absolute() or PureWindowsPath(destination).drive
                             or ".." in PurePosixPath(destination).parts):
                         raise ValueError(f"Invalid component destination: {cid}/{assembly['id']}")
+                    destination_key = (assembly["scope"], PurePosixPath(destination).as_posix())
+                    identity = (cid, assembly["id"])
+                    if destination_key in copy_destinations and copy_destinations[destination_key] != identity:
+                        raise ValueError(f"Multiple components target the same destination: {destination_key}")
+                    copy_destinations[destination_key] = identity
                 components.add(assembly["id"])
                 assembly_references.extend((cid, assembly["id"], field, ref)
                                            for field in ("dependencies", "conflicts")
@@ -181,6 +187,23 @@ def check_repository(root=ROOT):
 class RepositoryIntegrityTests(unittest.TestCase):
     def test_current_repository_integrity(self):
         check_repository()
+
+    def test_catalog_copy_destinations_are_unique_within_scope(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "repo"
+            shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns(".git", "__pycache__"))
+            testing_path = root / "capabilities/quality/testing.yaml"
+            documentation_path = root / "capabilities/workflow/documentation.yaml"
+            testing = load_yaml(testing_path)
+            documentation = load_yaml(documentation_path)
+            destination = next(c["assembly"]["destination"] for c in testing["components"]
+                               if c["id"] == "project-test-guidance")
+            next(c["assembly"] for c in documentation["components"]
+                 if c["id"] == "project-documentation-outline")["destination"] = destination
+            testing_path.write_text(yaml.safe_dump(testing, sort_keys=False), encoding="utf-8")
+            documentation_path.write_text(yaml.safe_dump(documentation, sort_keys=False), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "Multiple components target the same destination"):
+                check_repository(root)
 
     def test_all_catalog_capabilities_use_simple_version_one(self):
         catalog = load_yaml(ROOT / "capabilities/catalog.yaml")

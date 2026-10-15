@@ -11,7 +11,7 @@
     "selected_capabilities": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
     "components": {"type": "array", "items": {"$ref": "#/$defs/assembly_item"}},
     "skipped_components": {"type": "array", "items": {"$ref": "#/$defs/assembly_item"}},
-    "unresolved_conflicts": {"type": "array", "items": {"type": "object", "required": ["kind", "items", "reason"], "properties": {"kind": {"enum": ["capability", "component", "scope", "delivery"]}, "items": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 2}, "reason": {"type": "string", "minLength": 1}}, "additionalProperties": false}},
+    "unresolved_conflicts": {"type": "array", "items": {"type": "object", "required": ["kind", "items", "reason"], "properties": {"kind": {"enum": ["capability", "component", "scope", "delivery", "destination"]}, "items": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 2}, "reason": {"type": "string", "minLength": 1}}, "additionalProperties": false}},
     "warnings": {"type": "array", "items": {"type": "string", "minLength": 1}},
     "requires_confirmation": {"const": true},
     "generated_at": {"type": "string", "format": "date-time"}

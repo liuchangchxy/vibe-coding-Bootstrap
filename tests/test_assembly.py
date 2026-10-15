@@ -97,6 +97,28 @@ class AssemblyTests(unittest.TestCase):
             self.assertTrue({"scope", "delivery", "component"}.issubset(kinds))
             self.assertTrue(all(item["action"] == "review_required" for item in plan["components"] if item["component_id"] == "reviewable-changes"))
 
+    def test_duplicate_copy_destinations_are_reported_for_review(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in ("schemas", "capabilities", "assembly"):
+                shutil.copytree(ROOT / name, root / name)
+            testing_path = root / "capabilities/quality/testing.yaml"
+            documentation_path = root / "capabilities/workflow/documentation.yaml"
+            testing = load_yaml(testing_path)
+            documentation = load_yaml(documentation_path)
+            destination = next(c["assembly"]["destination"] for c in testing["components"]
+                               if c["id"] == "project-test-guidance")
+            next(c["assembly"] for c in documentation["components"]
+                 if c["id"] == "project-documentation-outline")["destination"] = destination
+            testing_path.write_text(yaml.safe_dump(testing, sort_keys=False), encoding="utf-8")
+            documentation_path.write_text(yaml.safe_dump(documentation, sort_keys=False), encoding="utf-8")
+            plan = assemble(self.recommendation("long-lived-web"), root)
+            conflicts = [issue for issue in plan["unresolved_conflicts"] if issue["kind"] == "destination"]
+            self.assertEqual(1, len(conflicts))
+            self.assertIn("Multiple components target the same destination", conflicts[0]["reason"])
+            self.assertTrue(all(item["action"] == "review_required" for item in plan["components"]
+                                if item["component_id"] in {"project-test-guidance", "project-documentation-outline"}))
+
     def test_input_is_unchanged_and_no_network_is_used(self):
         recommendation = self.recommendation("long-lived-web")
         before = copy.deepcopy(recommendation)

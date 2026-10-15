@@ -1,6 +1,7 @@
 """Resolve recommendation entries into a deterministic, review-only plan."""
 
 from datetime import datetime, timezone
+from pathlib import PurePosixPath
 
 from composer.core import ROOT, load_yaml, validate
 
@@ -122,6 +123,22 @@ def assemble(recommendation, root=ROOT, generated_at=None, recommendation_source
             if other["delivery"] != item["delivery"]:
                 unresolved.append({"kind": "delivery", "items": [item["component_id"], other["component_id"]], "reason": "The same component has mutually exclusive delivery strategies."})
                 item["action"] = other["action"] = "review_required"
+
+    destination_owners = {}
+    for item in items:
+        if item["delivery"] != "copy":
+            continue
+        key = (item["scope"], PurePosixPath(item["destination"].replace("\\", "/")).as_posix())
+        destination_owners.setdefault(key, []).append(item)
+    for owners in destination_owners.values():
+        if len(owners) > 1:
+            unresolved.append({
+                "kind": "destination",
+                "items": [f"{item['source_capability']}/{item['component_id']}" for item in owners],
+                "reason": "Multiple components target the same destination; no winner was selected.",
+            })
+            for item in owners:
+                item["action"] = "review_required"
 
     for item in items:
         for dependency in item["dependencies"]:

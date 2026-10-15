@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 import hashlib
+import os
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from urllib.parse import urlsplit
 
@@ -49,6 +50,7 @@ def materialize(assembly_plan, project_root, global_root=None, apply=False,
     timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
     items = []
     pending = []
+    destination_claims = {}
     previous = None
     valid_manifest = True
     if manifest.exists():
@@ -85,6 +87,9 @@ def materialize(assembly_plan, project_root, global_root=None, apply=False,
             content = source.read_bytes()
             digest = _sha256(content)
             result.update(destination=str(target), sha256=digest)
+            if (item["delivery"] == "copy" and item["action"] == "include"
+                    and item["scope"] in {"project", "global"}):
+                destination_claims.setdefault(os.path.normcase(str(target)), []).append(result)
             state = "copied"
             if target.exists():
                 existing_digest = _sha256(target.read_bytes()) if target.is_file() else None
@@ -105,6 +110,12 @@ def materialize(assembly_plan, project_root, global_root=None, apply=False,
             result["reason"] = reason
         items.append(result)
 
+    for claims in destination_claims.values():
+        if len(claims) > 1:
+            for result in claims:
+                result["result"] = "conflict"
+                result["reason"] = "Multiple Assembly items target the same destination; nothing was written."
+
     conflicts = [item for item in items if item["result"] == "conflict"]
     if not valid_manifest:
         for item in items:
@@ -121,7 +132,7 @@ def materialize(assembly_plan, project_root, global_root=None, apply=False,
         manifest_items = []
         if previous:
             manifest_items = previous.get("items", [])
-        keyed = {(entry["scope"], entry["component_id"], entry["destination"]): entry
+        keyed = {(entry["source_capability"], entry["component_id"], entry["scope"], entry["destination"]): entry
                  for entry in manifest_items}
         for item in items:
             if item["result"] in {"copied", "unchanged", "reference_only"}:
@@ -135,7 +146,8 @@ def materialize(assembly_plan, project_root, global_root=None, apply=False,
                 }
                 if "sha256" in item:
                     entry["sha256"] = item["sha256"]
-                keyed[(entry["scope"], entry["component_id"], entry["destination"])] = entry
+                key = (entry["source_capability"], entry["component_id"], entry["scope"], entry["destination"])
+                keyed[key] = entry
         manifest_data = {
             "format_version": 1, "assembly_source": assembly_source,
             "installed_at": timestamp, "items": list(keyed.values()),
