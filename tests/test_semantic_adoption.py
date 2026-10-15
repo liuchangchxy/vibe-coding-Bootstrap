@@ -1,6 +1,7 @@
 """Tests for bounded Host AI semantic adoption review."""
 
 from pathlib import Path
+import hashlib
 import tempfile
 import unittest
 
@@ -9,7 +10,13 @@ from adoption.semantic import (
     validate_semantic_result,
 )
 from composer.core import ROOT, validate
-from tests.test_adoption import tree_snapshot
+
+
+def tree_snapshot(root):
+    return {
+        path.relative_to(root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in sorted(root.rglob("*")) if path.is_file()
+    }
 
 
 class SemanticAdoptionTests(unittest.TestCase):
@@ -118,4 +125,4 @@ class SemanticAdoptionTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()\n
+    unittest.main()
