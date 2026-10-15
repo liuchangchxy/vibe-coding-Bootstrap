@@ -116,15 +116,15 @@ def assemble(recommendation, root=ROOT, generated_at=None, recommendation_source
             if other["scope"] != item["scope"]:
                 unresolved.append({"kind": "scope", "items": [item["component_id"], other["component_id"]], "reason": "The same component is registered with incompatible scopes."})
                 item["action"] = other["action"] = "review_required"
+            if other["delivery"] != item["delivery"]:
+                unresolved.append({"kind": "delivery", "items": [item["component_id"], other["component_id"]], "reason": "The same component has mutually exclusive delivery strategies."})
+                item["action"] = other["action"] = "review_required"
 
     for item in items:
         for dependency in item["dependencies"]:
             if not any(other["component_id"] == dependency for other in items):
                 unresolved.append({"kind": "component", "items": [item["component_id"], dependency], "reason": "Required component is not registered in the selected Assembly."})
                 item["action"] = "review_required"
-            if other["delivery"] != item["delivery"]:
-                unresolved.append({"kind": "delivery", "items": [item["component_id"], other["component_id"]], "reason": "The same component has mutually exclusive delivery strategies."})
-                item["action"] = other["action"] = "review_required"
 
     # A recommendation conflict also makes all components from either side review-only.
     conflict_caps = {cid for issue in unresolved if issue["kind"] == "capability" for cid in issue["items"]}

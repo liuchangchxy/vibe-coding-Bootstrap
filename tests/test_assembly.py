@@ -73,6 +73,30 @@ class AssemblyTests(unittest.TestCase):
             self.assertEqual([], plan["components"])
             self.assertTrue(any("no installable implementation component is registered" in warning for warning in plan["warnings"]))
 
+    def test_component_scope_delivery_and_dependency_conflicts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in ("schemas", "capabilities", "assembly"):
+                shutil.copytree(ROOT / name, root / name)
+            record_path = root / "capabilities/engineering/engineering-baseline.yaml"
+            record = load_yaml(record_path)
+            record["components"].append({
+                "id": "alternate-shared-prompt", "kind": "prompt",
+                "role": "Fixture for scope and delivery conflict checks", "source_id": "primary",
+                "assembly": {
+                    "id": "reviewable-changes", "name": "Reviewable changes prompt",
+                    "type": "prompt", "source": "https://example.invalid/reviewable-changes.md",
+                    "provider": "vibe-coding-bootstrap", "version": "1", "scope": "project",
+                    "delivery": "copy", "optional": True, "provenance": {"test": True},
+                    "dependencies": ["missing-component"],
+                },
+            })
+            record_path.write_text(yaml.safe_dump(record, sort_keys=False), encoding="utf-8")
+            plan = assemble(self.recommendation("long-lived-web"), root)
+            kinds = {issue["kind"] for issue in plan["unresolved_conflicts"]}
+            self.assertTrue({"scope", "delivery", "component"}.issubset(kinds))
+            self.assertTrue(all(item["action"] == "review_required" for item in plan["components"] if item["component_id"] == "reviewable-changes"))
+
     def test_input_is_unchanged_and_no_network_is_used(self):
         recommendation = self.recommendation("long-lived-web")
         before = copy.deepcopy(recommendation)
