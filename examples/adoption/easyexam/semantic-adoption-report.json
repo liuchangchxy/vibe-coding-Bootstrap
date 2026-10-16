@@ -1,0 +1,761 @@
+{
+  "target": {
+    "repository": "liuchangchxy/easy-exam",
+    "branch": "main",
+    "commit_sha": "7d54ef451ca9954b671c71e2673cc7e9b861218e",
+    "remote": "origin",
+    "remote_commit_sha": "7d54ef451ca9954b671c71e2673cc7e9b861218e",
+    "dirty": false
+  },
+  "project": {
+    "name": "飞牛刷题软件",
+    "project_type": "software project",
+    "description": "面向家庭/小团队 NAS 的自托管刷题、模考和个人学习档案系统。",
+    "technologies": [],
+    "platforms": [],
+    "development_signals": [
+      "GitHub Actions",
+      "server component",
+      "tests"
+    ]
+  },
+  "baseline_report_source": "deterministic discovery at target revision",
+  "baseline_coverage": [
+    {
+      "capability_id": "agent-development",
+      "status": "unknown",
+      "evidence": [],
+      "reason": "AI or MCP tooling alone does not show that the project develops an agent product. The catalog applies when a project is intentionally developing agent behavior and needs behavioral acceptance cases."
+    },
+    {
+      "capability_id": "code-review",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": ".agents/skills/receiving-code-review/SKILL.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": ".agents/skills/requesting-code-review/SKILL.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": ".agents/skills/writing-skills/SKILL.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": ".github/vccp/reviewer-task-prompt.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Assess a proposed change for correctness, clarity, and maintainability before acceptance.'; paths are listed below."
+    },
+    {
+      "capability_id": "debugging",
+      "status": "partial",
+      "evidence": [
+        {
+          "path": ".agents/skills/systematic-debugging/SKILL.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": ".agents/skills/test-driven-development/SKILL.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Several project-owned assets contain relevant signals, but complete coverage is not established."
+    },
+    {
+      "capability_id": "documentation",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": ".agents/skills/writing-skills/SKILL.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "DECISIONS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "README.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "SPEC.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/AGENT_COLLABORATION_PROTOCOL.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/ANTIGRAVITY_OSS_MASTER_PLAN_PROMPT.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/ANTIGRAVITY_WORKFLOW.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/EASYEXAM_GUARDRAILS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/REQUIREMENTS_TRACEABILITY.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/automation/AUTOMATION.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/automation/post-cleanup-smoke-test.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/automation/production-loop-validation.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/automation/repair-loop-validation.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/optional/STEPPER_WORKFLOWS.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/research/OSS_ABSORPTION_DECISION_REVIEW.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/research/OSS_REUSE_AUDIT.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/research/OSS_REUSE_MASTER_PLAN.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/research/OSS_REUSE_ROADMAP.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-22-fn-exam-implementation.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-23-architecture-refactor.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-23-core-learning-loop.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-ai-tutor-learning-assets.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-document-system-refactor.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-import-reliability-and-reuse.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-learning-diagnosis.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-25-ergonomics-ui-overhaul.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-25-fnos-fpk-packaging.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-25-frontend-ui-redesign.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-26-easyexam-traceability-fix.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-27-linear-architecture-redesign.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-27-mobile-ux-and-core-practice-refactor.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-27-ui-comprehensive-refactor-phase2.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-28-frontend-hardening.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-28-linear-deep-structural-redesign.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-30-adversarial-review-findings-remediation.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-30-direction-a-theme-system.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-30-session-permission-hardening.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-01-bilingual-enforcement.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-03-deep-adversarial-ui-remediation.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-03-ui-ux-refinement.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-03-vision-in-loop-ui-audit.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-06-native-reviewer-transport-cleanup.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/specs/2026-09-22-fn-exam-design.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/templates/OSS_REUSE_ROADMAP_TEMPLATE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/templates/PLAN_TEMPLATE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/templates/TEST_EVIDENCE_TEMPLATE.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/validation/native-review-roundtrip.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Organize explanations, reference material, tutorials, and task guidance around reader needs.'; paths are listed below."
+    },
+    {
+      "capability_id": "engineering-baseline",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": ".cursorrules",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "AGENTS.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Keep development changes traceable and reviewable through explicit version-control practices.'; paths are listed below."
+    },
+    {
+      "capability_id": "planning",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": ".agents/skills/executing-plans/SKILL.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": ".agents/skills/tasteskill/SKILL.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": ".agents/skills/writing-plans/SKILL.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/research/OSS_REUSE_ROADMAP.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-22-fn-exam-implementation.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-23-architecture-refactor.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-23-core-learning-loop.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-ai-tutor-learning-assets.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-document-system-refactor.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-import-reliability-and-reuse.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-24-learning-diagnosis.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-25-ergonomics-ui-overhaul.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-25-fnos-fpk-packaging.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-25-frontend-ui-redesign.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-26-easyexam-traceability-fix.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-27-linear-architecture-redesign.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-27-mobile-ux-and-core-practice-refactor.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-27-ui-comprehensive-refactor-phase2.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-28-frontend-hardening.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-28-linear-deep-structural-redesign.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-30-adversarial-review-findings-remediation.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-30-direction-a-theme-system.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-30-session-permission-hardening.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-01-bilingual-enforcement.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-03-deep-adversarial-ui-remediation.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-03-ui-ux-refinement.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-03-vision-in-loop-ui-audit.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-10-06-native-reviewer-transport-cleanup.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/templates/OSS_REUSE_ROADMAP_TEMPLATE.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Make goals, scope, acceptance conditions, and work dependencies explicit before implementation.'; paths are listed below."
+    },
+    {
+      "capability_id": "research-workflow",
+      "status": "unknown",
+      "evidence": [],
+      "reason": "No sufficiently specific evidence for catalog signals: Claims depend on experiments, datasets, or reproducible methods.. Applicable when an investigation or experiment must report provenance, outcomes, and limitations."
+    },
+    {
+      "capability_id": "testing",
+      "status": "satisfied",
+      "evidence": [
+        {
+          "path": ".agents/skills/executing-plans/SKILL.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": ".agents/skills/finishing-a-development-branch/SKILL.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": ".agents/skills/test-driven-development/SKILL.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": ".agents/skills/verification-before-completion/SKILL.md",
+          "ownership": "project_owned"
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "ownership": "project_owned"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-09-28-frontend-hardening.md",
+          "ownership": "project_owned"
+        }
+      ],
+      "reason": "Multiple project-owned assets provide evidence relevant to the catalog purpose, 'Check observable behavior with focused, repeatable tests appropriate to the change.'; paths are listed below."
+    }
+  ],
+  "semantic_coverage": [
+    {
+      "capability_id": "agent-development",
+      "status": "unknown",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "claim": "Describes AI collaboration and agent tooling as development workflow."
+        },
+        {
+          "path": "SPEC.md",
+          "claim": "Defines an exam and learning product, not an agent product."
+        }
+      ],
+      "reason": "Agent and subagent tooling supports development of EasyExam; there is no evidence EasyExam itself develops agent behavior as a product capability.",
+      "recommended_action": "no_action"
+    },
+    {
+      "capability_id": "code-review",
+      "status": "satisfied",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": ".agents/skills/requesting-code-review/SKILL.md",
+          "claim": "Provides a workflow for requesting scoped code review."
+        },
+        {
+          "path": ".agents/skills/receiving-code-review/SKILL.md",
+          "claim": "Provides a workflow for evaluating review feedback."
+        },
+        {
+          "path": ".github/vccp/reviewer-task-prompt.md",
+          "claim": "Defines event-triggered independent review, required checks, and exact-head verification."
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "claim": "Runs repository CI for pull requests."
+        }
+      ],
+      "reason": "Review Skills, a separately defined Reviewer, and CI provide complementary review coverage. They do not establish duplicate conflicting requirements.",
+      "recommended_action": "keep_existing"
+    },
+    {
+      "capability_id": "debugging",
+      "status": "satisfied",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": ".agents/skills/systematic-debugging/SKILL.md",
+          "claim": "Defines reproduction, root-cause investigation, and evidence-led debugging steps."
+        },
+        {
+          "path": ".agents/skills/test-driven-development/SKILL.md",
+          "claim": "Connects changes to regression tests and observed failure/pass evidence."
+        },
+        {
+          "path": "AGENTS.md",
+          "claim": "Requires global examination of related implementations after a reported defect."
+        }
+      ],
+      "reason": "The debugging capability is substantively documented. Its broad required process may add ceremony for simple incidents, but AGENTS.md separately says small tasks should avoid unrelated plans and agents.",
+      "recommended_action": "keep_existing"
+    },
+    {
+      "capability_id": "documentation",
+      "status": "satisfied",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "claim": "Defines a document map and authority boundaries."
+        },
+        {
+          "path": "SPEC.md",
+          "claim": "Records confirmed product behavior and non-goals."
+        },
+        {
+          "path": "docs/REQUIREMENTS_TRACEABILITY.md",
+          "claim": "Tracks requirement-to-implementation evidence and gaps."
+        }
+      ],
+      "reason": "The repository has clear documentation roles and product requirements traceability.",
+      "recommended_action": "keep_existing"
+    },
+    {
+      "capability_id": "engineering-baseline",
+      "status": "satisfied",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "claim": "Provides repository-wide behavior and engineering boundaries."
+        },
+        {
+          "path": "SPEC.md",
+          "claim": "Provides the confirmed product behavior authority."
+        },
+        {
+          "path": ".cursorrules",
+          "claim": "Contains an additional project-local development rule entry."
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "claim": "Defines an automated CI gate."
+        }
+      ],
+      "reason": "Current instructions, product authority, local rules, traceability, and CI establish a mature engineering baseline.",
+      "recommended_action": "keep_existing"
+    },
+    {
+      "capability_id": "planning",
+      "status": "satisfied",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "claim": "Scopes planning to task size and explicitly avoids plans for small tasks."
+        },
+        {
+          "path": ".agents/skills/writing-plans/SKILL.md",
+          "claim": "Provides a plan-writing workflow for multi-step requirements."
+        },
+        {
+          "path": "SPEC.md",
+          "claim": "Defines product requirements and acceptance boundaries."
+        }
+      ],
+      "reason": "Planning is available for applicable work and the root instructions limit ceremony for small tasks. Historical plans are not treated as current authority.",
+      "recommended_action": "keep_existing"
+    },
+    {
+      "capability_id": "research-workflow",
+      "status": "partial",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "path": "docs/research/OSS_REUSE_AUDIT.md",
+          "claim": "Records source revisions, licenses, reuse decisions, and boundaries."
+        },
+        {
+          "path": "docs/research/OSS_ABSORPTION_DECISION_REVIEW.md",
+          "claim": "Documents evidence limits and distinguishes verified facts from unverified historical claims."
+        }
+      ],
+      "reason": "The repository has useful provenance and limitation practices for source audits, but the inspected evidence does not establish a repeatable experimental research workflow for datasets or measured outcomes.",
+      "recommended_action": "review_gap"
+    },
+    {
+      "capability_id": "testing",
+      "status": "satisfied",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": ".agents/skills/test-driven-development/SKILL.md",
+          "claim": "Defines regression-first testing for implementation work."
+        },
+        {
+          "path": ".agents/skills/verification-before-completion/SKILL.md",
+          "claim": "Requires fresh verification evidence before completion claims."
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "claim": "Runs automated project checks on pull requests."
+        },
+        {
+          "path": "AGENTS.md",
+          "claim": "Requires relevant tests for business changes and honest reporting of skipped work."
+        }
+      ],
+      "reason": "Testing guidance and automated CI are already established. Additional Bootstrap testing guidance would be duplicative.",
+      "recommended_action": "keep_existing"
+    }
+  ],
+  "preference_findings": [
+    {
+      "preference_id": "worktree_strategy",
+      "status": "compatible",
+      "evidence": [
+        {
+          "path": ".agents/skills/using-git-worktrees/SKILL.md",
+          "claim": "Its trigger is feature work needing isolation or an implementation plan; it says to honor a stated worktree preference and continue in the current tree when isolation is declined or unnecessary."
+        },
+        {
+          "path": "AGENTS.md",
+          "claim": "Small tasks should not create a Master Plan, dispatch agents, or enable unrelated extensions."
+        }
+      ],
+      "reason": "The Skill offers conditional isolation guidance and does not establish an unconditional current project mandate. A single working tree remains compatible with the project rules."
+    },
+    {
+      "preference_id": "solution_complexity",
+      "status": "tension",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "claim": "Small tasks avoid unrelated plans and agents, while bug reports trigger a broad related-boundary scan and large tasks trigger additional protocols."
+        },
+        {
+          "path": ".agents/skills/systematic-debugging/SKILL.md",
+          "claim": "Applies a multi-phase investigation to any bug, test failure, or unexpected behavior."
+        }
+      ],
+      "reason": "The debugging baseline is more prescriptive than a simple default, especially for small failures, but the root instructions provide task-size limits and no incompatible hard requirement is established."
+    },
+    {
+      "preference_id": "tooling_preference",
+      "status": "compatible",
+      "evidence": [
+        {
+          "path": ".github/workflows/ci.yml",
+          "claim": "Uses GitHub Actions for pull-request CI."
+        },
+        {
+          "path": ".github/vccp/reviewer-task-prompt.md",
+          "claim": "Uses pull-request events and native GitHub Auto-merge behavior in the review workflow."
+        }
+      ],
+      "reason": "The inspected delivery path uses official GitHub mechanisms; the evidence does not show a competing tool mandate that conflicts with native-first preference."
+    },
+    {
+      "preference_id": "cost_preference",
+      "status": "unknown",
+      "evidence": [],
+      "reason": "The reviewed project instructions and workflows do not establish whether an equivalent paid third-party dependency is required or avoidable."
+    },
+    {
+      "preference_id": "automation_trigger_preference",
+      "status": "aligned",
+      "evidence": [
+        {
+          "path": ".github/vccp/reviewer-task-prompt.md",
+          "claim": "Describes event-triggered Reviewer runs and explicitly rejects a separate polling service."
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "claim": "Triggers CI from pull-request events."
+        }
+      ],
+      "reason": "The inspected review and CI flows are event-driven and explicitly avoid persistent polling."
+    },
+    {
+      "preference_id": "interaction_preference",
+      "status": "compatible",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "claim": "Small tasks proceed without unrelated master plans or agent dispatch; product rule changes and high-risk work retain confirmation gates."
+        }
+      ],
+      "reason": "The project scopes extra interaction to product decisions and higher-risk work. Those gates are compatible with minimizing unnecessary user decisions."
+    },
+    {
+      "preference_id": "verification_preference",
+      "status": "aligned",
+      "evidence": [
+        {
+          "path": ".github/vccp/reviewer-task-prompt.md",
+          "claim": "Separates the Reviewer from implementation and verifies the exact PR head and required checks."
+        },
+        {
+          "path": ".agents/skills/verification-before-completion/SKILL.md",
+          "claim": "Requires fresh verification before completion claims."
+        }
+      ],
+      "reason": "The project requires independent post-implementation verification and exact-revision evidence."
+    },
+    {
+      "preference_id": "testing_approach",
+      "status": "aligned",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "claim": "Requires tests appropriate to business changes and warns against tests with no value."
+        },
+        {
+          "path": ".agents/skills/test-driven-development/SKILL.md",
+          "claim": "Connects regression tests to changed behavior."
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "claim": "Runs repository checks in CI."
+        }
+      ],
+      "reason": "The project requires meaningful behavior checks while its small-task guidance avoids unrelated process, matching a targeted risk-based testing approach."
+    }
+  ],
+  "semantic_delta": [
+    {
+      "capability_id": "debugging",
+      "baseline": "partial",
+      "semantic": "satisfied",
+      "change": "status_changed"
+    },
+    {
+      "capability_id": "research-workflow",
+      "baseline": "unknown",
+      "semantic": "partial",
+      "change": "status_changed"
+    }
+  ],
+  "conflicts": [],
+  "gaps": [],
+  "recommendations": [
+    {
+      "capability_id": "research-workflow",
+      "status": "partial",
+      "action": "review_gap",
+      "reason": "The repository has useful provenance and limitation practices for source audits, but the inspected evidence does not establish a repeatable experimental research workflow for datasets or measured outcomes."
+    }
+  ],
+  "explicitly_no_action": [
+    "agent-development",
+    "code-review",
+    "debugging",
+    "documentation",
+    "engineering-baseline",
+    "planning",
+    "testing"
+  ],
+  "reviewed_at": "2026-10-16T10:25:43Z",
+  "reviewer": "host-ai"
+}

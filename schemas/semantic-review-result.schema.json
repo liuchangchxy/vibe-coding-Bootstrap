@@ -24,6 +24,19 @@
           "recommended_action": {"enum": ["keep_existing", "review_gap", "review_conflict", "consider_bootstrap_component", "no_action"]}
         }
       }
+    },
+    "preference_findings": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["preference_id", "status", "evidence", "reason"],
+        "properties": {
+          "preference_id": {"type": "string", "minLength": 1},
+          "status": {"enum": ["aligned", "compatible", "tension", "conflict", "unknown"]},
+          "evidence": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["path", "claim"], "properties": {"path": {"type": "string", "minLength": 1}, "claim": {"type": "string", "minLength": 1}}}},
+          "reason": {"type": "string", "minLength": 1}
+        }
+      }
     }
   }
 }

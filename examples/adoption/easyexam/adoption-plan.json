@@ -1,0 +1,215 @@
+{
+  "format_version": 1,
+  "target": {
+    "repository": "liuchangchxy/easy-exam",
+    "branch": "main",
+    "commit_sha": "7d54ef451ca9954b671c71e2673cc7e9b861218e",
+    "remote": "origin",
+    "remote_commit_sha": "7d54ef451ca9954b671c71e2673cc7e9b861218e",
+    "dirty": false
+  },
+  "semantic_review_source": "examples/adoption/easyexam/semantic-review-result.json",
+  "items": [
+    {
+      "capability_id": "agent-development",
+      "semantic_status": "unknown",
+      "confidence": "high",
+      "disposition": "no_action",
+      "reason": "Agent and subagent tooling supports development of EasyExam; there is no evidence EasyExam itself develops agent behavior as a product capability.",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "claim": "Describes AI collaboration and agent tooling as development workflow."
+        },
+        {
+          "path": "SPEC.md",
+          "claim": "Defines an exam and learning product, not an agent product."
+        }
+      ],
+      "bootstrap_component": null,
+      "materialization_eligible": false,
+      "requires_confirmation": false
+    },
+    {
+      "capability_id": "code-review",
+      "semantic_status": "satisfied",
+      "confidence": "high",
+      "disposition": "keep_existing",
+      "reason": "Review Skills, a separately defined Reviewer, and CI provide complementary review coverage. They do not establish duplicate conflicting requirements.",
+      "evidence": [
+        {
+          "path": ".agents/skills/requesting-code-review/SKILL.md",
+          "claim": "Provides a workflow for requesting scoped code review."
+        },
+        {
+          "path": ".agents/skills/receiving-code-review/SKILL.md",
+          "claim": "Provides a workflow for evaluating review feedback."
+        },
+        {
+          "path": ".github/vccp/reviewer-task-prompt.md",
+          "claim": "Defines event-triggered independent review, required checks, and exact-head verification."
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "claim": "Runs repository CI for pull requests."
+        }
+      ],
+      "bootstrap_component": null,
+      "materialization_eligible": false,
+      "requires_confirmation": false
+    },
+    {
+      "capability_id": "debugging",
+      "semantic_status": "satisfied",
+      "confidence": "high",
+      "disposition": "keep_existing",
+      "reason": "The debugging capability is substantively documented. Its broad required process may add ceremony for simple incidents, but AGENTS.md separately says small tasks should avoid unrelated plans and agents.",
+      "evidence": [
+        {
+          "path": ".agents/skills/systematic-debugging/SKILL.md",
+          "claim": "Defines reproduction, root-cause investigation, and evidence-led debugging steps."
+        },
+        {
+          "path": ".agents/skills/test-driven-development/SKILL.md",
+          "claim": "Connects changes to regression tests and observed failure/pass evidence."
+        },
+        {
+          "path": "AGENTS.md",
+          "claim": "Requires global examination of related implementations after a reported defect."
+        }
+      ],
+      "bootstrap_component": null,
+      "materialization_eligible": false,
+      "requires_confirmation": false
+    },
+    {
+      "capability_id": "documentation",
+      "semantic_status": "satisfied",
+      "confidence": "high",
+      "disposition": "keep_existing",
+      "reason": "The repository has clear documentation roles and product requirements traceability.",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "claim": "Defines a document map and authority boundaries."
+        },
+        {
+          "path": "SPEC.md",
+          "claim": "Records confirmed product behavior and non-goals."
+        },
+        {
+          "path": "docs/REQUIREMENTS_TRACEABILITY.md",
+          "claim": "Tracks requirement-to-implementation evidence and gaps."
+        }
+      ],
+      "bootstrap_component": null,
+      "materialization_eligible": false,
+      "requires_confirmation": false
+    },
+    {
+      "capability_id": "engineering-baseline",
+      "semantic_status": "satisfied",
+      "confidence": "high",
+      "disposition": "keep_existing",
+      "reason": "Current instructions, product authority, local rules, traceability, and CI establish a mature engineering baseline.",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "claim": "Provides repository-wide behavior and engineering boundaries."
+        },
+        {
+          "path": "SPEC.md",
+          "claim": "Provides the confirmed product behavior authority."
+        },
+        {
+          "path": ".cursorrules",
+          "claim": "Contains an additional project-local development rule entry."
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "claim": "Defines an automated CI gate."
+        }
+      ],
+      "bootstrap_component": null,
+      "materialization_eligible": false,
+      "requires_confirmation": false
+    },
+    {
+      "capability_id": "planning",
+      "semantic_status": "satisfied",
+      "confidence": "high",
+      "disposition": "keep_existing",
+      "reason": "Planning is available for applicable work and the root instructions limit ceremony for small tasks. Historical plans are not treated as current authority.",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "claim": "Scopes planning to task size and explicitly avoids plans for small tasks."
+        },
+        {
+          "path": ".agents/skills/writing-plans/SKILL.md",
+          "claim": "Provides a plan-writing workflow for multi-step requirements."
+        },
+        {
+          "path": "SPEC.md",
+          "claim": "Defines product requirements and acceptance boundaries."
+        }
+      ],
+      "bootstrap_component": null,
+      "materialization_eligible": false,
+      "requires_confirmation": false
+    },
+    {
+      "capability_id": "research-workflow",
+      "semantic_status": "partial",
+      "confidence": "medium",
+      "disposition": "review_gap",
+      "reason": "The repository has useful provenance and limitation practices for source audits, but the inspected evidence does not establish a repeatable experimental research workflow for datasets or measured outcomes.",
+      "evidence": [
+        {
+          "path": "docs/research/OSS_REUSE_AUDIT.md",
+          "claim": "Records source revisions, licenses, reuse decisions, and boundaries."
+        },
+        {
+          "path": "docs/research/OSS_ABSORPTION_DECISION_REVIEW.md",
+          "claim": "Documents evidence limits and distinguishes verified facts from unverified historical claims."
+        }
+      ],
+      "bootstrap_component": null,
+      "materialization_eligible": false,
+      "requires_confirmation": false
+    },
+    {
+      "capability_id": "testing",
+      "semantic_status": "satisfied",
+      "confidence": "high",
+      "disposition": "keep_existing",
+      "reason": "Testing guidance and automated CI are already established. Additional Bootstrap testing guidance would be duplicative.",
+      "evidence": [
+        {
+          "path": ".agents/skills/test-driven-development/SKILL.md",
+          "claim": "Defines regression-first testing for implementation work."
+        },
+        {
+          "path": ".agents/skills/verification-before-completion/SKILL.md",
+          "claim": "Requires fresh verification evidence before completion claims."
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "claim": "Runs automated project checks on pull requests."
+        },
+        {
+          "path": "AGENTS.md",
+          "claim": "Requires relevant tests for business changes and honest reporting of skipped work."
+        }
+      ],
+      "bootstrap_component": null,
+      "materialization_eligible": false,
+      "requires_confirmation": false
+    }
+  ],
+  "overall_decision": "review_required",
+  "materializable_changes": 0,
+  "requires_confirmation": true,
+  "generated_at": "2026-10-16T10:24:03Z",
+  "plan_digest": "48f46d17e9d79cd4f796baa0823f2f0608f78dd1aff10c876d6729cfe2dce03c"
+}

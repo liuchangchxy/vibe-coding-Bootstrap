@@ -68,6 +68,15 @@ class AdoptionTests(unittest.TestCase):
         self.assertTrue({".claude/skills/a/SKILL.md", ".agents/skills/b/SKILL.md", ".opencode/skills/c/SKILL.md", "docs/CONSTRAINTS.md"}.issubset(paths))
         self.assertNotIn("docs/random.md", paths)
 
+    def test_skill_bundle_is_one_primary_asset(self):
+        self.put(".agents/skills/foo/SKILL.md", "---\ndescription: Use when debugging\n---\n# Foo")
+        self.put(".agents/skills/foo/reference/a.md", "Supporting reference")
+        self.put(".agents/skills/foo/scripts/check.py", "print('supporting')")
+        paths = {asset["path"] for asset in discover(self.project)["discovered_assets"]}
+        self.assertIn(".agents/skills/foo/SKILL.md", paths)
+        self.assertNotIn(".agents/skills/foo/reference/a.md", paths)
+        self.assertNotIn(".agents/skills/foo/scripts/check.py", paths)
+
     def test_capability_mapping_prefers_unknown_without_evidence(self):
         self.put("README.md", "# Sample\nA small application.\n")
         report = discover(self.project)

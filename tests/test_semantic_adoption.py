@@ -7,7 +7,7 @@ import unittest
 import subprocess
 
 from adoption.semantic import (
-    authority_hint, build_semantic_input, relevant_excerpt,
+    activation_hint, authority_hint, build_semantic_input, relevant_excerpt,
     validate_semantic_result,
 )
 from composer.core import ROOT, validate
@@ -26,8 +26,9 @@ class SemanticAdoptionTests(unittest.TestCase):
         self.project = Path(self.temporary.name) / "sample"
         self.project.mkdir()
         self.put("AGENTS.md", "# Project instructions\nFollow documented requirements and test changes.\n")
+        self.put(".agents/skills/using-git-worktrees/SKILL.md", "---\ndescription: Use when work needs isolation\n---\n")
         for args in (("init", "-b", "main"), ("config", "user.name", "Test"),
-                     ("config", "user.email", "test@example.invalid"), ("add", "AGENTS.md"),
+                     ("config", "user.email", "test@example.invalid"), ("add", "."),
                      ("commit", "-m", "initial")):
             subprocess.run(["git", "-C", str(self.project), *args], check=True, capture_output=True, text=True)
         self.package = build_semantic_input(self.project)
@@ -43,9 +44,18 @@ class SemanticAdoptionTests(unittest.TestCase):
         return path
 
     def valid_result(self):
+        preference_ids = ["testing_approach", "solution_complexity", "worktree_strategy",
+                          "tooling_preference", "cost_preference", "automation_trigger_preference",
+                          "interaction_preference", "verification_preference"]
         return {
             "project_name": self.package["project"]["name"],
             "reviewer": "host-ai",
+            "preference_findings": [
+                {"preference_id": preference_id, "status": "compatible",
+                 "evidence": [{"path": "AGENTS.md", "claim": "Project instructions are available."}],
+                 "reason": "No incompatibility is established."}
+                for preference_id in preference_ids
+            ],
             "semantic_coverage": [
                 {"capability_id": capability_id, "status": "unknown", "confidence": "low",
                  "evidence": [{"path": "AGENTS.md", "claim": "Contains project instructions."}],
@@ -81,7 +91,50 @@ class SemanticAdoptionTests(unittest.TestCase):
 
     def test_each_excerpt_in_package_is_bounded_and_profile_is_explicit(self):
         self.assertTrue(all(len(asset["relevant_excerpt"]) <= 2600 for asset in self.package["discovered_assets"]))
-        self.assertEqual({"defaults": [], "exclusions": [], "explicit_preferences": {}}, self.package["profile_constraints"])
+        self.assertEqual([], self.package["profile_constraints"]["defaults"])
+        self.assertEqual([], self.package["profile_constraints"]["exclusions"])
+        self.assertTrue(self.package["profile_constraints"]["explicit_preferences"]["additional"])
+
+    def test_skill_activation_uses_trigger_text_not_path(self):
+        self.assertEqual("conditional", activation_hint(".agents/skills/using-git-worktrees/SKILL.md", "---\ndescription: Use when a feature needs isolation\n---"))
+        self.assertEqual("always", activation_hint(".agents/skills/using-superpowers/SKILL.md", "---\ndescription: Use when starting any conversation\n---"))
+        self.assertEqual("unknown", activation_hint(".agents/skills/x/SKILL.md", "---\nname: x\n---"))
+        self.assertEqual("unknown", activation_hint("AGENTS.md", "Always use a tool"))
+
+    def test_personal_profile_contains_only_authorized_development_preferences(self):
+        from composer.core import load_yaml
+        profile = load_yaml(ROOT / "profiles/personal.yaml")
+        self.assertEqual("Personal development profile", profile["name"])
+        self.assertNotIn("unconfigured", profile["description"].lower())
+        self.assertEqual([], profile["default_capability_ids"])
+        self.assertEqual([], profile["excluded_capability_ids"])
+        self.assertEqual("targeted", profile["preferences"]["testing_approach"])
+        self.assertNotIn("review_before_changes", profile["preferences"])
+        self.assertEqual({"prefer_simple_solutions", "avoid_unnecessary_abstraction", "worktree_strategy",
+                          "tooling_preference", "cost_preference", "automation_trigger_preference",
+                          "interaction_preference", "verification_preference"},
+                         set(profile["preferences"]["additional"]))
+        serialized = str(profile)
+        for forbidden in ("C:\\Users\\", "@", "phone", "health", "financial", "device"):
+            self.assertNotIn(forbidden.lower(), serialized.lower())
+
+    def test_duplicate_preference_findings_and_non_authoritative_conflict_are_rejected(self):
+        result = self.valid_result()
+        finding = {"preference_id": "worktree_strategy", "status": "compatible", "evidence": [
+            {"path": "AGENTS.md", "claim": "No mandatory worktree rule."}], "reason": "No conflict."}
+        result["preference_findings"] = [finding, dict(finding)]
+        with self.assertRaisesRegex(ValueError, "Duplicate Profile preference"):
+            validate_semantic_result(result, self.package)
+        result = self.valid_result()
+        worktree = next(item for item in result["preference_findings"] if item["preference_id"] == "worktree_strategy")
+        worktree.update(status="conflict", evidence=[
+            {"path": ".agents/skills/using-git-worktrees/SKILL.md", "claim": "Skill exists."}])
+        with self.assertRaisesRegex(ValueError, "current authoritative evidence"):
+            validate_semantic_result(result, self.package)
+        worktree.update(evidence=[{"path": "AGENTS.md", "claim": "Current mandatory rule."}])
+        next(asset for asset in self.package["discovered_assets"] if asset["path"] == "AGENTS.md")["authority_hint"] = "historical"
+        with self.assertRaisesRegex(ValueError, "current authoritative evidence"):
+            validate_semantic_result(result, self.package)
 
     def test_evidence_must_resolve_to_discovered_asset(self):
         result = self.valid_result()

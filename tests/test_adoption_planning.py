@@ -45,7 +45,19 @@ class AdoptionPlanningTests(unittest.TestCase):
                 evidence = []
             coverage.append({"capability_id": capability_id, "status": status, "confidence": "medium",
                              "evidence": evidence, "reason": "Reviewed for this fixture.", "recommended_action": action})
-        return {"project_name": "project", "reviewer": "host-ai", "semantic_coverage": coverage}
+        explicit = self.package["profile_constraints"]["explicit_preferences"]
+        preference_ids = (set(explicit) - {"additional"}) | set(explicit.get("additional", {}))
+        if {"prefer_simple_solutions", "avoid_unnecessary_abstraction"}.issubset(preference_ids):
+            preference_ids.difference_update({"prefer_simple_solutions", "avoid_unnecessary_abstraction"})
+            preference_ids.add("solution_complexity")
+        preferences = [
+            {"preference_id": preference_id, "status": "compatible",
+             "evidence": [{"path": "AGENTS.md", "claim": "Project instructions are available."}],
+             "reason": "No incompatibility is established."}
+            for preference_id in sorted(preference_ids)
+        ]
+        return {"project_name": "project", "reviewer": "host-ai", "semantic_coverage": coverage,
+                "preference_findings": preferences}
 
     def test_clean_and_dirty_revision_binding_excludes_private_remote_data(self):
         binding = bind_target_revision(self.project)

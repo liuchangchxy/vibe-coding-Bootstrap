@@ -59,7 +59,8 @@
           "summary": {"type": "string"},
           "relevant_excerpt": {"type": "string", "maxLength": 2600},
           "baseline_candidate_capabilities": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
-          "authority_hint": {"enum": ["primary", "active", "historical", "reference"]}
+          "authority_hint": {"enum": ["primary", "active", "historical", "reference"]},
+          "activation_hint": {"enum": ["always", "conditional", "optional", "unknown"]}
         }
       }
     },

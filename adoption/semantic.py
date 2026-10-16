@@ -31,6 +31,20 @@ def authority_hint(relative_path):
     return "reference"
 
 
+def activation_hint(relative_path, text):
+    """Describe when an asset is used from its own trigger wording, not its path."""
+    if not relative_path.lower().endswith("/skill.md"):
+        return "unknown"
+    opening = "\n".join(text.splitlines()[:12]).lower()
+    if "any conversation" in opening or "every conversation" in opening:
+        return "always"
+    if any(marker in opening for marker in ("use when", "use for", "when to use", "trigger:")):
+        return "conditional"
+    if "optional" in opening:
+        return "optional"
+    return "unknown"
+
+
 def _capability_terms(record):
     values = [record["id"].replace("-", " "), record["purpose"]]
     values.extend(record["selection_hints"]["signals"])
@@ -117,6 +131,7 @@ def build_semantic_input(project_root, root=ROOT):
             "relevant_excerpt": relevant_excerpt(_read_text(project / path), candidates),
             "baseline_candidate_capabilities": asset["candidate_capabilities"],
             "authority_hint": authority_hint(path),
+            "activation_hint": activation_hint(path, _read_text(project / path)),
         })
 
     profile = load_yaml(root / "profiles/personal.yaml")
@@ -147,11 +162,15 @@ def build_semantic_input(project_root, root=ROOT):
             "Review asset meaning from relevant_excerpt and authority_hint; do not treat a path or filename as proof of capability.",
             "Use only the supplied Capability Catalog IDs. Compare the existing assets with each Catalog purpose and applicability.",
             "Judge satisfied by substantive coverage, not by the number of cited files. Judge missing only when applicability is established and the core purpose is not covered; otherwise use unknown.",
-            "Call conflict only when current authoritative requirements and an explicit Profile preference cannot both be satisfied on the same behavior dimension. Differences and historical references alone are not conflicts.",
+            "A Skill's presence proves availability only. Infer activation from its trigger wording and current project-authority references; a Skill's path alone never proves activation or mandate.",
+            "Call a Profile conflict only when the preference is explicit, the project requirement is current and authoritative, both constrain the same behavior, and they cannot reasonably be satisfied together. Historical plans and a Skill's mere presence cannot establish conflict.",
             "MCP or AI coding-tool use alone does not establish agent-development. Distinguish the product's actual behavior from development tooling.",
             "Every evidence item must cite a discovered project-relative path and explain the supporting meaning. Use no absolute local paths.",
             "Do not recommend installation, modification, activation, or automatic resolution. A component may be considered only for a confirmed missing capability and an applicable project-scoped copy component listed in the Catalog.",
-            "If worktree requirements appear, use authority_hint and surrounding excerpt to distinguish current rules from historical plans; the supplied Profile expresses no preference when its preference fields are empty.",
+            "Treat Profile preferences as defaults, not prohibitions; retain reasonable project-specific exceptions and safety approvals.",
+            "Assess each explicit preference separately. Use only aligned, compatible, tension, conflict, or unknown; cite current discovered evidence and keep preference findings separate from Capability coverage.",
+            "For worktree_strategy, determine whether current authoritative project rules require worktrees. The existence of using-git-worktrees/SKILL.md alone is not a mandate.",
+            "Do not recommend changes where existing coverage is sufficient. Complementary Skills are not conflicts; do not propose duplicate Bootstrap capabilities.",
         ],
     }
     validate(package, "semantic-review-input.schema.json", root)
@@ -180,6 +199,25 @@ def validate_semantic_result(result, package, root=ROOT):
     if set(found) != set(records):
         raise ValueError("Result Capability IDs must match the current Catalog exactly")
     asset_paths = {asset["path"] for asset in package["discovered_assets"]}
+    preference_findings = result.get("preference_findings", [])
+    preference_ids = [item["preference_id"] for item in preference_findings]
+    if len(preference_ids) != len(set(preference_ids)):
+        raise ValueError("Duplicate Profile preference finding")
+    explicit = package["profile_constraints"]["explicit_preferences"]
+    expected_preferences = (set(explicit) - {"additional"}) | set(explicit.get("additional", {}))
+    if {"prefer_simple_solutions", "avoid_unnecessary_abstraction"}.issubset(expected_preferences):
+        expected_preferences.difference_update({"prefer_simple_solutions", "avoid_unnecessary_abstraction"})
+        expected_preferences.add("solution_complexity")
+    if set(preference_ids) != expected_preferences:
+        raise ValueError("Preference findings must assess every explicit Profile preference exactly once")
+    authoritative_paths = {asset["path"] for asset in package["discovered_assets"]
+                           if asset["authority_hint"] == "primary"}
+    for finding in preference_findings:
+        if any(evidence["path"] not in asset_paths for evidence in finding["evidence"]):
+            raise ValueError(f"Preference evidence path is not a discovered asset: {finding['preference_id']}")
+        if finding["status"] == "conflict" and not authoritative_paths.intersection(
+                evidence["path"] for evidence in finding["evidence"]):
+            raise ValueError(f"Preference conflict requires current authoritative evidence: {finding['preference_id']}")
     for item in result["semantic_coverage"]:
         capability_id = item["capability_id"]
         if any(evidence["path"] not in asset_paths for evidence in item["evidence"]):
@@ -224,6 +262,7 @@ def build_semantic_adoption_report(package, result, baseline_report_source):
         "baseline_report_source": baseline_report_source,
         "baseline_coverage": package["baseline_coverage"],
         "semantic_coverage": result["semantic_coverage"],
+        "preference_findings": result.get("preference_findings", []),
         "semantic_delta": delta,
         "conflicts": [item["capability_id"] for item in semantic.values() if item["status"] == "conflict"],
         "gaps": [item["capability_id"] for item in semantic.values() if item["status"] == "missing"],

@@ -1,6 +1,17 @@
 id: personal
-name: Personal profile (unconfigured)
-description: No personal preferences have been supplied. Empty lists express no defaults or exclusions.
+name: Personal development profile
+description: Explicitly stated preferences for AI-assisted software development. Only explicitly stated development preferences are recorded.
+preferences:
+  testing_approach: targeted
+  additional:
+    prefer_simple_solutions: 'true'
+    avoid_unnecessary_abstraction: 'true'
+    worktree_strategy: prefer_single_worktree_unless_isolation_is_needed
+    tooling_preference: prefer_native_or_official_before_custom
+    cost_preference: avoid_paid_third_party_when_equivalent_native_or_free_option_exists
+    automation_trigger_preference: prefer_event_driven_over_polling
+    interaction_preference: minimize_unnecessary_confirmation_and_branching
+    verification_preference: independent_post_implementation_verification
 default_capability_ids: []
 excluded_capability_ids: []
 created_at: '2026-10-15T00:00:00+08:00'

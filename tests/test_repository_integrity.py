@@ -215,6 +215,40 @@ class RepositoryIntegrityTests(unittest.TestCase):
         self.assertNotIn("C:/Users/", serialized)
         self.assertFalse((base / "adoption-decision.json").exists())
 
+    def test_easyexam_pilot_is_profile_aware_revision_bound_and_review_only(self):
+        base = ROOT / "examples/adoption/easyexam"
+        package = json.loads((base / "semantic-review-input.json").read_text(encoding="utf-8"))
+        result = json.loads((base / "semantic-review-result.json").read_text(encoding="utf-8"))
+        report = json.loads((base / "semantic-adoption-report.json").read_text(encoding="utf-8"))
+        plan = json.loads((base / "adoption-plan.json").read_text(encoding="utf-8"))
+        validate(package, "semantic-review-input.schema.json")
+        validate_semantic_result(result, package)
+        validate_adoption_plan(plan)
+        self.assertEqual("liuchangchxy/easy-exam", package["target"]["repository"])
+        self.assertEqual("main", package["target"]["branch"])
+        self.assertEqual("7d54ef451ca9954b671c71e2673cc7e9b861218e", package["target"]["commit_sha"])
+        self.assertEqual(package["target"]["commit_sha"], package["target"]["remote_commit_sha"])
+        self.assertFalse(package["target"]["dirty"])
+        self.assertEqual(package["target"], report["target"])
+        self.assertEqual(package["target"], plan["target"])
+        self.assertEqual(plan["plan_digest"], plan_digest(plan))
+        self.assertEqual(19, sum(asset["asset_type"] == "skill" for asset in package["discovered_assets"]))
+        self.assertTrue(all(asset["path"].endswith("/SKILL.md")
+                            for asset in package["discovered_assets"] if asset["asset_type"] == "skill"))
+        assets = {asset["path"]: asset for asset in package["discovered_assets"]}
+        worktree_asset = assets[".agents/skills/using-git-worktrees/SKILL.md"]
+        self.assertEqual("conditional", worktree_asset["activation_hint"])
+        self.assertEqual("historical", assets["docs/superpowers/plans/2026-10-06-native-reviewer-transport-cleanup.md"]["authority_hint"])
+        finding = next(item for item in result["preference_findings"] if item["preference_id"] == "worktree_strategy")
+        self.assertEqual("compatible", finding["status"])
+        self.assertEqual(8, len(report["preference_findings"]))
+        self.assertEqual("review_required", plan["overall_decision"])
+        self.assertEqual(0, plan["materializable_changes"])
+        self.assertFalse((base / "adoption-decision.json").exists())
+        serialized = json.dumps([package, result, report, plan], ensure_ascii=False)
+        self.assertNotIn("C:\\Users\\", serialized)
+        self.assertNotIn("C:/Users/", serialized)
+
     def test_catalog_copy_destinations_are_unique_within_scope(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "repo"

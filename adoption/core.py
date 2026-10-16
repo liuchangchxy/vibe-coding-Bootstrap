@@ -9,12 +9,13 @@ from composer.core import ROOT, load_yaml, validate
 from .mapping import map_capabilities
 
 
-ROOT_FILES = ("AGENTS.md", "CLAUDE.md", "README.md", "SPEC.md", "DECISIONS.md", "ROADMAP.md")
+ROOT_FILES = ("AGENTS.md", "CLAUDE.md", ".cursorrules", "README.md", "SPEC.md", "DECISIONS.md", "ROADMAP.md")
 SKILL_ROOTS = (".claude/skills", ".agents/skills", ".opencode/skills")
 DOC_TERMS = (
     "rule", "constraint", "test", "review", "workflow", "onboard", "start_here",
     "continuation", "mcp", "development", "process", "spec", "decision", "roadmap",
-    "plan", "architecture", "contribut", "debug", "release",
+    "plan", "architecture", "contribut", "debug", "release", "research", "traceability",
+    "guardrail", "collaboration", "automation",
 )
 
 
