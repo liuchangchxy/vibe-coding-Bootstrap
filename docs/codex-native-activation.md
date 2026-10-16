@@ -1,6 +1,6 @@
 # Codex Native Activation
 
-Bootstrap projects the existing `testing` Capability into Codex's repo-local Skill surface at `.agents/skills/bootstrap-testing/SKILL.md`. The Codex CLI 0.162.0 A/B pilot did not select the Skill from a matching task prompt, so activation also creates one short `AGENTS.md` trigger. When a target already has `AGENTS.md`, planning returns `review_required` and leaves it untouched.
+Bootstrap projects the existing `testing` Capability into Codex's repo-local Skill surface at `.agents/skills/bootstrap-testing/SKILL.md`. The Codex CLI 0.162.0 A/B pilot did not select the Skill from a matching task prompt, so Codex activation v1 requires both the repo-local Skill and this exact `AGENTS.md` trigger: `For implementation or bug-fix tasks that change observable behavior, use the $bootstrap-testing skill.` A matching Skill without the trigger is partial unmanaged state and requires review. Existing non-matching `AGENTS.md` files also require review and are left untouched. When both exact artifacts already exist without a manifest, activation is complete but unmanaged; Bootstrap does not claim ownership, and deactivation leaves them in place.
 
 Create a revision-bound plan:
 

@@ -98,11 +98,15 @@ def build_plan(project_root, capability="testing", host="codex", root=ROOT):
                 except (OSError, AttributeError, json.JSONDecodeError):
                     status = "conflict"
             else:
-                status = "already_active"
+                status = ("already_active" if agents.is_file()
+                          and _sha256(agents.read_bytes()) == agents_digest
+                          else "review_required")
         else:
             status = "conflict"
     if agents.exists() and not manifest.exists():
-        status = "review_required"
+        if not (destination.is_file() and _sha256(destination.read_bytes()) == skill_digest
+                and agents.is_file() and _sha256(agents.read_bytes()) == agents_digest):
+            status = "review_required"
     elif manifest.exists() and status != "already_active":
         status = "conflict"
     plan = {
@@ -171,10 +175,14 @@ def apply(plan, decision, project_root, root=ROOT):
     agents_content = AGENTS_TRIGGER.encode("utf-8")
     agents_digest = _sha256(agents_content)
     if plan["status"] == "already_active":
+        if (not destination.is_file() or _sha256(destination.read_bytes()) != skill_digest
+                or not agents.is_file() or _sha256(agents.read_bytes()) != agents_digest):
+            raise ValueError("Codex activation artifacts changed after planning")
         if not manifest_path.is_file():
             return {"status": "already_active", "sha256": skill_digest}
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        if (manifest.get("host") != "codex" or manifest.get("capability") != "testing"
+        if (manifest.get("format_version") != 1
+                or manifest.get("host") != "codex" or manifest.get("capability") != "testing"
                 or manifest.get("artifacts") != _owned_artifacts(skill_digest, agents_digest)):
             raise ValueError("Activation ownership conflict")
         return {"status": "already_active", "sha256": skill_digest}

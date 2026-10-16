@@ -77,15 +77,69 @@ class CodexActivationTests(unittest.TestCase):
         self.assertEqual("conflict", plan["status"])
         self.assertEqual('{"owner":"user"}\n', manifest.read_text(encoding="utf-8"))
 
-    def test_existing_identical_unmanaged_skill_is_idempotent(self):
+    def _write_production_skill(self):
         skill = self.project / SKILL_DESTINATION
         skill.parent.mkdir(parents=True)
         expected = (ROOT / "host_adapters/codex/skills/testing/SKILL.md").read_bytes()
         skill.write_bytes(expected)
+
+    def test_skill_only_unmanaged_is_review_required(self):
+        self._write_production_skill()
+        skill = self.project / SKILL_DESTINATION
+        before = skill.read_bytes()
+        plan = build_plan(self.project)
+        self.assertEqual("review_required", plan["status"])
+        with self.assertRaisesRegex(ValueError, "cannot be applied"):
+            apply(plan, make_decision(plan, "approve"), self.project)
+        self.assertEqual(before, skill.read_bytes())
+        self.assertFalse((self.project / AGENTS_DESTINATION).exists())
+        self.assertFalse((self.project / MANIFEST_PATH).exists())
+
+    def test_complete_unmanaged_activation_is_already_active(self):
+        self._write_production_skill()
+        agents = self.project / AGENTS_DESTINATION
+        agents.write_bytes(AGENTS_TRIGGER.encode("utf-8"))
         plan = build_plan(self.project)
         self.assertEqual("already_active", plan["status"])
         self.assertEqual("already_active", apply(plan, make_decision(plan, "approve"), self.project)["status"])
         self.assertFalse((self.project / MANIFEST_PATH).exists())
+
+    def test_complete_unmanaged_activation_is_not_claimed_or_removed(self):
+        self._write_production_skill()
+        agents = self.project / AGENTS_DESTINATION
+        agents.write_bytes(AGENTS_TRIGGER.encode("utf-8"))
+        self.assertEqual("not_active", deactivate(self.project)["status"])
+        self.assertTrue((self.project / SKILL_DESTINATION).is_file())
+        self.assertEqual(AGENTS_TRIGGER, agents.read_text(encoding="utf-8"))
+        self.assertFalse((self.project / MANIFEST_PATH).exists())
+
+    def test_complete_unmanaged_apply_rechecks_artifacts_without_claiming_them(self):
+        self._write_production_skill()
+        agents = self.project / AGENTS_DESTINATION
+        agents.write_bytes(AGENTS_TRIGGER.encode("utf-8"))
+        plan = build_plan(self.project)
+        decision = make_decision(plan, "approve")
+        agents.write_text("Changed after planning\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "artifacts changed"):
+            apply(plan, decision, self.project)
+        self.assertFalse((self.project / MANIFEST_PATH).exists())
+
+    def test_managed_agents_drift_is_conflict_and_deactivate_preserves_files(self):
+        plan = build_plan(self.project)
+        apply(plan, make_decision(plan, "approve"), self.project)
+        agents = self.project / AGENTS_DESTINATION
+        agents.write_text("User edit\n", encoding="utf-8")
+        self.assertEqual("conflict", build_plan(self.project)["status"])
+        self.assertEqual("conflict", deactivate(self.project)["status"])
+        self.assertTrue((self.project / SKILL_DESTINATION).is_file())
+        self.assertEqual("User edit\n", agents.read_text(encoding="utf-8"))
+        self.assertTrue((self.project / MANIFEST_PATH).is_file())
+
+    def test_already_active_requires_complete_observed_codex_contract(self):
+        self._write_production_skill()
+        self.assertNotEqual("already_active", build_plan(self.project)["status"])
+        (self.project / AGENTS_DESTINATION).write_bytes(AGENTS_TRIGGER.encode("utf-8"))
+        self.assertEqual("already_active", build_plan(self.project)["status"])
 
     def test_existing_agents_is_review_required_and_never_changed(self):
         agents = self.project / AGENTS_DESTINATION
@@ -96,6 +150,23 @@ class CodexActivationTests(unittest.TestCase):
             apply(plan, make_decision(plan, "approve"), self.project)
         self.assertEqual("User instructions\n", agents.read_text(encoding="utf-8"))
         self.assertFalse((self.project / SKILL_DESTINATION).exists())
+
+    def test_existing_different_agents_with_exact_skill_requires_review(self):
+        self._write_production_skill()
+        agents = self.project / AGENTS_DESTINATION
+        agents.write_text("User instructions\n", encoding="utf-8")
+        plan = build_plan(self.project)
+        self.assertEqual("review_required", plan["status"])
+        with self.assertRaisesRegex(ValueError, "cannot be applied"):
+            apply(plan, make_decision(plan, "approve"), self.project)
+        self.assertEqual("User instructions\n", agents.read_text(encoding="utf-8"))
+        self.assertFalse((self.project / MANIFEST_PATH).exists())
+
+    def test_existing_different_skill_is_conflict(self):
+        skill = self.project / SKILL_DESTINATION
+        skill.parent.mkdir(parents=True)
+        skill.write_text("Other skill\n", encoding="utf-8")
+        self.assertEqual("conflict", build_plan(self.project)["status"])
 
     def test_unrelated_skills_survive_activation_and_deactivation(self):
         other = self.project / ".agents/skills/other/SKILL.md"
