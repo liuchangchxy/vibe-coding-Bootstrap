@@ -1,0 +1,14 @@
+{
+  "snapshot_created": true,
+  "head_unchanged": true,
+  "index_preserved": true,
+  "worktree_modified_by_snapshot": false,
+  "tracked_dirty_state_captured": true,
+  "tracked_deletions_captured": true,
+  "non_ignored_untracked_captured": true,
+  "ignored_files_force_captured": false,
+  "snapshot_ref_verified": true,
+  "deployment_record_in_git_metadata": true,
+  "rollback_available": true,
+  "no_user_branch_commit": true
+}

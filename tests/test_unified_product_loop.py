@@ -13,6 +13,7 @@ import unittest
 import yaml
 
 from bootstrap.core import ProductLoopError, apply_plan, build_plan, decide, inspect_project
+from bootstrap.recovery import rollback
 from composer.core import ROOT, load_yaml
 
 
@@ -73,6 +74,8 @@ class UnifiedLoopTests(unittest.TestCase):
                   "--global-root", self.base / "global", "--output", result_path)
         result = json.loads(result_path.read_text(encoding="utf-8"))
         self.assertEqual(result["status"], "applied")
+        self.assertTrue(result["rollback_available"])
+        self.assertEqual(self._git("rev-parse", result["snapshot_ref"]), result["snapshot_commit"])
         self.assertTrue((self.repo / ".agents/skills/bootstrap-testing/SKILL.md").is_file())
         self.assertTrue((self.repo / ".vibe-coding-bootstrap/activation.json").is_file())
         self.assertTrue((self.repo / ".vibe-coding-bootstrap/manifest.yaml").is_file())
@@ -87,6 +90,7 @@ class UnifiedLoopTests(unittest.TestCase):
         self.assertFalse(second["requires_confirmation"])
         self.assertEqual(second["host_activations"][0]["status"], "already_active")
         self.assertTrue(all(item["result"] == "unchanged" for item in second["project_changes"] + second["global_changes"] if item["delivery"] == "copy"))
+        self.assertNotIn("deployment_id", apply_plan(second, None, self.repo, self.base / "global"))
 
     def test_routes_and_read_only_adoption(self):
         self.assertEqual(inspect_project(self.repo)["route"], "compose")
@@ -289,6 +293,97 @@ class UnifiedLoopTests(unittest.TestCase):
         self.assertFalse((self.repo / ".agents").exists())
         self.assertFalse((self.repo / ".vibe-coding-bootstrap").exists())
         self.assertEqual(destination.read_bytes(), source.read_bytes())
+
+    def test_snapshot_preserves_dirty_worktree_and_real_index_then_rolls_back(self):
+        (self.repo / "calculator.py").write_text("staged bytes\n", encoding="utf-8")
+        self._git("add", "calculator.py")
+        (self.repo / "calculator.py").write_text("worktree bytes\n", encoding="utf-8")
+        (self.repo / "test_calculator.py").unlink()
+        (self.repo / "user-note.txt").write_text("untracked bytes\n", encoding="utf-8")
+        (self.repo / "secret.tmp").write_text("secret\n", encoding="utf-8")
+        with (self.repo / ".gitignore").open("a", encoding="utf-8") as stream:
+            stream.write("secret.tmp\n")
+        self._git("add", ".gitignore")
+        staged_before = self._git("diff", "--cached", "--binary")
+        status_before = self._git("status", "--porcelain")
+        context = dict(CONTEXT, technology_tags=["Python"])
+        plan = build_plan(self.repo, context_path=self.context, global_root=self.base / "global")
+        result = apply_plan(plan, decide(plan, "approve"), self.repo, self.base / "global")
+        snapshot = result["snapshot_commit"]
+        self.assertEqual(self._git("show", f"{snapshot}:calculator.py"), "worktree bytes")
+        self.assertNotEqual(subprocess.run(["git", "-C", str(self.repo), "cat-file", "-e", f"{snapshot}:test_calculator.py"], capture_output=True).returncode, 0)
+        self.assertEqual(self._git("show", f"{snapshot}:user-note.txt"), "untracked bytes")
+        self.assertNotEqual(subprocess.run(["git", "-C", str(self.repo), "cat-file", "-e", f"{snapshot}:secret.tmp"], capture_output=True).returncode, 0)
+        self.assertEqual(self._git("diff", "--cached", "--binary"), staged_before)
+        self.assertEqual(self._git("rev-parse", "HEAD"), plan["target"]["commit_sha"])
+        self.assertIn("test_calculator.py", status_before)
+        preview = rollback(self.repo, result["deployment_id"])
+        self.assertEqual(preview["status"], "ready")
+        restored = rollback(self.repo, result["deployment_id"], apply=True)
+        self.assertEqual(restored["status"], "rolled_back")
+        self.assertEqual((self.repo / "calculator.py").read_text(encoding="utf-8"), "worktree bytes\n")
+        self.assertFalse((self.repo / "test_calculator.py").exists())
+        self.assertTrue((self.repo / "user-note.txt").is_file())
+        self.assertEqual(self._git("diff", "--cached", "--binary"), staged_before)
+        self.assertFalse((self.repo / "AGENTS.md").exists())
+        self.assertFalse(any((self.base / "global").rglob("*.md")))
+
+    def test_rollback_conflict_is_all_or_nothing_and_noop_has_no_deployment(self):
+        plan = build_plan(self.repo, context_path=self.context, global_root=self.base / "global")
+        result = apply_plan(plan, decide(plan, "approve"), self.repo, self.base / "global")
+        (self.repo / "AGENTS.md").write_text("user edit after deployment\n", encoding="utf-8")
+        preview = rollback(self.repo, result["deployment_id"])
+        self.assertEqual(preview["status"], "blocked")
+        with self.assertRaisesRegex(ValueError, "ROLLBACK_CONFLICT"):
+            rollback(self.repo, result["deployment_id"], apply=True)
+        self.assertTrue((self.repo / ".agents/skills/bootstrap-testing/SKILL.md").exists())
+        self.assertEqual((self.repo / "AGENTS.md").read_text(encoding="utf-8"), "user edit after deployment\n")
+        self.assertEqual(len(self._git("for-each-ref", "--format=%(refname)", "refs/vibe-coding-bootstrap/snapshots").splitlines()), 1)
+
+    def test_snapshot_ref_and_record_live_only_in_git_metadata(self):
+        plan = build_plan(self.repo, context_path=self.context, global_root=self.base / "global")
+        result = apply_plan(plan, decide(plan, "approve"), self.repo, self.base / "global")
+        self.assertFalse((self.repo / ".vibe-coding-bootstrap/deployments").exists())
+        metadata = Path(self._git("rev-parse", "--git-path", f"vibe-coding-bootstrap/deployments/{result['deployment_id']}"))
+        if not metadata.is_absolute():
+            metadata = self.repo / metadata
+        self.assertTrue((metadata / "record.json").is_file())
+
+    def test_global_existing_file_restores_and_global_conflict_blocks_project(self):
+        global_root = self.base / "global-existing"
+        probe = build_plan(self.repo, context_path=self.context, global_root=global_root)
+        global_item = next(item for item in probe["global_changes"] if item["component_id"] == "reviewable-changes")
+        global_target = Path(global_item["destination"])
+        global_target.parent.mkdir(parents=True)
+        global_target.write_bytes(b"pre-existing global bytes\n")
+        plan = build_plan(self.repo, context_path=self.context, global_root=global_root)
+        self.assertFalse(plan["executable"])
+        global_target.unlink()
+        plan = build_plan(self.repo, context_path=self.context, global_root=global_root)
+        result = apply_plan(plan, decide(plan, "approve"), self.repo, global_root)
+        global_target.write_bytes(b"global user edit\n")
+        self.assertEqual(rollback(self.repo, result["deployment_id"])["status"], "blocked")
+        self.assertTrue((self.repo / "AGENTS.md").exists())
+        global_target.write_bytes((ROOT / "components/global/reviewable-changes.md").read_bytes())
+        self.assertEqual(rollback(self.repo, result["deployment_id"], apply=True)["status"], "rolled_back")
+        self.assertFalse(global_target.exists())
+
+    def test_partial_apply_is_recorded_and_rollback_available(self):
+        from unittest.mock import patch
+        plan = build_plan(self.repo, context_path=self.context, global_root=self.base / "global")
+        approval = decide(plan, "approve")
+        real_materialize = __import__("bootstrap.core", fromlist=["materialize"]).materialize
+        with patch("bootstrap.core.materialize", side_effect=lambda *a, **kw: (
+                (_ for _ in ()).throw(OSError("synthetic write failure")) if kw.get("apply")
+                else real_materialize(*a, **kw))):
+            with self.assertRaisesRegex(ProductLoopError, "PARTIAL_APPLY"):
+                apply_plan(plan, approval, self.repo, self.base / "global")
+        refs = self._git("for-each-ref", "--format=%(refname)", "refs/vibe-coding-bootstrap/snapshots").splitlines()
+        self.assertEqual(len(refs), 1)
+        deployment_id = refs[0].rsplit("/", 1)[1]
+        preview = rollback(self.repo, deployment_id)
+        self.assertEqual(preview["status"], "ready")
+        self.assertEqual(rollback(self.repo, deployment_id, apply=True)["status"], "rolled_back")
 
 
 if __name__ == "__main__":

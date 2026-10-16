@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 
 from .core import apply_plan, build_plan, decide, inspect_project, load_json, render_summary, validate_output_path, write_json
+from .recovery import rollback
 
 
 def _parser():
@@ -32,13 +33,20 @@ def _parser():
     apply_cmd.add_argument("--project-root", required=True)
     apply_cmd.add_argument("--global-root")
     apply_cmd.add_argument("--output")
+    rollback_cmd = commands.add_parser("rollback", help="Preview or safely roll back one local Bootstrap deployment")
+    rollback_cmd.add_argument("--project-root", required=True)
+    rollback_cmd.add_argument("--deployment", required=True)
+    rollback_cmd.add_argument("--apply", action="store_true", help="Apply the conflict-checked rollback")
     return parser
 
 
 def main(argv=None):
     args = _parser().parse_args(argv)
     try:
-        if args.command == "inspect":
+        if args.command == "rollback":
+            value = rollback(args.project_root, args.deployment, args.apply)
+            print(json.dumps(value, indent=2, ensure_ascii=False))
+        elif args.command == "inspect":
             value = inspect_project(args.project_root, args.host)
             if args.output:
                 write_json(args.output, value, args.project_root)

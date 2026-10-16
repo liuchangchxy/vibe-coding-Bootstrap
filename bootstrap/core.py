@@ -16,6 +16,7 @@ from activation import core as activation
 from assembly.core import assemble
 from composer.core import ROOT, compose, load_yaml, validate
 from materializer.core import materialize
+from bootstrap.recovery import prepare_deployment, update_record
 
 
 class ProductLoopError(ValueError):
@@ -362,6 +363,11 @@ def apply_plan(plan, decision, project_root, global_root=None, root=ROOT):
                 "conflicts": [], "verification": {"passed": True}}
     if not plan["executable"]:
         raise ProductLoopError("PLAN_BLOCKED: resolve listed conflicts and generate a new plan")
+    if plan["actual_changes"] == 0:
+        return {"status": "no_changes", "route": plan["route"], "target_before": plan["target"],
+                "target_after": bind_target_revision(project), "project_changes": [], "global_changes": [],
+                "activation_results": [], "references": plan["references"], "unchanged": plan["unchanged"],
+                "conflicts": [], "verification": {"passed": True}}
     if not decision:
         raise ProductLoopError("DECISION_REQUIRED: provide the Unified Decision artifact")
     validate(decision, "bootstrap-decision.schema.json", root)
@@ -393,6 +399,10 @@ def apply_plan(plan, decision, project_root, global_root=None, root=ROOT):
         fresh = activation.build_plan(project, "testing", "codex", root)
         if fresh["plan_digest"] != subplan["plan_digest"] or fresh["status"] != subplan["status"]:
             raise ProductLoopError("STALE_BOOTSTRAP_PLAN: Codex activation subplan changed")
+    try:
+        deployment = prepare_deployment(plan, project, global_root)
+    except ValueError as exc:
+        raise ProductLoopError(str(exc)) from exc
     target_before = current
     activation_results = []
     completed = []
@@ -410,15 +420,23 @@ def apply_plan(plan, decision, project_root, global_root=None, root=ROOT):
                 raise ProductLoopError("PARTIAL_APPLY: materializer failed after activation")
             completed.extend(item["component_id"] for item in applied["items"] if item["result"] == "copied")
     except Exception as exc:
+        update_record(project, deployment, "partial" if completed else "aborted")
         if completed:
             raise ProductLoopError(f"PARTIAL_APPLY: completed {', '.join(completed)}; failed: {exc}") from exc
         raise
-    _verify(plan, project, root)
+    try:
+        _verify(plan, project, root)
+    except Exception:
+        update_record(project, deployment, "partial")
+        raise
+    update_record(project, deployment, "applied")
     return {"status": "applied", "route": plan["route"], "target_before": target_before,
             "target_after": bind_target_revision(project), "project_changes": plan["project_changes"],
             "global_changes": plan["global_changes"], "activation_results": activation_results,
             "references": plan["references"], "unchanged": plan["unchanged"], "conflicts": [],
-            "verification": {"passed": True}}
+            "verification": {"passed": True}, "deployment_id": deployment["deployment_id"],
+            "snapshot_ref": deployment["snapshot_ref"], "snapshot_commit": deployment["snapshot_commit"],
+            "rollback_available": True}
 
 
 def write_json(path, value, target_root=None):

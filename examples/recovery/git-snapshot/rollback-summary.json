@@ -1,0 +1,17 @@
+{
+  "preview_default": true,
+  "project_touched_paths_restored": true,
+  "global_touched_paths_restored": true,
+  "business_paths_untouched": true,
+  "later_project_edit_conflict_no_write": true,
+  "later_global_edit_conflict_no_write": true,
+  "all_paths_preflighted_before_restore": true,
+  "index_preserved": true,
+  "head_unchanged": true,
+  "final_state_verified": true,
+  "git_reset_hard_used": false,
+  "git_stash_used": false,
+  "user_commit_created": false,
+  "push_performed": false,
+  "partial_apply_recovery_verified": true
+}
