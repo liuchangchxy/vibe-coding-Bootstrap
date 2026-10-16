@@ -183,13 +183,10 @@ def validate_semantic_result(result, package, root=ROOT):
     validate(result, "semantic-review-result.schema.json", root)
     if result["project_name"] != package["project"]["name"]:
         raise ValueError("Semantic review project does not match input package")
-    current_catalog = _catalog_records(root)
-    if package["capability_catalog"] != current_catalog:
-        raise ValueError("Input Capability Catalog does not match the current Catalog")
-    records = {record["id"]: record for record in current_catalog}
+    records = {record["id"]: record for record in package["capability_catalog"]}
     package_baseline_ids = [item["capability_id"] for item in package["baseline_coverage"]]
     if len(package_baseline_ids) != len(set(package_baseline_ids)) or set(package_baseline_ids) != set(records):
-        raise ValueError("Baseline coverage must contain every Catalog Capability exactly once")
+        raise ValueError("Baseline coverage must contain every snapshot Capability exactly once")
     package_asset_paths = [asset["path"] for asset in package["discovered_assets"]]
     if len(package_asset_paths) != len(set(package_asset_paths)):
         raise ValueError("Duplicate discovered asset path in input package")
@@ -197,7 +194,7 @@ def validate_semantic_result(result, package, root=ROOT):
     if len(found) != len(set(found)):
         raise ValueError("Duplicate Capability result")
     if set(found) != set(records):
-        raise ValueError("Result Capability IDs must match the current Catalog exactly")
+        raise ValueError("Result Capability IDs must match the input snapshot exactly")
     asset_paths = {asset["path"] for asset in package["discovered_assets"]}
     preference_findings = result.get("preference_findings", [])
     preference_ids = [item["preference_id"] for item in preference_findings]

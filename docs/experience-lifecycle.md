@@ -16,6 +16,8 @@ Records use `schemas/experience.schema.json`. Phase 1 records without lifecycle 
 
 `verified` confirms what was observed in one project. It does not establish that a practice caused the outcome, applies to every project, or automatically promotes a Capability.
 
+For Composer reuse, `verified` alone is insufficient. A verified Experience becomes eligible only after an explicitly authorized Capability edit adds its ID to `experience_ids`; the record must have an accepted review and name that Capability in `capability_ids`. Composer still matches project type and does not infer a new candidate or change rule confidence.
+
 ## Review path
 
 ```text

@@ -26,6 +26,7 @@ components:
   source: https://www.anthropic.com/engineering/building-effective-agents
   delivery: reference
   action: review_required
+  capability_version: '1'
   configuration_preview: {}
   dependencies: []
   conflicts: []
@@ -38,6 +39,7 @@ components:
   source: https://docs.pytest.org/en/stable/explanation/goodpractices.html
   delivery: reference
   action: review_required
+  capability_version: '2'
   configuration_preview: {}
   dependencies: []
   conflicts: []
@@ -46,9 +48,23 @@ components:
   source_capability: testing
   reason: Catalog prerequisite of agent-development.
   scope: project
-  source: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/project/test-guidance.md
+  source: components/project/test-guidance.md
+  delivery: copy
+  action: include
+  capability_version: '2'
+  configuration_preview: {}
+  dependencies: []
+  conflicts: []
+  destination: .vibe-coding-bootstrap/components/test-guidance.md
+- component_id: codex-native-testing-skill
+  component_type: skill
+  source_capability: testing
+  reason: Catalog prerequisite of agent-development.
+  scope: project
+  source: host_adapters/codex/skills/testing/SKILL.md
   delivery: reference
   action: include
+  capability_version: '2'
   configuration_preview: {}
   dependencies: []
   conflicts: []
@@ -58,8 +74,12 @@ warnings:
 - 'agent-development: Testing is a catalog prerequisite for checking agent behavior.'
 - 'agent-development: Tool permissions, evaluation cases, and runtime choices remain
   project-specific.'
+- 'testing: Codex native activation is Host-specific. The Phase 9 verified v1 contract
+  uses the repo-local testing Skill plus the exact minimal AGENTS trigger; use the
+  activation adapter rather than generic materialization, and do not assume this contract
+  applies to other Hosts or future Codex versions.'
 - 'testing: Test effort must reflect change impact.'
 - 'testing: The referenced pytest component applies to Python; other stacks need a
   suitable component reference.'
 requires_confirmation: true
-generated_at: '2026-10-15T12:40:44Z'
+generated_at: '2026-10-16T13:29:39Z'

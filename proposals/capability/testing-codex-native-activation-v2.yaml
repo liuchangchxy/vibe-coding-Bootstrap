@@ -1,0 +1,31 @@
+proposal_id: proposal-testing-codex-native-activation-v2
+source_experience_proposals:
+  - proposal-exp-codex-testing-activation-v1
+target_capability: testing
+current_version: '1'
+proposed_change: >-
+  Advance testing from version 1 to 2; link exp-codex-testing-activation-v1; register the
+  Codex-native testing Skill as a project-scoped reference; record narrowly scoped supported
+  evidence and one Codex-specific selection constraint. Keep the core purpose, general applicability,
+  requires/conflicts, draft status, and experimental maturity unchanged.
+reason: The accepted Experience supports adding a host-specific representation while preserving the generic testing Capability's unvalidated status.
+evidence:
+  - type: project_result
+    source: experiences/verified/codex-testing-activation-v1.yaml
+    description: Accepted verified Experience records the limited Phase 9 Codex v1 activation observation.
+    strength: moderate
+    verification:
+      status: checked
+      method: Validated the Experience record and its referenced Phase 9 evidence.
+      verified_by: repository-maintainer
+      verified_at: '2026-10-16T13:29:39Z'
+affected_scope:
+  - testing Capability Codex-native projection
+risk: >-
+  A Codex-specific optional reference could be misread as universal guidance or as generic
+  materialization; the Assembly metadata therefore remains reference-only and the Capability remains draft/experimental.
+approval_status: approved
+reviewer: repository-maintainer
+reviewed_at: '2026-10-16T13:29:39Z'
+approval_notes: Explicitly authorized by the Phase 10 execution instruction. Approval is limited to linking the verified Codex activation Experience and registering its host-specific testing component; no general testing validation is implied.
+approved_change_reference: capabilities/quality/testing.yaml@2

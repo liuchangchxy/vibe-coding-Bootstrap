@@ -1,0 +1,14 @@
+{
+  "testing_version": "2",
+  "testing_evidence_state": "supported",
+  "testing_experience_ids": [
+    "exp-codex-testing-activation-v1"
+  ],
+  "recommendation_experience_ids": [
+    "exp-codex-testing-activation-v1"
+  ],
+  "testing_recommendation_experience_count": 1,
+  "codex_native_component_present": true,
+  "codex_native_component_delivery": "reference",
+  "automatic_activation": false
+}

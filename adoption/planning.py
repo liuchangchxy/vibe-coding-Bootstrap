@@ -7,7 +7,7 @@ from pathlib import Path
 
 from composer.core import ROOT, load_yaml, validate
 from .revision import bind_target_revision
-from .semantic import validate_semantic_result
+from .semantic import _catalog_records, validate_semantic_result
 
 
 DISPOSITIONS = {"keep_existing", "no_action", "review_gap", "review_conflict", "consider_component", "blocked"}
@@ -42,6 +42,8 @@ def plan_digest(plan):
 def build_adoption_plan(package, result, project_root, semantic_review_source="semantic-review-result.json", root=ROOT):
     """Build a plan only when the review still binds to the current target state."""
     validate_semantic_result(result, package, root)
+    if package["capability_catalog"] != _catalog_records(root):
+        raise ValueError("STALE_CATALOG_REVIEW: regenerate Semantic Review against the current Catalog before planning")
     expected = package.get("target")
     if not expected:
         raise ValueError("Semantic input has no target revision binding; regenerate discovery and semantic review")

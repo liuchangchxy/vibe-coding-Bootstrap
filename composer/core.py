@@ -80,12 +80,32 @@ def compose(context, root=ROOT):
         require_id(cid)
 
     experiences = []
+    lifecycle = {}
+    lifecycle_paths = sorted(path for state in ("raw", "candidate", "verified", "rejected", "archived")
+                             for path in (root / "experiences" / state).glob("*.yaml"))
+    for path in lifecycle_paths:
+        experience = load_yaml(path)
+        validate(experience, "experience.schema.json", root)
+        if experience["id"] in lifecycle:
+            raise ValueError(f"Duplicate Experience ID: {experience['id']}")
+        lifecycle[experience["id"]] = (path, experience)
     for path in sorted((root / "experiences").glob("*.yaml")):
         experience = load_yaml(path)
         validate(experience, "experience.schema.json", root)
         for cid in experience.get("capability_ids", []):
             require_id(cid)
         experiences.append((path.relative_to(root).as_posix(), experience))
+    for record in records.values():
+        for experience_id in record.get("experience_ids", []):
+            entry = lifecycle.get(experience_id)
+            if not entry or entry[0].parent.name != "verified":
+                raise ValueError(f"Capability experience_ids must resolve to a verified Experience: {experience_id}")
+            experience = entry[1]
+            if (experience.get("status") != "verified" or not experience.get("review")
+                    or experience["review"].get("review_status") != "accepted"
+                    or record["id"] not in experience.get("capability_ids", [])):
+                raise ValueError(f"Capability experience_ids must link an accepted verified Experience for {record['id']}: {experience_id}")
+            experiences.append((entry[0].relative_to(root).as_posix(), experience))
 
     candidates = {}
 

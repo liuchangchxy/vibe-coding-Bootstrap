@@ -145,7 +145,7 @@ class SemanticAdoptionTests(unittest.TestCase):
     def test_catalog_ids_must_match_exactly_and_duplicates_are_rejected(self):
         result = self.valid_result()
         result["semantic_coverage"][0]["capability_id"] = "invented-capability"
-        with self.assertRaisesRegex(ValueError, "match the current Catalog"):
+        with self.assertRaisesRegex(ValueError, "match the input snapshot"):
             validate_semantic_result(result, self.package)
         result = self.valid_result()
         result["semantic_coverage"][1]["capability_id"] = result["semantic_coverage"][0]["capability_id"]

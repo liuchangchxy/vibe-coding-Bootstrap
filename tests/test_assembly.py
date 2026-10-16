@@ -12,6 +12,18 @@ from composer.core import ROOT, load_yaml, validate
 
 
 class AssemblyTests(unittest.TestCase):
+    def test_codex_native_testing_component_is_a_project_reference(self):
+        context = load_yaml(ROOT / "examples/reuse/codex-maintained-project/project-context.yaml")
+        from composer.core import compose
+        recommendation = compose(context)
+        plan = assemble(recommendation)
+        item = next(item for item in plan["components"] if item["component_id"] == "codex-native-testing-skill")
+        self.assertEqual("testing", item["source_capability"])
+        self.assertEqual("skill", item["component_type"])
+        self.assertEqual("project", item["scope"])
+        self.assertEqual("reference", item["delivery"])
+        self.assertNotIn("destination", item)
+
     def recommendation(self, name):
         return load_yaml(ROOT / "examples" / name / "recommendation.yaml")
 
@@ -53,7 +65,8 @@ class AssemblyTests(unittest.TestCase):
         plan = assemble(self.recommendation("agent"))
         self.assertTrue(all(item["action"] == "review_required" for item in plan["components"] if item["scope"] == "external"))
         self.assertTrue(all(item["delivery"] == "reference" for item in plan["components"] if item["scope"] == "external"))
-        self.assertFalse(any(item["component_type"] in {"skill", "mcp"} for item in plan["components"]))
+        codex = next(item for item in plan["components"] if item["component_id"] == "codex-native-testing-skill")
+        self.assertEqual("reference", codex["delivery"])
 
     def test_capability_without_components_stays_empty(self):
         with tempfile.TemporaryDirectory() as directory:

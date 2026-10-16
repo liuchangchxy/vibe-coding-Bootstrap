@@ -9,7 +9,7 @@ import unittest
 
 from composer.core import ROOT, load_yaml, validate
 import yaml
-from adoption.planning import plan_digest, validate_adoption_plan
+from adoption.planning import build_adoption_plan, plan_digest, validate_adoption_plan
 from adoption.semantic import validate_semantic_result
 
 
@@ -165,6 +165,15 @@ def check_repository(root=ROOT):
             raise ValueError(f"Experience folder/status mismatch: {path}")
         if not set(record.get("capability_ids", [])).issubset(ids):
             raise ValueError(f"Unknown Experience Capability reference: {path}")
+    for cid, capability in records.items():
+        for experience_id in capability.get("experience_ids", []):
+            experience = experiences.get(experience_id)
+            experience_path = next((path for path in (root / "experiences/verified").glob("*.yaml")
+                                    if experience and load_yaml(path)["id"] == experience_id), None)
+            if (not experience or experience_path is None or experience.get("status") != "verified"
+                    or experience.get("review", {}).get("review_status") != "accepted"
+                    or cid not in experience.get("capability_ids", [])):
+                raise ValueError(f"Invalid curated verified Experience link in {cid}: {experience_id}")
 
     proposal_paths = sorted((root / "proposals").rglob("*.yaml")) if (root / "proposals").exists() else []
     proposal_records = [(path, load_yaml(path)) for path in proposal_paths]
@@ -177,8 +186,11 @@ def check_repository(root=ROOT):
             target = records.get(proposal["target_capability"])
             if not target:
                 raise ValueError(f"Unknown proposal Capability: {proposal['target_capability']}")
-            if proposal["current_version"] != target["version"]:
+            status = proposal["approval_status"]
+            if status in {"pending", "deferred"} and proposal["current_version"] != target["version"]:
                 raise ValueError(f"Stale Capability proposal version: {path}")
+            if status == "approved" and not proposal.get("approved_change_reference"):
+                raise ValueError(f"Approved Capability proposal requires approved_change_reference: {path}")
             if any(ref not in experience_proposal_ids for ref in proposal.get("source_experience_proposals", [])):
                 raise ValueError(f"Unknown source Experience proposal: {path}")
         else:
@@ -284,11 +296,13 @@ class RepositoryIntegrityTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Multiple components target the same destination"):
                 check_repository(root)
 
-    def test_all_catalog_capabilities_use_simple_version_one(self):
+    def test_only_testing_capability_advanced_to_version_two(self):
         catalog = load_yaml(ROOT / "capabilities/catalog.yaml")
-        versions = [load_yaml(ROOT / "capabilities" / path)["version"] for path in catalog["capabilities"]]
+        versions = {load_yaml(ROOT / "capabilities" / path)["id"]: load_yaml(ROOT / "capabilities" / path)["version"]
+                    for path in catalog["capabilities"]}
         self.assertEqual(8, len(versions))
-        self.assertEqual(["1"] * 8, versions)
+        self.assertEqual("2", versions["testing"])
+        self.assertEqual({"1"}, {version for cid, version in versions.items() if cid != "testing"})
 
     def test_bad_and_valid_experience_capability_ids(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -368,7 +382,7 @@ class RepositoryIntegrityTests(unittest.TestCase):
             root = Path(directory) / "repo"
             shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns(".git", "__pycache__"))
             proposals = root / "proposals"
-            proposals.mkdir()
+            proposals.mkdir(exist_ok=True)
             proposal = {
                 "proposal_id": "synthetic-test", "target_capability": "testing", "current_version": "0",
                 "proposed_change": "Synthetic test only", "reason": "Synthetic test only",
@@ -379,9 +393,98 @@ class RepositoryIntegrityTests(unittest.TestCase):
             path.write_text(yaml.safe_dump(proposal, sort_keys=False), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "Stale Capability proposal"):
                 check_repository(root)
-            proposal["current_version"] = "1"
+            proposal["current_version"] = "2"
             path.write_text(yaml.safe_dump(proposal, sort_keys=False), encoding="utf-8")
             check_repository(root)
+
+    def test_historical_semantic_snapshot_validates_but_cannot_plan_against_new_catalog(self):
+        base = ROOT / "examples/adoption/dayspark"
+        package = json.loads((base / "semantic-review-input.json").read_text(encoding="utf-8"))
+        result = json.loads((base / "semantic-review-result.json").read_text(encoding="utf-8"))
+        validate_semantic_result(result, package)
+        with self.assertRaisesRegex(ValueError, "STALE_CATALOG_REVIEW"):
+            build_adoption_plan(package, result, ROOT)
+
+    def test_codex_reuse_before_after_evidence_matches_generated_plans(self):
+        base = ROOT / "examples/reuse/codex-maintained-project"
+        before = json.loads((base / "before-promotion.json").read_text(encoding="utf-8"))
+        after = json.loads((base / "after-promotion.json").read_text(encoding="utf-8"))
+        recommendation = load_yaml(base / "recommendation.yaml")
+        assembly = load_yaml(base / "assembly-plan.yaml")
+        self.assertEqual("7f390d2dd5f396c11eded1106fc1e3e433995284", before["base_sha"])
+        self.assertEqual(before["base_sha"], before["bootstrap_base_sha"])
+        self.assertEqual("1", before["testing_capability_version"])
+        self.assertEqual("pending", before["testing_catalog_evidence_state"])
+        self.assertEqual([], before["testing_linked_experience_ids"])
+        self.assertEqual([], before["recommendation_experience_ids"])
+        self.assertFalse(before["assembly_contains_codex_native_testing_component"])
+        self.assertEqual("2", after["testing_version"])
+        self.assertEqual("supported", after["testing_evidence_state"])
+        self.assertIn("exp-codex-testing-activation-v1", after["testing_experience_ids"])
+        self.assertIn("exp-codex-testing-activation-v1", after["recommendation_experience_ids"])
+        self.assertTrue(after["codex_native_component_present"])
+        self.assertEqual("reference", after["codex_native_component_delivery"])
+        self.assertFalse(after["automatic_activation"])
+        testing = next(row for row in recommendation["recommendations"] if row["capability_id"] == "testing")
+        self.assertEqual("experiences/verified/codex-testing-activation-v1.yaml", testing["experiences"][0]["source"])
+        self.assertTrue(any(item["component_id"] == "codex-native-testing-skill"
+                            and item["delivery"] == "reference" for item in assembly["components"]))
+        serialized = json.dumps([before, after], ensure_ascii=False)
+        self.assertNotIn("C:\\Users\\", serialized)
+        self.assertNotIn("/Users/", serialized)
+
+    def test_proposal_version_history_and_approval_reference(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "repo"
+            shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns(".git", "__pycache__"))
+            proposal_path = root / "proposals/capability/testing-codex-native-activation-v2.yaml"
+            proposal = load_yaml(proposal_path)
+            proposal["approval_status"] = "deferred"
+            proposal_path.write_text(yaml.safe_dump(proposal, sort_keys=False), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "Stale Capability proposal"):
+                check_repository(root)
+            proposal["approval_status"] = "approved"
+            proposal.pop("approved_change_reference")
+            proposal_path.write_text(yaml.safe_dump(proposal, sort_keys=False), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "requires approved_change_reference"):
+                check_repository(root)
+            proposal["approved_change_reference"] = "capabilities/quality/testing.yaml@2"
+            proposal_path.write_text(yaml.safe_dump(proposal, sort_keys=False), encoding="utf-8")
+            check_repository(root)
+            proposal["current_version"] = "0"
+            proposal["approval_status"] = "rejected"
+            proposal.pop("approved_change_reference")
+            proposal_path.write_text(yaml.safe_dump(proposal, sort_keys=False), encoding="utf-8")
+            check_repository(root)
+
+    def test_only_accepted_verified_experiences_can_be_linked(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "repo"
+            shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns(".git", "__pycache__"))
+            capability_path = root / "capabilities/quality/testing.yaml"
+            capability = load_yaml(capability_path)
+            capability["experience_ids"] = ["synthetic-link"]
+            capability_path.write_text(yaml.safe_dump(capability, sort_keys=False), encoding="utf-8")
+            for state, review_status in (("candidate", "accepted"), ("rejected", "accepted"), ("verified", "pending")):
+                source = load_yaml(root / "experiences/candidate/testing-gap.yaml")
+                source["id"] = source["identity"] = "synthetic-link"
+                source["capability_ids"] = ["testing"]
+                source["status"] = "verified"
+                source["review"] = {"review_status": review_status, "reviewer": "fixture", "reviewed_at": "2026-10-16T00:00:00Z"}
+                if not any(item.get("type") == "project_result" for item in source["evidence"]):
+                    source["evidence"] = [{"type": "project_result", "source": "fixture", "description": "fixture", "strength": "moderate", "verification": {"status": "checked"}}]
+                fixture = root / "experiences" / state / "synthetic-link.yaml"
+                source["status"] = state
+                if state == "verified":
+                    source["review"]["review_status"] = review_status
+                fixture.write_text(yaml.safe_dump(source, sort_keys=False), encoding="utf-8")
+                if state == "verified":
+                    with self.assertRaisesRegex(Exception, "accepted"):
+                        check_repository(root)
+                else:
+                    with self.assertRaisesRegex(ValueError, "Invalid curated verified Experience link"):
+                        check_repository(root)
+                fixture.unlink()
 
 
 if __name__ == "__main__":

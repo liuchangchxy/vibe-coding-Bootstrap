@@ -44,11 +44,7 @@ whose prerequisite is excluded is itself excluded with an explanation. Other
 Profile preference fields are preserved in the input file but are not matching
 rules in this MVP.
 
-Composer reads immediate `experiences/*.yaml` files using the existing schema.
-There are no real Experience records yet. For matching project types and Capability
-IDs it includes the complete original Experience, including failures, context,
-evidence, confidence and limits. This coarse match is advisory; it never changes
-rule confidence, manufactures observations, or promotes catalog evidence status.
+Composer supports legacy immediate `experiences/*.yaml` files and deliberately curated lifecycle Experiences. It resolves only `experience_ids` declared by Catalog Capabilities; each link must point to an accepted verified record whose `capability_ids` includes the same Capability. Verified records without that human-approved link are not ingested. For matching project types and Capability IDs it includes the complete original Experience, including limits, as supporting context. Experience does not create candidates or change rule confidence.
 
 ## Output and confirmation
 
@@ -61,8 +57,7 @@ and selected conflict pairs. SHA-256 over registry bytes and ordered record path
 and bytes identifies the catalog snapshot independently of a Git checkout.
 
 Confidence measures relevance to explicit rules or preferences, not demonstrated
-effectiveness. All initial catalog entries remain draft/experimental with pending
-evidence. The Python-specific testing component is disclosed even for a Node.js
+effectiveness. Catalog entries remain draft/experimental; the testing Capability has narrowly scoped `supported` evidence while its general effectiveness remains unvalidated. The Python-specific testing component is disclosed even for a Node.js
 project: recommending a general capability does not resolve an implementation.
 Optional related capabilities are never automatically included. Conflict edges
 are checked in both directions, without choosing a winner.

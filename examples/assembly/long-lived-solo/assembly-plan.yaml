@@ -27,6 +27,7 @@ components:
   source: https://git-scm.com/book/en/v2/Getting-Started-About-Version-Control
   delivery: reference
   action: review_required
+  capability_version: '1'
   configuration_preview: {}
   dependencies: []
   conflicts: []
@@ -36,12 +37,14 @@ components:
   reason: 'Long-lived and production projects need change history, regression checks,
     and maintainable guidance. Matched: {''lifecycle'': ''long_lived''}.'
   scope: global
-  source: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/global/reviewable-changes.md
-  delivery: reference
+  source: components/global/reviewable-changes.md
+  delivery: copy
   action: include
+  capability_version: '1'
   configuration_preview: {}
   dependencies: []
   conflicts: []
+  destination: components/reviewable-changes.md
 - component_id: reference
   component_type: document
   source_capability: testing
@@ -52,6 +55,7 @@ components:
   source: https://docs.pytest.org/en/stable/explanation/goodpractices.html
   delivery: reference
   action: review_required
+  capability_version: '2'
   configuration_preview: {}
   dependencies: []
   conflicts: []
@@ -61,9 +65,24 @@ components:
   reason: 'Long-lived and production projects need change history, regression checks,
     and maintainable guidance. Matched: {''lifecycle'': ''long_lived''}.'
   scope: project
-  source: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/project/test-guidance.md
+  source: components/project/test-guidance.md
+  delivery: copy
+  action: include
+  capability_version: '2'
+  configuration_preview: {}
+  dependencies: []
+  conflicts: []
+  destination: .vibe-coding-bootstrap/components/test-guidance.md
+- component_id: codex-native-testing-skill
+  component_type: skill
+  source_capability: testing
+  reason: 'Long-lived and production projects need change history, regression checks,
+    and maintainable guidance. Matched: {''lifecycle'': ''long_lived''}.'
+  scope: project
+  source: host_adapters/codex/skills/testing/SKILL.md
   delivery: reference
   action: include
+  capability_version: '2'
   configuration_preview: {}
   dependencies: []
   conflicts: []
@@ -77,6 +96,7 @@ components:
   source: https://diataxis.fr/
   delivery: reference
   action: review_required
+  capability_version: '1'
   configuration_preview: {}
   dependencies: []
   conflicts: []
@@ -86,20 +106,26 @@ components:
   reason: 'Long-lived and production projects need change history, regression checks,
     and maintainable guidance. Matched: {''lifecycle'': ''long_lived''}.'
   scope: project
-  source: https://raw.githubusercontent.com/liuchangchxy/vibe-coding-Bootstrap/main/components/project/documentation-outline.md
-  delivery: reference
+  source: components/project/documentation-outline.md
+  delivery: copy
   action: include
+  capability_version: '1'
   configuration_preview: {}
   dependencies: []
   conflicts: []
+  destination: .vibe-coding-bootstrap/components/documentation-outline.md
 skipped_components: []
 unresolved_conflicts: []
 warnings:
 - 'documentation: Project-specific content stays in the project; this catalog only
   describes the reusable ability.'
 - 'engineering-baseline: Choose the actual branching policy with the project owner.'
+- 'testing: Codex native activation is Host-specific. The Phase 9 verified v1 contract
+  uses the repo-local testing Skill plus the exact minimal AGENTS trigger; use the
+  activation adapter rather than generic materialization, and do not assume this contract
+  applies to other Hosts or future Codex versions.'
 - 'testing: Test effort must reflect change impact.'
 - 'testing: The referenced pytest component applies to Python; other stacks need a
   suitable component reference.'
 requires_confirmation: true
-generated_at: '2026-10-15T12:40:44Z'
+generated_at: '2026-10-16T13:29:39Z'

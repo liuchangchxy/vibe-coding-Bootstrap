@@ -11,9 +11,10 @@ project_context:
   constraints:
   - No autonomous approval.
   collaboration: solo
-catalog_revision: sha256:fc4b741c5f90fac0b12aa079583c8e5c9bbeccf0ac5ed824530957fd64e1a453
+catalog_revision: sha256:0d28e8d9e3ad9bdaca55c22f47e4f18a49ab03743a9ea4175ca9afa85554986a
 profile_source: profiles/personal.yaml
-experience_sources: []
+experience_sources:
+- experiences/verified/codex-testing-activation-v1.yaml
 recommendations:
 - capability_id: agent-development
   reason: 'Explicit agent development needs bounded behavior and acceptance cases.
@@ -45,13 +46,21 @@ recommendations:
   status: draft
   maturity: experimental
   evidence:
-    state: pending
-    summary: No project-use evidence has been recorded. The external reference establishes
-      provenance only; a maintainer must review observed outcomes before validation.
+    state: supported
+    summary: Real project-use evidence supports the Codex-native testing activation
+      projection only. It does not establish testing effectiveness across projects
+      or Hosts; the Capability remains draft and experimental.
+    references:
+    - ../../experiences/verified/codex-testing-activation-v1.yaml
+    - ../../examples/activation/codex/README.md
   constraints:
   - The referenced pytest component applies to Python; other stacks need a suitable
     component reference.
   - Test effort must reflect change impact.
+  - Codex native activation is Host-specific. The Phase 9 verified v1 contract uses
+    the repo-local testing Skill plus the exact minimal AGENTS trigger; use the activation
+    adapter rather than generic materialization, and do not assume this contract applies
+    to other Hosts or future Codex versions.
   not_for:
   - A guarantee of correctness from coverage numbers alone.
   requires: []

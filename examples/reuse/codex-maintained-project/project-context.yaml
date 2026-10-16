@@ -1,0 +1,12 @@
+name: codex-reuse-pilot
+description: A maintained software project used to verify curated Experience reuse.
+project_type: software-project
+lifecycle: production
+technology_tags:
+  - Python
+runtime: Python
+platform: local
+goal: Maintain observable behavior with focused regression verification.
+constraints:
+  - AI coding host is Codex
+collaboration: solo

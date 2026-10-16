@@ -28,4 +28,6 @@ Experience Proposals may recommend `add_component`, `modify_guidance`, `change_a
 
 ## Composer relationship
 
-The Composer may read curated Experience as contextual support for a recommendation. Its existing immediate `experiences/*.yaml` input convention remains unchanged. Lifecycle records placed in the state subdirectories are governance records and are not automatically ingested by the Composer. Only deliberate curation into its existing input path can make an Experience available there; a proposal or `verified` status alone does not alter Composer rules or Capability data. See [Composer](composer.md) for its current input boundary.
+The Composer continues to support legacy immediate `experiences/*.yaml` records. Lifecycle records in state subdirectories are not automatically ingested: only an Experience ID explicitly listed in a Capability's `experience_ids` field is eligible, and the link must resolve to a verified record with an accepted review and matching Capability ID. Verified status alone does not make an Experience reusable. The Composer includes linked evidence only when project type and Capability ID match; Experience never creates a recommendation candidate or changes rule confidence. See [Composer](composer.md) for the input contract.
+
+The Phase 10 Codex activation Experience supports only the Codex-native testing projection observed with Codex CLI 0.162.0-alpha.17.2. It does not establish general testing effectiveness, behavior on other Hosts, or a permanent requirement for an AGENTS trigger.

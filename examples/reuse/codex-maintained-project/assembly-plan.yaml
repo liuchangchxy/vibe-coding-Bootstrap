@@ -1,0 +1,131 @@
+project_context:
+  name: codex-reuse-pilot
+  description: A maintained software project used to verify curated Experience reuse.
+  project_type: software-project
+  lifecycle: production
+  technology_tags:
+  - Python
+  runtime: Python
+  platform: local
+  goal: Maintain observable behavior with focused regression verification.
+  constraints:
+  - AI coding host is Codex
+  collaboration: solo
+recommendation_source: examples/reuse/codex-maintained-project/recommendation.yaml
+selected_capabilities:
+- documentation
+- engineering-baseline
+- testing
+components:
+- component_id: pro-git-reference
+  component_type: document
+  source_capability: engineering-baseline
+  reason: 'Capability exists, but no installable implementation component is registered.
+    Long-lived and production projects need change history, regression checks, and
+    maintainable guidance. Matched: {''lifecycle'': ''production''}.'
+  scope: external
+  source: https://git-scm.com/book/en/v2/Getting-Started-About-Version-Control
+  delivery: reference
+  action: review_required
+  capability_version: '1'
+  configuration_preview: {}
+  dependencies: []
+  conflicts: []
+- component_id: reviewable-changes
+  component_type: prompt
+  source_capability: engineering-baseline
+  reason: 'Long-lived and production projects need change history, regression checks,
+    and maintainable guidance. Matched: {''lifecycle'': ''production''}.'
+  scope: global
+  source: components/global/reviewable-changes.md
+  delivery: copy
+  action: include
+  capability_version: '1'
+  configuration_preview: {}
+  dependencies: []
+  conflicts: []
+  destination: components/reviewable-changes.md
+- component_id: reference
+  component_type: document
+  source_capability: testing
+  reason: 'Capability exists, but no installable implementation component is registered.
+    Long-lived and production projects need change history, regression checks, and
+    maintainable guidance. Matched: {''lifecycle'': ''production''}.'
+  scope: external
+  source: https://docs.pytest.org/en/stable/explanation/goodpractices.html
+  delivery: reference
+  action: review_required
+  capability_version: '2'
+  configuration_preview: {}
+  dependencies: []
+  conflicts: []
+- component_id: project-test-guidance
+  component_type: template
+  source_capability: testing
+  reason: 'Long-lived and production projects need change history, regression checks,
+    and maintainable guidance. Matched: {''lifecycle'': ''production''}.'
+  scope: project
+  source: components/project/test-guidance.md
+  delivery: copy
+  action: include
+  capability_version: '2'
+  configuration_preview: {}
+  dependencies: []
+  conflicts: []
+  destination: .vibe-coding-bootstrap/components/test-guidance.md
+- component_id: codex-native-testing-skill
+  component_type: skill
+  source_capability: testing
+  reason: 'Long-lived and production projects need change history, regression checks,
+    and maintainable guidance. Matched: {''lifecycle'': ''production''}.'
+  scope: project
+  source: host_adapters/codex/skills/testing/SKILL.md
+  delivery: reference
+  action: include
+  capability_version: '2'
+  configuration_preview: {}
+  dependencies: []
+  conflicts: []
+- component_id: reference
+  component_type: document
+  source_capability: documentation
+  reason: 'Capability exists, but no installable implementation component is registered.
+    Long-lived and production projects need change history, regression checks, and
+    maintainable guidance. Matched: {''lifecycle'': ''production''}.'
+  scope: external
+  source: https://diataxis.fr/
+  delivery: reference
+  action: review_required
+  capability_version: '1'
+  configuration_preview: {}
+  dependencies: []
+  conflicts: []
+- component_id: project-documentation-outline
+  component_type: template
+  source_capability: documentation
+  reason: 'Long-lived and production projects need change history, regression checks,
+    and maintainable guidance. Matched: {''lifecycle'': ''production''}.'
+  scope: project
+  source: components/project/documentation-outline.md
+  delivery: copy
+  action: include
+  capability_version: '1'
+  configuration_preview: {}
+  dependencies: []
+  conflicts: []
+  destination: .vibe-coding-bootstrap/components/documentation-outline.md
+skipped_components: []
+unresolved_conflicts: []
+warnings:
+- 'documentation: Project-specific content stays in the project; this catalog only
+  describes the reusable ability.'
+- 'engineering-baseline: Choose the actual branching policy with the project owner.'
+- 'testing: Codex native activation is Host-specific. The Phase 9 verified v1 contract
+  uses the repo-local testing Skill plus the exact minimal AGENTS trigger; use the
+  activation adapter rather than generic materialization, and do not assume this contract
+  applies to other Hosts or future Codex versions.'
+- 'testing: Test effort must reflect change impact.'
+- 'testing: The referenced pytest component applies to Python; other stacks need a
+  suitable component reference.'
+requires_confirmation: true
+generated_at: '2026-10-16T13:37:33Z'

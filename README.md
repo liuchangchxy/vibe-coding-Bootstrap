@@ -59,6 +59,10 @@ Phase 7C binds semantic review artifacts to the target repository revision and b
 
 The Codex adapter projects the existing `testing` Capability to a repo-local Skill at `.agents/skills/bootstrap-testing/SKILL.md`. It uses a revision-bound Activation Plan, an explicit approve/reject decision, and a target manifest that records ownership for safe deactivation. See [Codex Native Activation](docs/codex-native-activation.md). Host consumption is established separately by the sanitized Control/Activated acceptance evidence in [`examples/activation/codex/`](examples/activation/codex/).
 
+## Phase 10: Experience Promotion and Cross-Project Reuse
+
+Verified Experience does not auto-promote. Only Experience IDs explicitly linked through an authorized Capability edit are eligible for Composer reuse, and matching remains limited by project type and Capability ID. The Codex activation Experience supports only the observed Codex CLI 0.162.0-alpha.17.2 testing projection; it does not establish general testing effectiveness or rules for other Hosts. See [Experience governance](docs/experience-governance.md) and the [before/after reuse pilot](examples/reuse/codex-maintained-project/README.md).
+
 ## Integrity guarantees
 
 Repository tests validate Catalog paths and references, lifecycle Experience records use structured Evidence, and `verified` requires reviewed checked evidence. Capability proposals bind to the target's current version. GitHub Actions runs repository integrity, Composer, Assembly, and Materializer tests.

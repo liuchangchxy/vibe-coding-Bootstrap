@@ -1,0 +1,22 @@
+{
+  "base_sha": "7f390d2dd5f396c11eded1106fc1e3e433995284",
+  "testing_version": "1",
+  "testing_evidence_state": "pending",
+  "testing_experience_ids": [],
+  "recommendation_experience_ids": [],
+  "testing_recommendation_experience_count": 0,
+  "assembly_component_ids": [
+    "pro-git-reference",
+    "reviewable-changes",
+    "reference",
+    "project-test-guidance",
+    "reference",
+    "project-documentation-outline"
+  ],
+  "assembly_contains_codex_native_testing_component": false,
+  "codex_native_component_present": false,
+  "bootstrap_base_sha": "7f390d2dd5f396c11eded1106fc1e3e433995284",
+  "testing_capability_version": "1",
+  "testing_catalog_evidence_state": "pending",
+  "testing_linked_experience_ids": []
+}

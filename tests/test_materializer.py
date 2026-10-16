@@ -161,6 +161,8 @@ class MaterializerTests(unittest.TestCase):
             references = {(item["source_capability"], item["component_id"])
                           for item in manifest_items if item["state"] == "reference_only"}
             self.assertTrue({("testing", "reference"), ("documentation", "reference")}.issubset(references))
+            self.assertIn(("testing", "codex-native-testing-skill"), references)
+            self.assertFalse((project / ".agents/skills/bootstrap-testing/SKILL.md").exists())
             self.assertIn(("engineering-baseline", "pro-git-reference"), references)
             count = len(manifest_items)
             repeated_again = materialize(plan, project, global_root, apply=True)

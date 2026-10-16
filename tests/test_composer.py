@@ -14,6 +14,38 @@ from composer.core import ROOT, compose, load_yaml, validate
 
 
 class ComposerTests(unittest.TestCase):
+    def test_curated_verified_experience_is_reused_without_creating_candidates(self):
+        context = load_yaml(ROOT / "examples/reuse/codex-maintained-project/project-context.yaml")
+        recommendation = compose(context)
+        testing = next(row for row in recommendation["recommendations"] if row["capability_id"] == "testing")
+        self.assertEqual(["exp-codex-testing-activation-v1"],
+                         [item["record"]["id"] for item in testing["experiences"]])
+        self.assertEqual("supported", testing["evidence"]["state"])
+        self.assertEqual("high", testing["confidence"])
+        research = dict(context, project_type="research", lifecycle="short_term")
+        self.assertEqual({"research-workflow"},
+                         {row["capability_id"] for row in compose(research)["recommendations"]})
+        self.assertTrue(all(not row["experiences"] for row in compose(research)["recommendations"]))
+
+    def test_unlinked_verified_experience_is_not_ingested(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in ["schemas", "capabilities", "composer", "profiles", "experiences"]:
+                shutil.copytree(ROOT / name, root / name)
+            experience = load_yaml(ROOT / "experiences/verified/codex-testing-activation-v1.yaml")
+            experience["id"] = experience["identity"] = "unlinked-synthetic-experience"
+            (root / "experiences/verified/unlinked.yaml").write_text(
+                yaml.safe_dump(experience, sort_keys=False), encoding="utf-8")
+            context = load_yaml(ROOT / "examples/reuse/codex-maintained-project/project-context.yaml")
+            recommendation = compose(context, root)
+            testing = next(row for row in recommendation["recommendations"] if row["capability_id"] == "testing")
+            self.assertEqual(["exp-codex-testing-activation-v1"],
+                             [item["record"]["id"] for item in testing["experiences"]])
+            context["lifecycle"] = "short_term"
+            context["project_type"] = "research"
+            self.assertEqual({"research-workflow"},
+                             {row["capability_id"] for row in compose(context, root)["recommendations"]})
+
     def test_examples(self):
         expected = {
             "long-lived-web": {"engineering-baseline", "testing", "documentation"},
@@ -26,7 +58,8 @@ class ComposerTests(unittest.TestCase):
             self.assertEqual(ids, {r["capability_id"] for r in plan["recommendations"]})
             self.assertTrue(plan["requires_confirmation"])
             self.assertEqual(plan, compose(context))
-            self.assertTrue(all(r["evidence"]["state"] == "pending" for r in plan["recommendations"]))
+            self.assertEqual({"supported" if cid == "testing" else "pending" for cid in ids},
+                             {r["evidence"]["state"] for r in plan["recommendations"]})
 
     def test_all_schemas(self):
         for path in (ROOT / "schemas").glob("*.json"):
@@ -77,7 +110,7 @@ class ComposerTests(unittest.TestCase):
             plan = compose(context, root)
             testing = next(r for r in plan["recommendations"] if r["capability_id"] == "testing")
             self.assertEqual(experience, testing["experiences"][0]["record"])
-            self.assertEqual("pending", testing["evidence"]["state"])
+            self.assertEqual("supported", testing["evidence"]["state"])
             context = copy.deepcopy(context)
             context["project_type"] = "web"
             context["lifecycle"] = "long_lived"

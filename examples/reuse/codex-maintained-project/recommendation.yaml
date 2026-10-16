@@ -1,0 +1,222 @@
+project_context:
+  name: codex-reuse-pilot
+  description: A maintained software project used to verify curated Experience reuse.
+  project_type: software-project
+  lifecycle: production
+  technology_tags:
+  - Python
+  runtime: Python
+  platform: local
+  goal: Maintain observable behavior with focused regression verification.
+  constraints:
+  - AI coding host is Codex
+  collaboration: solo
+catalog_revision: sha256:0d28e8d9e3ad9bdaca55c22f47e4f18a49ab03743a9ea4175ca9afa85554986a
+profile_source: profiles/personal.yaml
+experience_sources:
+- experiences/verified/codex-testing-activation-v1.yaml
+recommendations:
+- capability_id: engineering-baseline
+  reason: 'Long-lived and production projects need change history, regression checks,
+    and maintainable guidance. Matched: {''lifecycle'': ''production''}.'
+  confidence: high
+  source:
+  - composer/rules.yaml#maintained-project
+  catalog_record: capabilities/engineering/engineering-baseline.yaml
+  status: draft
+  maturity: experimental
+  evidence:
+    state: pending
+    summary: No project-use evidence has been recorded. The external reference establishes
+      provenance only; a maintainer must review observed outcomes before validation.
+  constraints:
+  - Choose the actual branching policy with the project owner.
+  not_for:
+  - Repository hosting policy or a project-specific branching mandate.
+  requires: []
+  experiences: []
+- capability_id: testing
+  reason: 'Long-lived and production projects need change history, regression checks,
+    and maintainable guidance. Matched: {''lifecycle'': ''production''}.'
+  confidence: high
+  source:
+  - composer/rules.yaml#maintained-project
+  catalog_record: capabilities/quality/testing.yaml
+  status: draft
+  maturity: experimental
+  evidence:
+    state: supported
+    summary: Real project-use evidence supports the Codex-native testing activation
+      projection only. It does not establish testing effectiveness across projects
+      or Hosts; the Capability remains draft and experimental.
+    references:
+    - ../../experiences/verified/codex-testing-activation-v1.yaml
+    - ../../examples/activation/codex/README.md
+  constraints:
+  - The referenced pytest component applies to Python; other stacks need a suitable
+    component reference.
+  - Test effort must reflect change impact.
+  - Codex native activation is Host-specific. The Phase 9 verified v1 contract uses
+    the repo-local testing Skill plus the exact minimal AGENTS trigger; use the activation
+    adapter rather than generic materialization, and do not assume this contract applies
+    to other Hosts or future Codex versions.
+  not_for:
+  - A guarantee of correctness from coverage numbers alone.
+  requires: []
+  experiences:
+  - source: experiences/verified/codex-testing-activation-v1.yaml
+    record:
+      id: exp-codex-testing-activation-v1
+      identity: exp-codex-testing-activation-v1
+      title: Codex repo-local testing Skill requires the verified activation contract
+      project_context:
+        project_type: software-project
+        goal: Verify that Bootstrap testing guidance is consumed by Codex through
+          native repository surfaces.
+        technologies:
+        - Python
+        - Codex CLI
+        constraints:
+        - Disposable acceptance fixture
+        - Identical Control and Activated base state
+        - Identical user prompt
+        - Pilot marker isolated from the production Skill
+      approach: Compared a Control repository with no repo-local testing Skill against
+        an Activated repository using the same base and prompt. A Skill-only attempt
+        did not emit the marker. The finalized repo-local Skill plus exact minimal
+        AGENTS trigger was then exercised in the matched pilot.
+      capability_ids:
+      - testing
+      context: Phase 9 exercised Codex CLI 0.162.0-alpha.17.2 against a disposable
+        acceptance fixture. Both final A/B runs started at the same initial commit
+        and used the identical prompt; the marker was isolated to the pilot copy and
+        did not modify the production Skill.
+      observation: Skill-only activation did not produce the acceptance marker. The
+        complete Skill plus exact AGENTS trigger activation did produce the marker
+        under otherwise matched A/B conditions.
+      solution: For the tested Codex activation v1 contract, treat the repo-local
+        testing Skill plus the exact minimal AGENTS trigger as the complete native
+        activation state.
+      scope:
+      - codex
+      - repo-local-skill
+      - testing-capability
+      - native-activation
+      - codex-cli-0.162.0-alpha.17.2
+      reasoning:
+        interpretation: The observed Host behavior supports the current Codex activation
+          adapter contract.
+        limits:
+        - A single Codex CLI version was directly exercised.
+        - The A/B verifies Host consumption, not general testing effectiveness.
+        - Future Codex behavior may change.
+        - This result does not apply automatically to Claude, OpenCode, Gemini, or
+          other Hosts.
+        - It does not prove the AGENTS trigger is permanently required by all future
+          Codex versions.
+      outcome:
+        summary: The finalized activation contract produced observable Codex Skill
+          consumption in the controlled Phase 9 pilot.
+        result: success
+        measures:
+        - name: control_marker_observed
+          value: false
+        - name: activated_marker_observed
+          value: true
+        - name: control_base_equals_activated_base
+          value: true
+        - name: prompt_identical
+          value: true
+      evidence:
+      - type: project_result
+        source: examples/activation/codex/control-result.json; examples/activation/codex/activated-result.json
+        description: Matched Control and Activated evidence; Control marker absent
+          and Activated marker present.
+        strength: moderate
+        verification:
+          status: checked
+          method: Compared the committed sanitized Phase 9 A/B summaries, base commit,
+            prompt identity, and marker observations.
+          verified_by: repository-maintainer
+          verified_at: '2026-10-16T13:29:39Z'
+        observed_at: '2026-10-16T13:29:39Z'
+        limits:
+        - One Codex CLI version and one disposable acceptance fixture.
+        - Host Skill consumption does not establish general testing effectiveness.
+      - type: reviewer_confirmation
+        source: examples/activation/codex/README.md
+        description: Phase 9 review confirmed the observed contract and its scope;
+          this records repository evidence review and does not claim a new Codex CLI
+          execution.
+        strength: moderate
+        verification:
+          status: independently_confirmed
+          method: Reviewed the Phase 9 acceptance summary and repository artifacts.
+          verified_by: repository-maintainer
+          verified_at: '2026-10-16T13:29:39Z'
+        observed_at: '2026-10-16T13:29:39Z'
+        limits:
+        - Confirms the recorded Phase 9 observation only.
+      - type: ci_result
+        source: https://github.com/liuchangchxy/vibe-coding-Bootstrap/actions/runs/38893332854
+        description: Phase 9 CI run 38893332854 recorded 92 passing tests after the
+          activation-state repair; this checks implementation and state-contract regression,
+          not the Host A/B itself.
+        strength: moderate
+        verification:
+          status: checked
+          method: Referenced the Phase 9 recorded GitHub Actions result.
+          verified_by: repository-maintainer
+          verified_at: '2026-10-16T13:29:39Z'
+        observed_at: '2026-10-16T13:29:39Z'
+        limits:
+        - CI does not independently establish Codex Host A/B behavior.
+      confidence: medium
+      lesson: Under the verified Phase 9 Codex v1 conditions, the complete observed
+        activation state required both the repo-local testing Skill and the exact
+        minimal AGENTS trigger.
+      recorded_by: repository-maintainer
+      recorded_at: '2026-10-16T13:29:39Z'
+      source:
+        project: liuchangchxy/vibe-coding-Bootstrap Phase 9 Codex native activation
+          pilot
+        recorded_by: repository-maintainer
+        record_uri: examples/activation/codex/README.md
+        recorded_at: '2026-10-16T13:29:39Z'
+      status: verified
+      review:
+        review_status: accepted
+        reviewer: repository-maintainer
+        reviewed_at: '2026-10-16T13:29:39Z'
+        notes: Explicitly authorized by the Phase 10 execution instruction; acceptance
+          is limited to the scoped Codex activation observation and does not generalize
+          testing effectiveness.
+- capability_id: documentation
+  reason: 'Long-lived and production projects need change history, regression checks,
+    and maintainable guidance. Matched: {''lifecycle'': ''production''}.'
+  confidence: high
+  source:
+  - composer/rules.yaml#maintained-project
+  catalog_record: capabilities/workflow/documentation.yaml
+  status: draft
+  maturity: experimental
+  evidence:
+    state: pending
+    summary: No project-use evidence has been recorded. The external reference establishes
+      provenance only; a maintainer must review observed outcomes before validation.
+  constraints:
+  - Project-specific content stays in the project; this catalog only describes the
+    reusable ability.
+  not_for:
+  - Promoting private project facts into global capability records.
+  requires: []
+  experiences: []
+excluded: []
+conflicts: []
+requires_confirmation: true
+notes:
+- Confidence describes rule relevance, not proven capability effectiveness.
+- Free-text goals, constraints, runtime and platform require human applicability review.
+- Experiences match project type only; original evidence and limits are retained without
+  changing recommendations.
+- Conflicting candidates have no automatic winner; resolve them before any later assembly.

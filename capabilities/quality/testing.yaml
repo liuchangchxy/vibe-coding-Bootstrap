@@ -1,5 +1,5 @@
 id: testing
-version: "1"
+version: "2"
 name: Testing
 kind: workflow
 description: Check observable behavior with focused, repeatable tests appropriate to the change.
@@ -43,6 +43,25 @@ components:
     optional: true
     provenance:
       repository_path: components/project/test-guidance.md
+- id: codex-native-testing-skill
+  kind: skill
+  role: >-
+    Repo-local Codex representation of the testing Capability. Native activation is managed by
+    the Codex activation adapter and requires the verified Skill plus minimal AGENTS trigger contract.
+  source_id: codex-native-testing
+  assembly:
+    id: codex-native-testing-skill
+    name: Codex native testing Skill
+    type: skill
+    source: host_adapters/codex/skills/testing/SKILL.md
+    provider: vibe-coding-bootstrap
+    version: '1'
+    scope: project
+    delivery: reference
+    optional: true
+    provenance:
+      repository_path: host_adapters/codex/skills/testing/SKILL.md
+      activation_adapter: codex
 component_sources:
 - id: primary
   title: 'pytest: Good Integration Practices'
@@ -53,13 +72,22 @@ component_sources:
   title: Project test guidance template
   uri: components/project/test-guidance.md
   relationship: reference
+- id: codex-native-testing
+  title: Bootstrap Codex native testing Skill
+  uri: host_adapters/codex/skills/testing/SKILL.md
+  relationship: reference
+experience_ids:
+  - exp-codex-testing-activation-v1
 selection_hints:
   signals:
   - Regression risk or repeatable behavioral checks are relevant.
   constraints:
   - The referenced pytest component applies to Python; other stacks need a suitable component reference.
   - Test effort must reflect change impact.
+  - Codex native activation is Host-specific. The Phase 9 verified v1 contract uses the repo-local testing Skill plus the exact minimal AGENTS trigger; use the activation adapter rather than generic materialization, and do not assume this contract applies to other Hosts or future Codex versions.
 evidence:
-  state: pending
-  summary: No project-use evidence has been recorded. The external reference establishes provenance only;
-    a maintainer must review observed outcomes before validation.
+  state: supported
+  summary: Real project-use evidence supports the Codex-native testing activation projection only. It does not establish testing effectiveness across projects or Hosts; the Capability remains draft and experimental.
+  references:
+    - ../../experiences/verified/codex-testing-activation-v1.yaml
+    - ../../examples/activation/codex/README.md
