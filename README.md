@@ -53,7 +53,7 @@ Confirmed Assembly Plans can now materialize Bootstrap-owned local components in
 
 The [adoption discovery command](docs/adoption-discovery.md) inventories existing development-environment assets, identifies project context, and maps evidence to the current Capability Catalog. It produces a read-only Adoption Report; it does not install or modify target files.
 
-Phase 7C binds semantic review artifacts to the target repository revision and builds a deterministic Adoption Plan. A stale review is rejected, each Catalog Capability receives one disposition, and a no-op or review-only outcome is valid. Plans require explicit confirmation; plan eligibility does not execute materialization.
+Phase 7C binds semantic review artifacts to the target repository revision and builds a deterministic Adoption Plan. A stale review is rejected, each Catalog Capability receives one disposition, and a no-op or review-only outcome is valid. `requires_confirmation: true` means the plan is not approval: an explicit approve/reject Decision Artifact binds the choice to the exact plan digest and target SHA. Execution remains deferred.
 
 ## Integrity guarantees
 

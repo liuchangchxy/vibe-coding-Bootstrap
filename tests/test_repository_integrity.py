@@ -205,6 +205,7 @@ class RepositoryIntegrityTests(unittest.TestCase):
         self.assertEqual(package["target"], report["target"])
         self.assertEqual(package["target"], plan["target"])
         self.assertEqual(plan["plan_digest"], plan_digest(plan))
+        self.assertEqual("review_required", plan["overall_decision"])
         catalog = load_yaml(ROOT / "capabilities/catalog.yaml")
         catalog_ids = {load_yaml(ROOT / "capabilities" / item)["id"] for item in catalog["capabilities"]}
         self.assertEqual(catalog_ids, {item["capability_id"] for item in plan["items"]})
@@ -212,6 +213,7 @@ class RepositoryIntegrityTests(unittest.TestCase):
         serialized = json.dumps([package, report, plan], ensure_ascii=False)
         self.assertNotIn("C:\\Users\\", serialized)
         self.assertNotIn("C:/Users/", serialized)
+        self.assertFalse((base / "adoption-decision.json").exists())
 
     def test_catalog_copy_destinations_are_unique_within_scope(self):
         with tempfile.TemporaryDirectory() as directory:

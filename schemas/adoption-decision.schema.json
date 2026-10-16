@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/adoption-decision.schema.json",
+  "title": "Adoption Decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format_version", "plan_digest", "target_commit_sha", "decision", "confirmed_at"],
+  "properties": {
+    "format_version": {"const": 1},
+    "plan_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "target_commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "decision": {"enum": ["approve", "reject"]},
+    "confirmed_at": {"type": "string", "format": "date-time"}
+  }
+}
