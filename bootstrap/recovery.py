@@ -182,6 +182,24 @@ def update_record(project, record, status):
     (metadata / "record.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
 
 
+def update_record_after_failure(project, record):
+    """Persist observed post-state and classify from mutations to deployment paths."""
+    mutated = False
+    for action in record["actions"]:
+        base = Path(project) if action["scope"] == "project" else Path(record["global_root"])
+        try:
+            state = _state(_contained(base, action["path"]))
+        except (OSError, RecoveryError):
+            state = {"exists": False, "sha256": None}
+        action["post_state"] = state
+        if state != action.get("pre_state"):
+            mutated = True
+    record["status"] = "partial" if mutated else "aborted"
+    metadata = _metadata_dir(project, record["deployment_id"])
+    (metadata / "record.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+    return mutated
+
+
 def load_record(project, deployment_id):
     path = _metadata_dir(project, deployment_id) / "record.json"
     try:

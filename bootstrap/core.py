@@ -16,7 +16,7 @@ from activation import core as activation
 from assembly.core import assemble
 from composer.core import ROOT, compose, load_yaml, validate
 from materializer.core import materialize
-from bootstrap.recovery import prepare_deployment, update_record
+from bootstrap.recovery import prepare_deployment, update_record, update_record_after_failure
 
 
 class ProductLoopError(ValueError):
@@ -420,9 +420,9 @@ def apply_plan(plan, decision, project_root, global_root=None, root=ROOT):
                 raise ProductLoopError("PARTIAL_APPLY: materializer failed after activation")
             completed.extend(item["component_id"] for item in applied["items"] if item["result"] == "copied")
     except Exception as exc:
-        update_record(project, deployment, "partial" if completed else "aborted")
-        if completed:
-            raise ProductLoopError(f"PARTIAL_APPLY: completed {', '.join(completed)}; failed: {exc}") from exc
+        mutated = update_record_after_failure(project, deployment)
+        if mutated:
+            raise ProductLoopError(f"PARTIAL_APPLY: deployment paths changed before failure: {exc}") from exc
         raise
     try:
         _verify(plan, project, root)

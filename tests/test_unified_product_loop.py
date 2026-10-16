@@ -385,6 +385,55 @@ class UnifiedLoopTests(unittest.TestCase):
         self.assertEqual(preview["status"], "ready")
         self.assertEqual(rollback(self.repo, deployment_id, apply=True)["status"], "rolled_back")
 
+    def test_activation_mid_write_failure_is_partial_and_rollbackable(self):
+        from unittest.mock import patch
+        from bootstrap.recovery import load_record
+        plan = build_plan(self.repo, context_path=self.context, global_root=self.base / "global")
+        approval = decide(plan, "approve")
+
+        def write_first_activation_artifact(subplan, decision, project, root):
+            destination = Path(project) / subplan["destination"]
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes((Path(root) / subplan["source"]).read_bytes())
+            raise OSError("synthetic activation mid-write failure")
+
+        with patch("bootstrap.core.activation.apply", side_effect=write_first_activation_artifact):
+            with self.assertRaisesRegex(ProductLoopError, "PARTIAL_APPLY"):
+                apply_plan(plan, approval, self.repo, self.base / "global")
+        snapshot_refs = self._git("for-each-ref", "--format=%(refname)", "refs/vibe-coding-bootstrap/snapshots").splitlines()
+        self.assertEqual(len(snapshot_refs), 1)
+        deployment_id = snapshot_refs[0].rsplit("/", 1)[1]
+        record = load_record(self.repo, deployment_id)
+        self.assertEqual(record["status"], "partial")
+        actions = {item["path"]: item for item in record["actions"]}
+        skill = ".agents/skills/bootstrap-testing/SKILL.md"
+        self.assertTrue(actions[skill]["post_state"]["exists"])
+        self.assertEqual(actions["AGENTS.md"]["post_state"], {"exists": False, "sha256": None})
+        self.assertEqual(actions[".vibe-coding-bootstrap/activation.json"]["post_state"],
+                         {"exists": False, "sha256": None})
+        self.assertTrue((self.repo / skill).is_file())
+        self.assertEqual(rollback(self.repo, deployment_id)["status"], "ready")
+        self.assertEqual(rollback(self.repo, deployment_id, apply=True)["status"], "rolled_back")
+        self.assertFalse((self.repo / skill).exists())
+        self.assertFalse((self.repo / "AGENTS.md").exists())
+        self.assertFalse((self.repo / ".vibe-coding-bootstrap/activation.json").exists())
+        self.assertFalse((self.repo / ".vibe-coding-bootstrap/manifest.yaml").exists())
+        self.assertFalse(any((self.base / "global").rglob("*.md")))
+
+    def test_failure_after_snapshot_before_any_write_is_aborted(self):
+        from unittest.mock import patch
+        from bootstrap.recovery import load_record, rollback
+        plan = build_plan(self.repo, context_path=self.context, global_root=self.base / "global")
+        with patch("bootstrap.core.activation.apply", side_effect=OSError("synthetic zero-write failure")):
+            with self.assertRaisesRegex(OSError, "synthetic zero-write failure"):
+                apply_plan(plan, decide(plan, "approve"), self.repo, self.base / "global")
+        refs = self._git("for-each-ref", "--format=%(refname)", "refs/vibe-coding-bootstrap/snapshots").splitlines()
+        deployment_id = refs[0].rsplit("/", 1)[1]
+        record = load_record(self.repo, deployment_id)
+        self.assertEqual(record["status"], "aborted")
+        with self.assertRaisesRegex(ValueError, "ROLLBACK_UNAVAILABLE"):
+            rollback(self.repo, deployment_id)
+
 
 if __name__ == "__main__":
     unittest.main()
