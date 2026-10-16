@@ -4,8 +4,18 @@
   "title": "Semantic Review Input",
   "type": "object",
   "additionalProperties": false,
-  "required": ["project", "capability_catalog", "discovered_assets", "baseline_coverage", "baseline_report_source", "profile_constraints", "review_instructions"],
+  "required": ["target", "project", "capability_catalog", "discovered_assets", "baseline_coverage", "baseline_report_source", "profile_constraints", "review_instructions"],
   "properties": {
+    "target": {
+      "type": "object", "additionalProperties": false,
+      "required": ["repository", "branch", "commit_sha", "remote", "remote_commit_sha", "dirty"],
+      "properties": {
+        "repository": {"type": ["string", "null"]}, "branch": {"type": ["string", "null"]},
+        "commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "remote": {"type": ["string", "null"]}, "remote_commit_sha": {"type": ["string", "null"]},
+        "dirty": {"type": "boolean"}
+      }
+    },
     "project": {
       "type": "object",
       "required": ["name", "project_type", "description", "technologies", "platforms", "development_signals"],

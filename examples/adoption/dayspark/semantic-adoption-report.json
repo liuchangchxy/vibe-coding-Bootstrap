@@ -1,4 +1,12 @@
 {
+  "target": {
+    "repository": "liuchangchxy/dayspark",
+    "branch": "main",
+    "commit_sha": "2e5fe700d7295d7069c7223547af9cfaa528b4e8",
+    "remote": "origin",
+    "remote_commit_sha": "2e5fe700d7295d7069c7223547af9cfaa528b4e8",
+    "dirty": false
+  },
   "project": {
     "name": "dayspark",
     "project_type": "cross-platform application",
@@ -21,7 +29,7 @@
       "tests"
     ]
   },
-  "baseline_report_source": "examples/adoption/dayspark/semantic-review-input.json#baseline_coverage (fresh deterministic discovery)",
+  "baseline_report_source": "examples/adoption/dayspark/adoption-report.json",
   "baseline_coverage": [
     {
       "capability_id": "agent-development",
@@ -529,6 +537,6 @@
     "planning",
     "research-workflow"
   ],
-  "reviewed_at": "2026-10-15T17:05:42Z",
+  "reviewed_at": "2026-10-16T09:47:01Z",
   "reviewer": "host-ai"
 }

@@ -1,6 +1,7 @@
 """Repository-wide cross-file checks; fixtures in this module are synthetic."""
 
 from collections import defaultdict
+import json
 from pathlib import Path, PurePosixPath, PureWindowsPath
 import shutil
 import tempfile
@@ -8,6 +9,8 @@ import unittest
 
 from composer.core import ROOT, load_yaml, validate
 import yaml
+from adoption.planning import plan_digest, validate_adoption_plan
+from adoption.semantic import validate_semantic_result
 
 
 def check_repository(root=ROOT):
@@ -187,6 +190,28 @@ def check_repository(root=ROOT):
 class RepositoryIntegrityTests(unittest.TestCase):
     def test_current_repository_integrity(self):
         check_repository()
+
+    def test_dayspark_pilot_artifacts_are_revision_bound_and_catalog_complete(self):
+        base = ROOT / "examples/adoption/dayspark"
+        package = json.loads((base / "semantic-review-input.json").read_text(encoding="utf-8"))
+        result = json.loads((base / "semantic-review-result.json").read_text(encoding="utf-8"))
+        report = json.loads((base / "semantic-adoption-report.json").read_text(encoding="utf-8"))
+        plan = json.loads((base / "adoption-plan.json").read_text(encoding="utf-8"))
+        validate(package, "semantic-review-input.schema.json")
+        validate_semantic_result(result, package)
+        validate_adoption_plan(plan)
+        self.assertEqual("liuchangchxy/dayspark", package["target"]["repository"])
+        self.assertRegex(package["target"]["commit_sha"], r"^[0-9a-f]{40}$")
+        self.assertEqual(package["target"], report["target"])
+        self.assertEqual(package["target"], plan["target"])
+        self.assertEqual(plan["plan_digest"], plan_digest(plan))
+        catalog = load_yaml(ROOT / "capabilities/catalog.yaml")
+        catalog_ids = {load_yaml(ROOT / "capabilities" / item)["id"] for item in catalog["capabilities"]}
+        self.assertEqual(catalog_ids, {item["capability_id"] for item in plan["items"]})
+        self.assertEqual(0, plan["materializable_changes"])
+        serialized = json.dumps([package, report, plan], ensure_ascii=False)
+        self.assertNotIn("C:\\Users\\", serialized)
+        self.assertNotIn("C:/Users/", serialized)
 
     def test_catalog_copy_destinations_are_unique_within_scope(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -7,6 +7,7 @@ import re
 
 from composer.core import ROOT, load_yaml, validate
 from .core import _read_text, discover
+from .revision import bind_target_revision
 
 
 MAX_EXCERPT_CHARS = 2600
@@ -126,6 +127,7 @@ def build_semantic_input(project_root, root=ROOT):
         "testing_approach", "review_before_changes", "additional",
     }
     package = {
+        "target": bind_target_revision(project),
         "project": baseline["project"],
         "capability_catalog": records,
         "discovered_assets": assets,
@@ -217,6 +219,7 @@ def build_semantic_adoption_report(package, result, baseline_report_source):
         if baseline[capability_id]["status"] != semantic[capability_id]["status"]
     ]
     return {
+        "target": package["target"],
         "project": package["project"],
         "baseline_report_source": baseline_report_source,
         "baseline_coverage": package["baseline_coverage"],

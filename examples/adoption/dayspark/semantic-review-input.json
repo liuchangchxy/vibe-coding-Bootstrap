@@ -1,4 +1,12 @@
 {
+  "target": {
+    "repository": "liuchangchxy/dayspark",
+    "branch": "main",
+    "commit_sha": "2e5fe700d7295d7069c7223547af9cfaa528b4e8",
+    "remote": "origin",
+    "remote_commit_sha": "2e5fe700d7295d7069c7223547af9cfaa528b4e8",
+    "dirty": false
+  },
   "project": {
     "name": "dayspark",
     "project_type": "cross-platform application",

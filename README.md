@@ -53,6 +53,8 @@ Confirmed Assembly Plans can now materialize Bootstrap-owned local components in
 
 The [adoption discovery command](docs/adoption-discovery.md) inventories existing development-environment assets, identifies project context, and maps evidence to the current Capability Catalog. It produces a read-only Adoption Report; it does not install or modify target files.
 
+Phase 7C binds semantic review artifacts to the target repository revision and builds a deterministic Adoption Plan. A stale review is rejected, each Catalog Capability receives one disposition, and a no-op or review-only outcome is valid. Plans require explicit confirmation; plan eligibility does not execute materialization.
+
 ## Integrity guarantees
 
 Repository tests validate Catalog paths and references, lifecycle Experience records use structured Evidence, and `verified` requires reviewed checked evidence. Capability proposals bind to the target's current version. GitHub Actions runs repository integrity, Composer, Assembly, and Materializer tests.

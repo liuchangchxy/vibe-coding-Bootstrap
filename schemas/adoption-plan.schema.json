@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/adoption-plan.schema.json",
+  "title": "Existing Project Adoption Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format_version", "target", "semantic_review_source", "items", "overall_decision", "materializable_changes", "requires_confirmation", "generated_at", "plan_digest"],
+  "properties": {
+    "format_version": {"const": 1},
+    "target": {
+      "type": "object", "additionalProperties": false,
+      "required": ["repository", "branch", "commit_sha", "remote", "remote_commit_sha", "dirty"],
+      "properties": {
+        "repository": {"type": ["string", "null"]}, "branch": {"type": ["string", "null"]},
+        "commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "remote": {"type": ["string", "null"]}, "remote_commit_sha": {"type": ["string", "null"]},
+        "dirty": {"type": "boolean"}
+      }
+    },
+    "semantic_review_source": {"type": "string", "minLength": 1},
+    "items": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/item"}},
+    "overall_decision": {"enum": ["no_changes", "review_required", "changes_available", "blocked"]},
+    "materializable_changes": {"type": "integer", "minimum": 0},
+    "requires_confirmation": {"const": true},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "plan_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "item": {
+      "type": "object", "additionalProperties": false,
+      "required": ["capability_id", "semantic_status", "confidence", "disposition", "reason", "evidence", "bootstrap_component", "materialization_eligible", "requires_confirmation"],
+      "properties": {
+        "capability_id": {"type": "string", "minLength": 1},
+        "semantic_status": {"enum": ["satisfied", "partial", "missing", "conflict", "unknown"]},
+        "confidence": {"enum": ["low", "medium", "high"]},
+        "disposition": {"enum": ["keep_existing", "no_action", "review_gap", "review_conflict", "consider_component", "blocked"]},
+        "reason": {"type": "string", "minLength": 1},
+        "evidence": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["path", "claim"], "properties": {"path": {"type": "string", "minLength": 1}, "claim": {"type": "string", "minLength": 1}}}},
+        "bootstrap_component": {"type": ["object", "null"], "additionalProperties": false, "required": ["component_id", "source_capability", "delivery", "scope", "source", "destination"], "properties": {"component_id": {"type": "string"}, "source_capability": {"type": "string"}, "delivery": {"const": "copy"}, "scope": {"const": "project"}, "source": {"type": ["string", "null"]}, "destination": {"type": ["string", "null"]}}},
+        "materialization_eligible": {"type": "boolean"},
+        "requires_confirmation": {"type": "boolean"}
+      }
+    }
+  }
+}

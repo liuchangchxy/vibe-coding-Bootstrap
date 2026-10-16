@@ -1,0 +1,211 @@
+{
+  "format_version": 1,
+  "target": {
+    "repository": "liuchangchxy/dayspark",
+    "branch": "main",
+    "commit_sha": "2e5fe700d7295d7069c7223547af9cfaa528b4e8",
+    "remote": "origin",
+    "remote_commit_sha": "2e5fe700d7295d7069c7223547af9cfaa528b4e8",
+    "dirty": false
+  },
+  "semantic_review_source": "examples/adoption/dayspark/semantic-review-result.json",
+  "items": [
+    {
+      "capability_id": "agent-development",
+      "semantic_status": "partial",
+      "confidence": "medium",
+      "disposition": "review_gap",
+      "reason": "The project does develop AI-assisted behavior and an agent-facing tool surface, so applicability is established. The inspected material specifies tool contracts and feature QA, but does not show a systematic set of behavioral acceptance cases for the assistant/agent behavior; MCP presence alone is insufficient for satisfied.",
+      "evidence": [
+        {
+          "path": "CLAUDE.md",
+          "claim": "Describes a user-facing AI assistant using a user-supplied model key, so the repository develops AI-assisted product behavior in addition to coding-tool instructions."
+        },
+        {
+          "path": "SPEC.md",
+          "claim": "Defines MCP operations and a stdio wrapper for a local Agent, including action constraints and protocol behavior."
+        },
+        {
+          "path": "docs/qa/p3-mcp-qa.md",
+          "claim": "Provides concrete MCP feature QA evidence, but does not by itself define task-level behavioral acceptance cases for the AI assistant or an agent system."
+        }
+      ],
+      "bootstrap_component": null,
+      "materialization_eligible": false,
+      "requires_confirmation": false
+    },
+    {
+      "capability_id": "code-review",
+      "semantic_status": "satisfied",
+      "confidence": "high",
+      "disposition": "keep_existing",
+      "reason": "The repository has both project-level adversarial review guidance and an exact-head formal reviewer contract, with acceptance kept separate from implementation.",
+      "evidence": [
+        {
+          "path": "docs/process/REVIEWING.md",
+          "claim": "Requires specification and quality verdicts, reproducible findings, evidence references and reviewers to rerun gates."
+        },
+        {
+          "path": ".opencode/skills/dayspark-code-review/SKILL.md",
+          "claim": "Provides an active adversarial review checklist with severity levels and concrete defect categories."
+        },
+        {
+          "path": ".github/vccp/reviewer-task-prompt.md",
+          "claim": "Separates a formal reviewer from the implementer and binds decisions to the exact current PR head and frozen scope."
+        }
+      ],
+      "bootstrap_component": null,
+      "materialization_eligible": false,
+      "requires_confirmation": false
+    },
+    {
+      "capability_id": "debugging",
+      "semantic_status": "partial",
+      "confidence": "medium",
+      "disposition": "review_gap",
+      "reason": "Root-cause-first diagnosis, reproduction and incident records are present, but the inspected active guidance does not define a general bounded debugging process for collecting execution evidence across failures. This is partial coverage, not a missing capability.",
+      "evidence": [
+        {
+          "path": "CLAUDE.md",
+          "claim": "Requires identifying a failure's root cause before changing code and validating the correction with evidence."
+        },
+        {
+          "path": "docs/process/TESTING.md",
+          "claim": "Uses reproduced failures and regression tests to distinguish an observed defect from an unverified fix."
+        },
+        {
+          "path": "docs/CONSTRAINTS.md",
+          "claim": "Records concrete incident symptoms, root-cause chains, fixes and verification for selected technical incidents."
+        }
+      ],
+      "bootstrap_component": null,
+      "materialization_eligible": false,
+      "requires_confirmation": false
+    },
+    {
+      "capability_id": "documentation",
+      "semantic_status": "satisfied",
+      "confidence": "high",
+      "disposition": "keep_existing",
+      "reason": "The active documentation set has explicit reader roles, authoritative sources, current status and stable product reference. Historical documents are distinguished by path and are not counted as current authority.",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "claim": "Assigns distinct authority and audiences to SPEC, CLAUDE, CONSTRAINTS, ROADMAP, START_HERE and process documentation."
+        },
+        {
+          "path": "docs/START_HERE.md",
+          "claim": "Provides a current continuation entry and directs readers to the live project state and next work."
+        },
+        {
+          "path": "docs/ROADMAP.md",
+          "claim": "Acts as the current project status and roadmap source."
+        },
+        {
+          "path": "SPEC.md",
+          "claim": "Defines the product contracts and core behavior as the business source of truth."
+        }
+      ],
+      "bootstrap_component": null,
+      "materialization_eligible": false,
+      "requires_confirmation": false
+    },
+    {
+      "capability_id": "engineering-baseline",
+      "semantic_status": "satisfied",
+      "confidence": "high",
+      "disposition": "keep_existing",
+      "reason": "Current governing instructions and the execution process provide a coherent, traceable and reviewable change workflow. The historical plans are not needed to establish this coverage.",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "claim": "Requires SPEC-first changes, preservation of protected data and Git history, and full analyze/test gates before commit."
+        },
+        {
+          "path": "CLAUDE.md",
+          "claim": "Defines traceable change rules, root-cause-first fixes, evidence-based validation, and platform-aware implementation."
+        },
+        {
+          "path": "docs/process/EXECUTION.md",
+          "claim": "Defines task briefs, implementation reports, review diffs, independent review, bounded fix cycles, and delivery rulings for multi-task work."
+        }
+      ],
+      "bootstrap_component": null,
+      "materialization_eligible": false,
+      "requires_confirmation": false
+    },
+    {
+      "capability_id": "planning",
+      "semantic_status": "satisfied",
+      "confidence": "high",
+      "disposition": "keep_existing",
+      "reason": "The active specification, roadmap and execution process cover scope, acceptance and dependencies at a depth suited to the project; they do not require ceremony for every small edit.",
+      "evidence": [
+        {
+          "path": "SPEC.md",
+          "claim": "Defines product scope, behavioral contracts, phased work and out-of-scope items."
+        },
+        {
+          "path": "docs/ROADMAP.md",
+          "claim": "Tracks current phases, status and pending work."
+        },
+        {
+          "path": "docs/process/EXECUTION.md",
+          "claim": "For multi-task work, requires briefs with acceptance criteria and dependency/interface review before implementation."
+        }
+      ],
+      "bootstrap_component": null,
+      "materialization_eligible": false,
+      "requires_confirmation": false
+    },
+    {
+      "capability_id": "research-workflow",
+      "semantic_status": "unknown",
+      "confidence": "medium",
+      "disposition": "no_action",
+      "reason": "The catalog's applicability condition—investigations or experiments that must report provenance, outcomes and limitations—is not established for this product. Absence of a research keyword is not treated as a gap.",
+      "evidence": [
+        {
+          "path": "SPEC.md",
+          "claim": "Defines a calendar and task product with synchronization and an AI/MCP interface; it does not establish research experiments or dataset-based claims as a project need."
+        },
+        {
+          "path": "docs/START_HERE.md",
+          "claim": "Describes product development and pending project work rather than a research or experiment workflow."
+        }
+      ],
+      "bootstrap_component": null,
+      "materialization_eligible": false,
+      "requires_confirmation": false
+    },
+    {
+      "capability_id": "testing",
+      "semantic_status": "satisfied",
+      "confidence": "high",
+      "disposition": "keep_existing",
+      "reason": "The active policy combines repeatable tests, regression evidence, change validation and CI gates; its purpose is substantively covered.",
+      "evidence": [
+        {
+          "path": "AGENTS.md",
+          "claim": "Requires dart analyze and the complete Flutter test suite as evidence before commits."
+        },
+        {
+          "path": "docs/process/TESTING.md",
+          "claim": "Requires defect reproduction, a regression test that fails before the fix, successful rerun, relevant validation and explicit completion criteria."
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "claim": "Runs the project's automated CI validation on repository changes."
+        }
+      ],
+      "bootstrap_component": null,
+      "materialization_eligible": false,
+      "requires_confirmation": false
+    }
+  ],
+  "overall_decision": "review_required",
+  "materializable_changes": 0,
+  "requires_confirmation": true,
+  "generated_at": "2026-10-16T09:47:02Z",
+  "plan_digest": "86969a4346a110ef94759eedca15d8ccb6f8963ff5e832fed0629a963e00039b"
+}

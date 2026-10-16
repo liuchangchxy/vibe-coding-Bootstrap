@@ -4,6 +4,7 @@ from pathlib import Path
 import hashlib
 import tempfile
 import unittest
+import subprocess
 
 from adoption.semantic import (
     authority_hint, build_semantic_input, relevant_excerpt,
@@ -25,6 +26,10 @@ class SemanticAdoptionTests(unittest.TestCase):
         self.project = Path(self.temporary.name) / "sample"
         self.project.mkdir()
         self.put("AGENTS.md", "# Project instructions\nFollow documented requirements and test changes.\n")
+        for args in (("init", "-b", "main"), ("config", "user.name", "Test"),
+                     ("config", "user.email", "test@example.invalid"), ("add", "AGENTS.md"),
+                     ("commit", "-m", "initial")):
+            subprocess.run(["git", "-C", str(self.project), *args], check=True, capture_output=True, text=True)
         self.package = build_semantic_input(self.project)
         self.catalog_ids = [item["id"] for item in self.package["capability_catalog"]]
 
