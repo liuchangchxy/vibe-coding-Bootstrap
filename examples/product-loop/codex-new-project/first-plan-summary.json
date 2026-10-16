@@ -1,0 +1,17 @@
+{
+  "evidence_sanitized": true,
+  "target_base_sha": "5906f582f2f2b03deff569f9899a2a2ab49bee34",
+  "route": "compose",
+  "selected_capabilities": [
+    "documentation",
+    "engineering-baseline",
+    "testing"
+  ],
+  "project_writes": 2,
+  "global_writes": 1,
+  "codex_activations": 1,
+  "references": 4,
+  "unchanged": 0,
+  "conflicts": 0,
+  "requires_confirmation": true
+}

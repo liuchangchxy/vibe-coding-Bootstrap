@@ -1,0 +1,12 @@
+{
+  "evidence_sanitized": true,
+  "target_base_sha": "5906f582f2f2b03deff569f9899a2a2ab49bee34",
+  "status": "applied",
+  "generic_materialization": true,
+  "codex_activation": true,
+  "activation_manifest_valid": true,
+  "materializer_manifest_valid": true,
+  "business_files_unchanged": true,
+  "verification_passed": true,
+  "target_after_dirty": true
+}

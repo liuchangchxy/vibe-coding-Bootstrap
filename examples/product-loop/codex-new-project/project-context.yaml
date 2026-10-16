@@ -1,0 +1,12 @@
+name: bootstrap-product-loop-pilot
+description: Maintained Python software used to verify the unified Bootstrap product loop.
+project_type: software-project
+lifecycle: production
+technology_tags:
+  - Python
+runtime: Python
+platform: local
+goal: Maintain observable behavior with focused automated verification.
+constraints:
+  - AI coding host is Codex
+collaboration: solo

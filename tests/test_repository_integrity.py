@@ -486,6 +486,25 @@ class RepositoryIntegrityTests(unittest.TestCase):
                         check_repository(root)
                 fixture.unlink()
 
+    def test_product_loop_evidence_is_sanitized_and_bound_to_one_pilot(self):
+        evidence = ROOT / "examples/product-loop/codex-new-project"
+        first = json.loads((evidence / "first-plan-summary.json").read_text(encoding="utf-8"))
+        applied = json.loads((evidence / "apply-result.json").read_text(encoding="utf-8"))
+        second = json.loads((evidence / "second-plan-summary.json").read_text(encoding="utf-8"))
+        for item in (first, applied, second):
+            self.assertTrue(item["evidence_sanitized"])
+            serialized = json.dumps(item, ensure_ascii=False)
+            self.assertNotIn("C:\\Users\\", serialized)
+            self.assertNotIn("/Users/", serialized)
+            self.assertNotRegex(serialized, r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}")
+            self.assertNotRegex(serialized, r"(?i)(token|api[_-]?key|secret)\\s*[:=]")
+        self.assertEqual(first["target_base_sha"], applied["target_base_sha"])
+        self.assertEqual(first["target_base_sha"], second["target_base_sha"])
+        self.assertEqual(first["route"], "compose")
+        self.assertTrue(applied["business_files_unchanged"] and applied["verification_passed"])
+        self.assertEqual(second["new_project_writes"] + second["new_global_writes"] + second["new_activations"], 0)
+        self.assertFalse(second["requires_confirmation"])
+
 
 if __name__ == "__main__":
     unittest.main()

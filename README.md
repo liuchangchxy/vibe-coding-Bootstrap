@@ -2,6 +2,15 @@
 
 A personalizable foundation for assembling an AI development environment around a software project. It models project context, user preferences, reusable capabilities, and validated experience so future phases can help users make informed choices.
 
+## Unified Product Loop
+
+Use `python -m bootstrap inspect --project-root <project> --host codex`, then `python -m bootstrap plan --project-root <project> --host codex --context <context.yaml> --output <plan.json>`.
+The AI Host supplies context or semantic review when requested, presents the concise plan, and creates an approve decision only after explicit human confirmation.
+Run `python -m bootstrap decide <plan.json> --decision approve --output <decision.json>` and `python -m bootstrap apply --plan <plan.json> --decision <decision.json> --project-root <project>`.
+Users follow one inspect → plan → confirm once → apply flow; they do not need to understand the internal modules.
+Advanced/diagnostic CLIs remain available: `composer`, `assembly`, `materializer`, `adoption`, and `activation`.
+See [Unified Product Loop](docs/unified-product-loop.md) for the Host contract and safety details.
+
 ## Phase 1: Capability Foundation
 
 Phase 1 defines three data models only:
