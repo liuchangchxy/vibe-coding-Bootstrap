@@ -327,6 +327,31 @@ def _verify(plan, project, root):
     return True
 
 
+def _validate_materialization_preflight(plan, dry):
+    """Require every approved copy mutation to retain its exact identity and bytes."""
+    def mutations(items):
+        return {
+            (item["source_capability"], item["component_id"], item["scope"], item.get("destination")): {
+                "result": item["result"], "sha256": item.get("sha256"),
+            }
+            for item in items
+            if item.get("delivery") == "copy" and item.get("result") in {
+                "copied", "unchanged", "conflict", "unsupported", "skipped",
+            }
+        }
+
+    expected = mutations([*plan["project_changes"], *plan["global_changes"]])
+    expected = {key: value for key, value in expected.items() if value["result"] == "copied"}
+    fresh = mutations(dry["items"])
+    for key, approved in expected.items():
+        observed = fresh.get(key)
+        if (observed is None or observed["result"] != "copied"
+                or observed["sha256"] != approved["sha256"]):
+            raise ProductLoopError(
+                "STALE_BOOTSTRAP_PLAN: materialization source or action changed after planning"
+            )
+
+
 def apply_plan(plan, decision, project_root, global_root=None, root=ROOT):
     validate(plan, "bootstrap-plan.schema.json", root)
     project = Path(project_root).resolve(strict=True)
@@ -361,8 +386,9 @@ def apply_plan(plan, decision, project_root, global_root=None, root=ROOT):
     dry = None
     if material_plan:
         dry = materialize(material_plan, project, global_root, apply=False, root=root)
+        _validate_materialization_preflight(plan, dry)
         if any(item["result"] in {"conflict", "unsupported"} for item in dry["items"]):
-            raise ProductLoopError("PLAN_BLOCKED: materializer preflight found a conflict")
+            raise ProductLoopError("STALE_BOOTSTRAP_PLAN: materialization conditions changed after planning")
     for subplan in plan["host_activations"]:
         fresh = activation.build_plan(project, "testing", "codex", root)
         if fresh["plan_digest"] != subplan["plan_digest"] or fresh["status"] != subplan["status"]:

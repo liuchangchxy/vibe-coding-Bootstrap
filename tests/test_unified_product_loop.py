@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -233,6 +234,61 @@ class UnifiedLoopTests(unittest.TestCase):
                 apply_plan(plan, approved, self.repo, self.base / "global")
         finally:
             catalog.write_bytes(original_catalog)
+
+    def _isolated_bootstrap_root(self, label):
+        root = self.base / f"bootstrap-{label}"
+        shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns(".git", "__pycache__"))
+        return root
+
+    def _approve_isolated_plan(self, root, global_root):
+        plan = build_plan(self.repo, context_path=self.context, global_root=global_root, root=root)
+        return plan, decide(plan, "approve")
+
+    def test_changed_project_component_source_rejects_before_write(self):
+        root = self._isolated_bootstrap_root("project-source")
+        global_root = self.base / "global-project-source"
+        plan, approval = self._approve_isolated_plan(root, global_root)
+        self.assertTrue(any(item["component_id"] == "project-test-guidance" and item["result"] == "copied"
+                            for item in plan["project_changes"]))
+        source = root / "components/project/test-guidance.md"
+        source.write_bytes(source.read_bytes() + b"\nchanged after approval\n")
+        with self.assertRaisesRegex(ProductLoopError, "STALE_BOOTSTRAP_PLAN"):
+            apply_plan(plan, approval, self.repo, global_root, root)
+        self.assertFalse((self.repo / "AGENTS.md").exists())
+        self.assertFalse((self.repo / ".agents").exists())
+        self.assertFalse((self.repo / ".vibe-coding-bootstrap").exists())
+        self.assertFalse(global_root.exists())
+
+    def test_changed_global_component_source_rejects_before_write(self):
+        root = self._isolated_bootstrap_root("global-source")
+        global_root = self.base / "global-global-source"
+        plan, approval = self._approve_isolated_plan(root, global_root)
+        self.assertTrue(any(item["component_id"] == "reviewable-changes" and item["result"] == "copied"
+                            for item in plan["global_changes"]))
+        source = root / "components/global/reviewable-changes.md"
+        source.write_bytes(source.read_bytes() + b"\nchanged after approval\n")
+        with self.assertRaisesRegex(ProductLoopError, "STALE_BOOTSTRAP_PLAN"):
+            apply_plan(plan, approval, self.repo, global_root, root)
+        self.assertFalse((self.repo / "AGENTS.md").exists())
+        self.assertFalse((self.repo / ".agents").exists())
+        self.assertFalse((self.repo / ".vibe-coding-bootstrap").exists())
+        self.assertFalse(global_root.exists())
+
+    def test_global_copy_classification_change_rejects_before_write(self):
+        root = self._isolated_bootstrap_root("global-classification")
+        global_root = self.base / "global-classification"
+        plan, approval = self._approve_isolated_plan(root, global_root)
+        component = next(item for item in plan["global_changes"] if item["component_id"] == "reviewable-changes")
+        destination = global_root / component["destination"]
+        destination.parent.mkdir(parents=True)
+        source = root / "components/global/reviewable-changes.md"
+        destination.write_bytes(source.read_bytes())
+        with self.assertRaisesRegex(ProductLoopError, "STALE_BOOTSTRAP_PLAN"):
+            apply_plan(plan, approval, self.repo, global_root, root)
+        self.assertFalse((self.repo / "AGENTS.md").exists())
+        self.assertFalse((self.repo / ".agents").exists())
+        self.assertFalse((self.repo / ".vibe-coding-bootstrap").exists())
+        self.assertEqual(destination.read_bytes(), source.read_bytes())
 
 
 if __name__ == "__main__":
