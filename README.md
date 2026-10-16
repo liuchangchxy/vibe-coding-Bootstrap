@@ -55,6 +55,10 @@ The [adoption discovery command](docs/adoption-discovery.md) inventories existin
 
 Phase 7C binds semantic review artifacts to the target repository revision and builds a deterministic Adoption Plan. A stale review is rejected, each Catalog Capability receives one disposition, and a no-op or review-only outcome is valid. `requires_confirmation: true` means the plan is not approval: an explicit approve/reject Decision Artifact binds the choice to the exact plan digest and target SHA. Execution remains deferred.
 
+## Phase 9: Codex Native Activation
+
+The Codex adapter projects the existing `testing` Capability to a repo-local Skill at `.agents/skills/bootstrap-testing/SKILL.md`. It uses a revision-bound Activation Plan, an explicit approve/reject decision, and a target manifest that records ownership for safe deactivation. See [Codex Native Activation](docs/codex-native-activation.md). Host consumption is established separately by the sanitized Control/Activated acceptance evidence in [`examples/activation/codex/`](examples/activation/codex/).
+
 ## Integrity guarantees
 
 Repository tests validate Catalog paths and references, lifecycle Experience records use structured Evidence, and `verified` requires reviewed checked evidence. Capability proposals bind to the target's current version. GitHub Actions runs repository integrity, Composer, Assembly, and Materializer tests.

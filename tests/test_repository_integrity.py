@@ -249,6 +249,24 @@ class RepositoryIntegrityTests(unittest.TestCase):
         self.assertNotIn("C:\\Users\\", serialized)
         self.assertNotIn("C:/Users/", serialized)
 
+    def test_codex_activation_acceptance_evidence_is_sanitized_and_ab_matched(self):
+        base = ROOT / "examples/activation/codex"
+        control = json.loads((base / "control-result.json").read_text(encoding="utf-8"))
+        activated = json.loads((base / "activated-result.json").read_text(encoding="utf-8"))
+        plan = json.loads((base / "activation-plan.json").read_text(encoding="utf-8"))
+        self.assertTrue(control["evidence_sanitized"] and activated["evidence_sanitized"] and plan["evidence_sanitized"])
+        self.assertEqual(control["target_base_commit"], activated["target_base_commit"])
+        self.assertEqual(control["prompt"], activated["prompt"])
+        self.assertEqual(control["prompt_sha256"], activated["prompt_sha256"])
+        self.assertFalse(control["pilot_marker_observed"])
+        self.assertTrue(activated["pilot_marker_observed"])
+        self.assertEqual("YES", activated["codex_consumed_native_skill"])
+        self.assertEqual("AGENTS-triggered repo-local skill", activated["activation_mechanism"])
+        self.assertEqual(control["target_base_commit"], plan["target_commit_sha"])
+        serialized = json.dumps([control, activated, plan], ensure_ascii=False)
+        self.assertNotIn("C:\\Users\\", serialized)
+        self.assertNotIn("AppData", serialized)
+
     def test_catalog_copy_destinations_are_unique_within_scope(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "repo"

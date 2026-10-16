@@ -1,0 +1,13 @@
+{
+  "evidence_sanitized": true,
+  "run": "control",
+  "codex_cli_version": "codex-cli 0.162.0-alpha.17.2",
+  "target_base_commit": "aa6921294fb1e8a4e0ebe412d55818435a8e8478",
+  "prompt": "Fix the bug in this repository and verify the change.",
+  "prompt_sha256": "a57d620df013ed52aefba12adfd6a0d1e14bd433473737d17b790fa641c5634c",
+  "activation_present": false,
+  "pilot_marker_observed": false,
+  "observed_behavior": "Codex fixed clamp and reported all three standard-library tests plus git diff --check passed.",
+  "git_diff_summary": "calculator.py corrected the order of the lower and upper bounds.",
+  "final_response_excerpt": "Fixed clamp by applying the lower bound before the upper bound. Verification passed: all 3 unit tests and git diff --check."
+}

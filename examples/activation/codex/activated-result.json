@@ -1,0 +1,19 @@
+{
+  "evidence_sanitized": true,
+  "run": "activated",
+  "codex_cli_version": "codex-cli 0.162.0-alpha.17.2",
+  "target_base_commit": "aa6921294fb1e8a4e0ebe412d55818435a8e8478",
+  "prompt": "Fix the bug in this repository and verify the change.",
+  "prompt_sha256": "a57d620df013ed52aefba12adfd6a0d1e14bd433473737d17b790fa641c5634c",
+  "activation_mechanism": "AGENTS-triggered repo-local skill",
+  "skill_destination": ".agents/skills/bootstrap-testing/SKILL.md",
+  "agents_trigger": "For implementation or bug-fix tasks that change observable behavior, use the $bootstrap-testing skill.",
+  "production_skill_sha256": "35ec5be8baae84f70176a5968a5d3e97ecdaa841520a15c39ffbd412c7be7506",
+  "pilot_copy_sha256": "acc518fe4983294ebe4b16da34293d847588966d2c9950ce17f423989e89958b",
+  "agents_sha256": "6913308d3c138e4fee4fe1016e6c86749419255aac027ebffd6d17c17553001e",
+  "pilot_marker_observed": true,
+  "pre_fix_test_observation": "3 tests run; 2 failed.",
+  "post_fix_test_observation": "3 tests passed; git diff --check passed.",
+  "codex_consumed_native_skill": "YES",
+  "final_response_excerpt": "clamp fixed; 2 tests failed before the fix and all 3 passed after it; git diff --check passed. BOOTSTRAP_CODEX_TESTING_SKILL_ACTIVE"
+}

@@ -1,0 +1,17 @@
+{
+  "evidence_sanitized": true,
+  "format_version": 1,
+  "host": "codex",
+  "target": "disposable local pilot (local path redacted)",
+  "target_commit_sha": "aa6921294fb1e8a4e0ebe412d55818435a8e8478",
+  "target_dirty": false,
+  "capability_id": "testing",
+  "source": "host_adapters/codex/skills/testing/SKILL.md",
+  "destination": ".agents/skills/bootstrap-testing/SKILL.md",
+  "agents_destination": "AGENTS.md",
+  "status": "ready",
+  "requires_confirmation": true,
+  "plan_digest": "423d4c171eab8663562487ba6845eee381284ac2a06fd8617e6431142eebf7c1",
+  "decision": "approve",
+  "note": "Plan target path was redacted for committed evidence; digest is the original applied plan digest."
+}
