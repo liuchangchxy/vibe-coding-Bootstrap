@@ -275,22 +275,32 @@ class Phase12E2EAcceptanceTests(unittest.TestCase):
     def test_acceptance_d_exact_byte_rollback_for_deploy_upgrade_and_uninstall(self):
         """Acceptance D: Verify exact-byte rollback for deploy -> rollback, upgrade -> rollback, and uninstall -> rollback."""
         # --- Case D1: Deploy -> Rollback ---
-        readme_before = (self.project / "README.md").read_bytes()
-        main_before = (self.project / "main.py").read_bytes()
+        project_d1 = self.base / "consumer_d1"
+        project_d1.mkdir()
+        self._git(project_d1, "init", "-q")
+        self._git(project_d1, "config", "user.email", "e2e@example.invalid")
+        self._git(project_d1, "config", "user.name", "E2E User")
+        (project_d1 / "README.md").write_text("# Test Consumer Repository\n")
+        (project_d1 / "main.py").write_text("def run():\n    return 42\n")
+        self._git(project_d1, "add", ".")
+        self._git(project_d1, "commit", "-qm", "Initial commit")
 
-        res_deploy = self._approve_and_deploy(project_root=self.project, host="codex", context_path=self.context_file,
+        readme_before = (project_d1 / "README.md").read_bytes()
+        main_before = (project_d1 / "main.py").read_bytes()
+
+        res_deploy = self._approve_and_deploy(project_root=project_d1, host="codex", context_path=self.context_file,
                                              global_root=self.global_root, root=self.vcbs_root)
         dep_id_deploy = res_deploy["deployment_id"]
 
         # Rollback deploy
-        rb_deploy = rollback(self.project, dep_id_deploy, apply=True)
+        rb_deploy = rollback(project_d1, dep_id_deploy, apply=True)
         self.assertEqual("rolled_back", rb_deploy["status"])
 
         # Verify target is clean of VCBS files and original files untouched
-        self.assertFalse((self.project / ".vibe-coding-bootstrap").exists())
-        self.assertFalse((self.project / activation.SKILL_DESTINATION).exists())
-        self.assertEqual(readme_before, (self.project / "README.md").read_bytes())
-        self.assertEqual(main_before, (self.project / "main.py").read_bytes())
+        self.assertFalse((project_d1 / ".vibe-coding-bootstrap").exists())
+        self.assertFalse((project_d1 / activation.SKILL_DESTINATION).exists())
+        self.assertEqual(readme_before, (project_d1 / "README.md").read_bytes())
+        self.assertEqual(main_before, (project_d1 / "main.py").read_bytes())
 
         # --- Case D2: Deploy v1 -> Upgrade to v2 -> Rollback restores v1 ---
         res_v1 = self._approve_and_deploy(project_root=self.project, host="codex", context_path=self.context_file,
