@@ -11,6 +11,8 @@ import unittest
 import yaml
 
 from activation import core as activation
+from bootstrap import __version__
+from bootstrap.__main__ import _parser, main
 from bootstrap.core import ProductLoopError, ROOT, decide, apply_plan
 from bootstrap.lifecycle import (
     apply_uninstall, build_uninstall_plan, decide_uninstall, deploy,
@@ -326,3 +328,85 @@ class LifecycleUnitTests(unittest.TestCase):
         mdata = yaml.safe_load(mpath.read_text(encoding="utf-8"))
         self.assertFalse(any(it["component_id"] == "project-test-guidance" for it in mdata["items"]))
         self.assertTrue(any(it["component_id"] == "reviewable-changes" for it in mdata["items"]))
+
+    def _run_cli(self, *args, cwd=None):
+        env = dict(os.environ, PYTHONPATH=str(ROOT))
+        return subprocess.run(
+            [sys.executable, "-m", "bootstrap", *map(str, args)],
+            cwd=str(cwd or self.project),
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+
+    def _run_vcbs(self, *args, cwd=None):
+        env = dict(os.environ, PYTHONPATH=str(ROOT))
+        return subprocess.run(
+            [sys.executable, str(ROOT / "vcbs"), *map(str, args)],
+            cwd=str(cwd or self.project),
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+
+    def test_cli_version_flag(self):
+        """Top-level --version flag displays 0.1.0 and exits 0 via python -m bootstrap and ./vcbs."""
+        # 0. Package __version__
+        self.assertEqual("0.1.0", __version__)
+
+        # 1. python -m bootstrap --version
+        res_m = self._run_cli("--version")
+        self.assertEqual(0, res_m.returncode)
+        self.assertEqual("0.1.0", res_m.stdout.strip())
+
+        # 2. ./vcbs --version
+        res_v = self._run_vcbs("--version")
+        self.assertEqual(0, res_v.returncode)
+        self.assertEqual("0.1.0", res_v.stdout.strip())
+
+    def test_cli_status_default_project_root(self):
+        """python -m bootstrap status without --project-root defaults to CWD and inspects repository."""
+        # 1. In uninstalled repository
+        res = self._run_cli("status")
+        self.assertEqual(0, res.returncode)
+        self.assertIn("VCBS Status: NOT_INSTALLED", res.stdout)
+        self.assertIn(str(self.project), res.stdout)
+
+        # 2. In uninstalled repository with --json
+        res_json = self._run_cli("status", "--json")
+        self.assertEqual(0, res_json.returncode)
+        data = json.loads(res_json.stdout)
+        self.assertEqual("not_installed", data["status"])
+        self.assertEqual(str(self.project), data["project_root"])
+
+        # 3. Via ./vcbs wrapper
+        res_vcbs = self._run_vcbs("status")
+        self.assertEqual(0, res_vcbs.returncode)
+        self.assertIn("VCBS Status: NOT_INSTALLED", res_vcbs.stdout)
+
+        # 4. In deployed repository
+        self._deploy_initial()
+        res_deployed = self._run_cli("status", "--global-root", str(self.global_root))
+        self.assertEqual(0, res_deployed.returncode)
+        self.assertIn("VCBS Status: INSTALLED", res_deployed.stdout)
+        self.assertIn(str(self.project), res_deployed.stdout)
+
+    def test_lifecycle_subcommands_parser_defaults(self):
+        """Lifecycle subcommands default --project-root to '.' and diagnostic subcommands require it."""
+        parser = _parser()
+
+        # Lifecycle subcommands default to "."
+        self.assertEqual(".", parser.parse_args(["status"]).project_root)
+        self.assertEqual(".", parser.parse_args(["deploy"]).project_root)
+        self.assertEqual(".", parser.parse_args(["upgrade"]).project_root)
+        self.assertEqual(".", parser.parse_args(["uninstall"]).project_root)
+
+        # Diagnostic subcommands still require --project-root
+        res_inspect = self._run_cli("inspect")
+        self.assertEqual(2, res_inspect.returncode)
+        self.assertIn("--project-root", res_inspect.stderr)
+
+        res_plan = self._run_cli("plan")
+        self.assertEqual(2, res_plan.returncode)
+        self.assertIn("--project-root", res_plan.stderr)
+

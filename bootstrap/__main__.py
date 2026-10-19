@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import sys
 
+from . import __version__
 from .core import apply_plan, build_plan, decide, inspect_project, load_json, render_summary, validate_output_path, write_json
 from .experience import harvest_experience, review_experience, verify_evidence
 from .lifecycle import (
@@ -17,17 +18,18 @@ from .recovery import rollback
 
 def _parser():
     parser = argparse.ArgumentParser(prog="python -m bootstrap", description="Inspect, plan, confirm once, and apply a project Bootstrap plan.")
+    parser.add_argument("--version", action="version", version=__version__)
     commands = parser.add_subparsers(dest="command", required=True)
 
     # Standard Lifecycle Commands (Phase 12)
     status_cmd = commands.add_parser("status", help="Query read-only VCBS status and managed components inventory")
-    status_cmd.add_argument("--project-root", required=True, help="Target project root directory")
+    status_cmd.add_argument("--project-root", default=".", help="Target project root directory")
     status_cmd.add_argument("--global-root", help="Global root directory if inspecting global scope")
     status_cmd.add_argument("--host", choices=("codex", "none"), default="codex")
     status_cmd.add_argument("--json", action="store_true", help="Output status as structured JSON")
 
     deploy_cmd = commands.add_parser("deploy", help="Standardized VCBS initial deployment or reconciliation")
-    deploy_cmd.add_argument("--project-root", required=True, help="Target project root directory")
+    deploy_cmd.add_argument("--project-root", default=".", help="Target project root directory")
     deploy_cmd.add_argument("--host", choices=("codex", "none"), default="codex")
     deploy_cmd.add_argument("--context", help="Project Context file path (required for Compose route)")
     deploy_cmd.add_argument("--semantic-result", help="Semantic Result file path (required for Adoption route)")
@@ -39,7 +41,7 @@ def _parser():
     deploy_cmd.add_argument("--json", action="store_true", help="Output result as JSON")
 
     upgrade_cmd = commands.add_parser("upgrade", help="Standardized VCBS safe upgrade")
-    upgrade_cmd.add_argument("--project-root", required=True, help="Target project root directory")
+    upgrade_cmd.add_argument("--project-root", default=".", help="Target project root directory")
     upgrade_cmd.add_argument("--host", choices=("codex", "none"), default="codex")
     upgrade_cmd.add_argument("--context", help="Optional updated Project Context file path")
     upgrade_cmd.add_argument("--global-root", help="Global root directory")
@@ -50,7 +52,7 @@ def _parser():
     upgrade_cmd.add_argument("--json", action="store_true", help="Output result as JSON")
 
     uninstall_cmd = commands.add_parser("uninstall", help="Standardized VCBS safe uninstall")
-    uninstall_cmd.add_argument("--project-root", required=True, help="Target project root directory")
+    uninstall_cmd.add_argument("--project-root", default=".", help="Target project root directory")
     uninstall_cmd.add_argument("--component", "--components", dest="component", help="Optional specific component ID(s) to uninstall (comma-separated)")
     uninstall_cmd.add_argument("--global-root", help="Global root directory")
     uninstall_cmd.add_argument("--output", help="Save generated uninstall plan to output path")
@@ -108,6 +110,8 @@ def _parser():
 def main(argv=None):
     args = _parser().parse_args(argv)
     try:
+        if getattr(args, "project_root", None) is not None:
+            args.project_root = str(Path(args.project_root).resolve())
         if args.command == "status":
             value = get_status(args.project_root, host=args.host, global_root=args.global_root)
             if getattr(args, "json", False):
