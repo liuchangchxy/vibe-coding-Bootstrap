@@ -1,0 +1,19 @@
+name: Coordination Label Cleanup
+
+on:
+  issues:
+    types: [closed]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  cleanup:
+    name: Remove active coordination labels after Issue close
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove active coordination labels and preserve terminal evidence
+        uses: liuchangchxy/vibe-coding-control-plane/.github/actions/coordination-label-cleanup@cb772a269152638ba756c9d02cc15c0f294a6bec
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
