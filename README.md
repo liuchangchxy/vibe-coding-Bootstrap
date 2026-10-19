@@ -2,14 +2,20 @@
 
 A personalizable foundation for assembling an AI development environment around a software project. It models project context, user preferences, reusable capabilities, and validated experience so future phases can help users make informed choices.
 
-## Unified Product Loop
+## Unified Product Loop & Lifecycle
 
-Use `python -m bootstrap inspect --project-root <project> --host codex`, then `python -m bootstrap plan --project-root <project> --host codex --context <context.yaml> --output <plan.json>`.
-The AI Host supplies context or semantic review when requested, presents the concise plan, and creates an approve decision only after explicit human confirmation.
-Run `python -m bootstrap decide <plan.json> --decision approve --output <decision.json>` and `python -m bootstrap apply --plan <plan.json> --decision <decision.json> --project-root <project>`.
-Users follow one inspect → plan → confirm once → apply flow; they do not need to understand the internal modules.
-Advanced/diagnostic CLIs remain available: `composer`, `assembly`, `materializer`, `adoption`, and `activation`.
-See [Unified Product Loop](docs/unified-product-loop.md) for the Host contract and safety details.
+VCBS provides four standardized lifecycle operations for end users:
+
+```bash
+vcbs status --project-root <project> [--json]
+vcbs deploy --project-root <project> [--host codex] [--context <context.yaml>] [--apply]
+vcbs upgrade --project-root <project> [--apply]
+vcbs uninstall --project-root <project> [--components <id1,id2>] [--apply]
+```
+*(also available via `python -m bootstrap <deploy|upgrade|uninstall|status>` or `./vcbs`)*
+
+The underlying inspect → plan → confirm once → apply loop coordinates with AI Hosts for context and semantic review while preserving strict safety invariants, snapshot/rollback guarantees, and ownership boundaries. Advanced diagnostic CLIs remain available: `composer`, `assembly`, `materializer`, `adoption`, and `activation`.
+See [Unified Product Loop](docs/unified-product-loop.md) for details.
 
 ## Phase 1: Capability Foundation
 
@@ -71,6 +77,14 @@ The Codex adapter projects the existing `testing` Capability to a repo-local Ski
 ## Phase 10: Experience Promotion and Cross-Project Reuse
 
 Verified Experience does not auto-promote. Only Experience IDs explicitly linked through an authorized Capability edit are eligible for Composer reuse, and matching remains limited by project type and Capability ID. The Codex activation Experience supports only the observed Codex CLI 0.162.0-alpha.17.2 testing projection; it does not establish general testing effectiveness or rules for other Hosts. See [Experience governance](docs/experience-governance.md) and the [before/after reuse pilot](examples/reuse/codex-maintained-project/README.md).
+
+## Phase 12: Standardized Lifecycle Management
+
+Phase 12 standardizes VCBS deployment, upgrade, uninstallation, and status reporting into four unified operations with strict ownership, pre-apply snapshot creation, and exact-byte rollback:
+- **`status`**: Read-only query reporting current git revision, deployment state (`installed`/`partially_installed`/`not_installed`), managed components (version, expected vs disk sha256, health), native activation, unmanaged assets, and recovery points. Validated against `schemas/bootstrap-status.schema.json`.
+- **`deploy`**: Standardized deployment pipeline distinguishing clean Compose from Existing Adoption, previewing planned changes, requiring explicit approval, creating Git snapshots, and guaranteeing idempotence (`no_changes`).
+- **`upgrade`**: Managed component upgrade detecting outdated vs conflict states, diffing hashes and content, and preventing overwrites of user-modified files.
+- **`uninstall`**: Safe ownership-verified removal of VCBS-deployed files, directories, and activation skills. User-modified files block removal; unmanaged files and project code are never touched. Complete or partial uninstalls update manifests cleanly, and snapshots ensure full rollback.
 
 ## Integrity guarantees
 

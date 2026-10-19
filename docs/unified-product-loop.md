@@ -46,4 +46,71 @@ python -m bootstrap review-experience <candidate-id> --decision approve --review
 - `review-experience`: An explicit human review approves or rejects the candidate. Upon approval by a named reviewer, qualifying evidence is checked, the record is verified, and it is registered in `profiles/personal.yaml#reusable_experience_ids`.
 - Cross-project reuse: When Composer plans for another project matching the capability and project context, verified personal experiences are automatically included without editing generic Capability Catalog definitions.
 
+## Standardized Lifecycle Operations (Phase 12)
+
+Phase 12 elevates VCBS into a product with four core lifecycle operations: `status`, `deploy`, `upgrade`, and `uninstall`. Users interact through `./vcbs` or `python -m bootstrap <subcommand>`.
+
+### 1. Status (`vcbs status`)
+
+Read-only inspection of target project management status.
+
+```text
+python -m bootstrap status --project-root <project> [--json]
+```
+
+- Reports target path, current Git revision, deployment state (`installed`, `partially_installed`, `not_installed`).
+- Lists VCBS-managed components with scope (`project`, `global`, `external`), delivery mode, installed version, disk sha256 vs expected sha256, and health status (`healthy`, `modified_conflict`, `missing`).
+- Reports Native Activation status (`activated`, `drifted`, `not_activated`) and Host support status.
+- Detects unmanaged AI assets (rules, skills, mcp) that are project-owned and protected from takeover.
+- Lists available recovery snapshots and recent deployment history.
+- Produces clean human-readable summaries or schema-validated JSON conforming to `schemas/bootstrap-status.schema.json`.
+- Guaranteed strictly read-only: does not modify files, Git index, HEAD, manifests, or profiles.
+
+### 2. Standardized Deploy (`vcbs deploy`)
+
+Unified first-time deployment into a target project.
+
+```text
+python -m bootstrap deploy --project-root <project> [--host <host>] [--context <context.yaml>] [--global-root <dir>] [--apply] [--decision <decision.json>]
+```
+
+- Reuses existing inspect → plan → decide → apply pipeline under the hood.
+- Distinguishes clean Compose from Existing Adoption.
+- Previews the deployment plan by default without writing files.
+- Applying requires an explicit approved decision artifact (`--decision <decision.json>` or generated upon user approval).
+- Creates a safety Git snapshot under `refs/vibe-coding-bootstrap/snapshots/<id>` before any disk mutation.
+- Verified post-apply state; repeats are fully idempotent (`no_changes`).
+
+### 3. Standardized Upgrade (`vcbs upgrade`)
+
+Managed component upgrade for installed projects.
+
+```text
+python -m bootstrap upgrade --project-root <project> [--global-root <dir>] [--apply] [--decision <decision.json>]
+```
+
+- Reads installed `manifest.yaml` and compares against the current Capability Catalog.
+- Categorizes each item: `up_to_date`, `upgrade_available`, `conflict`.
+- Shows old vs new version, old vs new SHA-256, and patch preview.
+- Modifying an installed file causes a `conflict` block: VCBS refuses to overwrite user modifications.
+- Executes safe upgrade after approval with pre-apply Git snapshot. Rollback can restore exact pre-upgrade state.
+- Repeating an upgrade run immediately yields `no_changes`.
+
+### 4. Safe Uninstall (`vcbs uninstall`)
+
+Strict, ownership-verified uninstallation of VCBS-deployed assets.
+
+```text
+python -m bootstrap uninstall --project-root <project> [--components <id1,id2>] [--global-root <dir>] [--apply] [--decision <decision.json>]
+```
+
+- Strict Ownership Verification: Assets are only uninstalled if recorded in `manifest.yaml` and their on-disk SHA-256 matches the manifest digest.
+- Never guesses ownership by file name or directory scanning; never performs recursive `rm -rf`.
+- Never touches project source code, unmanaged AI configurations (user rules, skills, MCP configs), or consumer Git state.
+- Conflict blocking: If a managed file was edited by the user (`conflict: modified_by_user`), uninstall plan marks it as blocked and refuses removal unless reconciled.
+- Scope support: Safely uninstalls project-scope files, global-scope files (with per-file backup), and Codex Native Activation (`.agents/skills/bootstrap-testing/SKILL.md`).
+- Clean pruning: Removes empty parent directories created for VCBS components without affecting non-empty directories.
+- Clean manifest lifecycle: Removes `manifest.yaml` if all managed items are uninstalled, or updates it if partial component uninstall is selected.
+- Rollback support: Apply takes a pre-uninstall Git snapshot. Exact pre-uninstall files and manifests can be restored via `python -m bootstrap rollback`.
+
 Supported Hosts: `codex` and `none`. Native activation is Codex-only and Compose-only when testing is selected. Adoption remains conservative and does not add Host activation. No automatic Git add, commit, or push occurs in a consumer project.
