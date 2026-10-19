@@ -205,11 +205,22 @@
       "bootstrap_component": null,
       "materialization_eligible": false,
       "requires_confirmation": false
+    },
+    {
+      "capability_id": "vcbs-manager",
+      "semantic_status": "missing",
+      "confidence": "high",
+      "disposition": "review_gap",
+      "reason": "The project uses AI coding assistance, but has not yet adopted VCBS management workflow skills.",
+      "evidence": [],
+      "bootstrap_component": null,
+      "materialization_eligible": false,
+      "requires_confirmation": false
     }
   ],
   "overall_decision": "review_required",
   "materializable_changes": 0,
   "requires_confirmation": true,
   "generated_at": "2026-10-16T10:24:03Z",
-  "plan_digest": "48f46d17e9d79cd4f796baa0823f2f0608f78dd1aff10c876d6729cfe2dce03c"
+  "plan_digest": "8f844bf4e2b36d5e9cc46c18fcee46c5477ab213f4478ab9408b4950242b5c53"
 }

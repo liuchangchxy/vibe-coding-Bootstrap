@@ -27,6 +27,14 @@ def _component_for(root, capability_id):
                     "delivery": assembly["delivery"], "scope": assembly["scope"],
                     "source": component.get("source"), "destination": assembly.get("destination"),
                 }
+        for component in record.get("components", []):
+            assembly = component.get("assembly", {})
+            if assembly.get("delivery") == "reference" and assembly.get("scope") == "project":
+                return {
+                    "component_id": component["id"], "source_capability": capability_id,
+                    "delivery": assembly["delivery"], "scope": assembly["scope"],
+                    "source": component.get("source"), "destination": assembly.get("destination"),
+                }
     return None
 
 

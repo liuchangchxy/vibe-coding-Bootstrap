@@ -180,41 +180,47 @@ def get_status(project_root, host="codex", global_root=None, root=ROOT):
     if activation_manifest_path.is_file():
         try:
             adata = json.loads(activation_manifest_path.read_text(encoding="utf-8"))
-            if adata.get("format_version") == 1 and adata.get("host") == "codex" and adata.get("capability") == "testing":
+            if adata.get("format_version") == 1:
                 has_activation = True
-                skill_path = _contained(project, activation.SKILL_DESTINATION)
-                agents_path = _contained(project, activation.AGENTS_DESTINATION)
-                inst_skill = next((a for a in adata.get("artifacts", []) if a.get("destination") == activation.SKILL_DESTINATION), {})
-                inst_skill_sha = inst_skill.get("sha256")
-                act_actual_sha = _sha(skill_path.read_bytes()) if skill_path.is_file() else None
+                codex_act = None
+                if adata.get("host") == "codex" and adata.get("capability") == "testing":
+                    codex_act = adata
+                elif "activations" in adata and isinstance(adata["activations"], list):
+                    codex_act = next((a for a in adata["activations"] if a.get("host") == "codex" and a.get("capability") == "testing"), None)
+                if codex_act:
+                    skill_path = _contained(project, activation.SKILL_DESTINATION)
+                    agents_path = _contained(project, activation.AGENTS_DESTINATION)
+                    inst_skill = next((a for a in codex_act.get("artifacts", []) if a.get("destination") == activation.SKILL_DESTINATION), {})
+                    inst_skill_sha = inst_skill.get("sha256")
+                    act_actual_sha = _sha(skill_path.read_bytes()) if skill_path.is_file() else None
 
-                desired_skill_file = Path(root) / activation.SKILL_SOURCE
-                desired_act_sha = _sha(desired_skill_file.read_bytes()) if desired_skill_file.is_file() else inst_skill_sha
+                    desired_skill_file = Path(root) / activation.SKILL_SOURCE
+                    desired_act_sha = _sha(desired_skill_file.read_bytes()) if desired_skill_file.is_file() else inst_skill_sha
 
-                expected_agents_sha = _sha(activation.AGENTS_TRIGGER.encode("utf-8"))
-                actual_agents_sha = _sha(agents_path.read_bytes()) if agents_path.is_file() else None
+                    expected_agents_sha = _sha(activation.AGENTS_TRIGGER.encode("utf-8"))
+                    actual_agents_sha = _sha(agents_path.read_bytes()) if agents_path.is_file() else None
 
-                if not skill_path.exists() or not agents_path.exists():
-                    act_status = "missing"
-                elif act_actual_sha != inst_skill_sha or actual_agents_sha != expected_agents_sha:
-                    act_status = "conflict"
-                    conflicts.append("Codex activation artifacts were modified by user")
-                elif desired_act_sha != inst_skill_sha:
-                    act_status = "update_available"
-                else:
-                    act_status = "active"
+                    if not skill_path.exists() or not agents_path.exists():
+                        act_status = "missing"
+                    elif act_actual_sha != inst_skill_sha or actual_agents_sha != expected_agents_sha:
+                        act_status = "conflict"
+                        conflicts.append("Codex activation artifacts were modified by user")
+                    elif desired_act_sha != inst_skill_sha:
+                        act_status = "update_available"
+                    else:
+                        act_status = "active"
 
-                codex_activation = {
-                    "status": act_status,
-                    "destination": activation.SKILL_DESTINATION,
-                    "installed_sha256": inst_skill_sha,
-                    "actual_sha256": act_actual_sha,
-                    "desired_sha256": desired_act_sha,
-                }
+                    codex_activation = {
+                        "status": act_status,
+                        "destination": activation.SKILL_DESTINATION,
+                        "installed_sha256": inst_skill_sha,
+                        "actual_sha256": act_actual_sha,
+                        "desired_sha256": desired_act_sha,
+                    }
             else:
-                conflicts.append("Codex activation.json is invalid or corrupted")
+                conflicts.append("Activation manifest activation.json is invalid or corrupted")
         except Exception:
-            conflicts.append("Failed to read Codex activation.json")
+            conflicts.append("Failed to read activation manifest activation.json")
 
     # Scope breakdown
     proj_comps = [c["component_id"] for c in components if c["scope"] == "project"]
@@ -239,15 +245,24 @@ def get_status(project_root, host="codex", global_root=None, root=ROOT):
     managed_only, signals, unmanaged = _owned_state(project)
     route_prediction = "adoption" if unmanaged else "compose"
 
+    from bootstrap.core import _parse_hosts
+    try:
+        parsed_hosts = _parse_hosts(host)
+        is_supported = bool(parsed_hosts)
+    except Exception:
+        parsed_hosts = []
+        is_supported = False
+
     host_support = {
         "host": host,
-        "supported": host in {"codex", "none"},
-        "native_activation": "supported" if host == "codex" else "none",
+        "supported": is_supported,
+        "native_activation": "supported" if any(h in {"codex", "claude", "antigravity"} for h in parsed_hosts) else "none",
         "known_hosts": {
             "codex": "supported",
             "none": "supported",
-            "claude_code": "external_or_future",
-            "antigravity": "external_or_future",
+            "claude": "supported",
+            "claude_code": "supported",
+            "antigravity": "supported",
         },
     }
 

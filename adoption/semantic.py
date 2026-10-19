@@ -237,7 +237,7 @@ def validate_semantic_result(result, package, root=ROOT):
         if action == "consider_bootstrap_component":
             available = records[capability_id]["bootstrap_components"]
             if item["status"] != "missing" or not any(
-                    component["delivery"] == "copy" and component["scope"] == "project"
+                    component["delivery"] in {"copy", "reference"} and component["scope"] == "project"
                     for component in available):
                 raise ValueError(f"No applicable project-scoped Bootstrap component for {capability_id}")
     return result

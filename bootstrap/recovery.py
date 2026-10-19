@@ -90,9 +90,12 @@ def _deployment_paths(plan, project):
         paths[rel] = {"path": rel, "scope": "project", "source": "materializer_manifest", "existed_before": None}
     for subplan in plan.get("host_activations", []):
         if subplan.get("status") in {"ready", "deactivating", "removed", "uninstalled"}:
-            for rel in (subplan["destination"], subplan["agents_destination"], ".vibe-coding-bootstrap/activation.json"):
+            dest_list = [subplan["destination"], ".vibe-coding-bootstrap/activation.json"]
+            if subplan.get("agents_destination"):
+                dest_list.append(subplan["agents_destination"])
+            for rel in dest_list:
                 rel = _safe_rel(rel)
-                paths[rel] = {"path": rel, "scope": "project", "source": "codex_activation", "existed_before": None}
+                paths[rel] = {"path": rel, "scope": "project", "source": f"{subplan.get('host', 'codex')}_activation", "existed_before": None}
     for item in plan.get("global_changes", []):
         if item.get("result") in {"copied", "upgraded", "removed", "uninstalled"}:
             if not plan.get("global_root"):
