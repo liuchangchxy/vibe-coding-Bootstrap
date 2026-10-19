@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vibe-coding-bootstrap"
+version = "0.1.0"
+description = "A personalizable foundation for assembling an AI development environment around a software project."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "PyYAML>=6.0,<7",
+    "jsonschema>=4.18,<5"
+]
+
+[project.scripts]
+vcbs = "bootstrap.__main__:main"

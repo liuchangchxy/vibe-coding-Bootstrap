@@ -76,8 +76,8 @@ def _metadata_dir(project, deployment_id):
 
 def _deployment_paths(plan, project):
     paths = {}
-    for item in plan["project_changes"]:
-        if item.get("result") in {"copied", "upgraded"}:
+    for item in plan.get("project_changes", []):
+        if item.get("result") in {"copied", "upgraded", "removed", "uninstalled"}:
             destination = Path(item["destination"]).resolve()
             try:
                 rel = destination.relative_to(Path(project).resolve()).as_posix()
@@ -85,16 +85,18 @@ def _deployment_paths(plan, project):
                 raise RecoveryError("SNAPSHOT_UNSAFE: project destination escapes target") from exc
             rel = _safe_rel(rel)
             paths[rel] = {"path": rel, "scope": "project", "source": "materializer", "existed_before": None}
-    if any(item.get("result") in {"copied", "upgraded"} for item in plan["project_changes"]):
+    if any(item.get("result") in {"copied", "upgraded", "removed", "uninstalled"} for item in plan.get("project_changes", [])):
         rel = ".vibe-coding-bootstrap/manifest.yaml"
         paths[rel] = {"path": rel, "scope": "project", "source": "materializer_manifest", "existed_before": None}
-    for subplan in plan["host_activations"]:
-        if subplan.get("status") == "ready":
+    for subplan in plan.get("host_activations", []):
+        if subplan.get("status") in {"ready", "deactivating", "removed", "uninstalled"}:
             for rel in (subplan["destination"], subplan["agents_destination"], ".vibe-coding-bootstrap/activation.json"):
                 rel = _safe_rel(rel)
                 paths[rel] = {"path": rel, "scope": "project", "source": "codex_activation", "existed_before": None}
-    for item in plan["global_changes"]:
-        if item.get("result") in {"copied", "upgraded"}:
+    for item in plan.get("global_changes", []):
+        if item.get("result") in {"copied", "upgraded", "removed", "uninstalled"}:
+            if not plan.get("global_root"):
+                raise RecoveryError("SNAPSHOT_UNSAFE: global destination requires planned global_root")
             destination = Path(item["destination"]).resolve()
             global_base = Path(plan["global_root"]).resolve()
             try:
@@ -223,6 +225,24 @@ def load_record(project, deployment_id):
         return record
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError, RecoveryError) as exc:
         raise RecoveryError(f"INVALID_DEPLOYMENT_RECORD: {exc}") from exc
+
+
+def list_deployments(project):
+    """List deployment records for a project, sorted newest first."""
+    try:
+        base = _git_path(project, "vibe-coding-bootstrap/deployments")
+    except Exception:
+        return []
+    if not base.is_dir():
+        return []
+    records = []
+    for item in sorted(base.iterdir(), reverse=True):
+        if item.is_dir() and (item / "record.json").is_file():
+            try:
+                records.append(load_record(project, item.name))
+            except Exception:
+                pass
+    return records
 
 
 def rollback(project, deployment_id, apply=False):

@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/bootstrap-status.schema.json",
+  "title": "Unified Bootstrap Status",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format_version",
+    "project_root",
+    "target",
+    "catalog_revision",
+    "profile_sha256",
+    "status",
+    "deployed",
+    "components",
+    "codex_activation",
+    "host_support",
+    "scope_breakdown",
+    "recent_deployment",
+    "recovery_points",
+    "has_conflicts",
+    "conflicts",
+    "update_available",
+    "partial",
+    "route_prediction",
+    "unmanaged_assets"
+  ],
+  "properties": {
+    "format_version": { "const": 1 },
+    "project_root": { "type": "string" },
+    "target": {
+      "type": "object",
+      "required": ["commit_sha", "dirty", "path"],
+      "properties": {
+        "repository": { "type": ["string", "null"] },
+        "branch": { "type": ["string", "null"] },
+        "commit_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "remote": { "type": ["string", "null"] },
+        "remote_commit_sha": { "type": ["string", "null"] },
+        "dirty": { "type": "boolean" },
+        "path": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "catalog_revision": { "type": "string" },
+    "profile_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "status": {
+      "enum": ["installed", "not_installed", "uninstalled", "update_available", "conflict", "partial"]
+    },
+    "deployed": { "type": "boolean" },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["component_id", "source_capability", "scope", "destination", "installed_version", "desired_version", "installed_sha256", "actual_sha256", "desired_sha256", "status"],
+        "properties": {
+          "component_id": { "type": "string" },
+          "source_capability": { "type": "string" },
+          "scope": { "enum": ["project", "global", "external"] },
+          "destination": { "type": "string" },
+          "installed_version": { "type": "string" },
+          "desired_version": { "type": "string" },
+          "installed_sha256": { "type": "string" },
+          "actual_sha256": { "type": ["string", "null"] },
+          "desired_sha256": { "type": "string" },
+          "status": { "enum": ["unchanged", "update_available", "conflict", "missing", "reference_only"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "codex_activation": {
+      "type": "object",
+      "required": ["status", "destination", "installed_sha256", "actual_sha256", "desired_sha256"],
+      "properties": {
+        "status": { "enum": ["active", "update_available", "conflict", "missing", "not_active"] },
+        "destination": { "type": ["string", "null"] },
+        "installed_sha256": { "type": ["string", "null"] },
+        "actual_sha256": { "type": ["string", "null"] },
+        "desired_sha256": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "host_support": {
+      "type": "object",
+      "required": ["host", "supported", "native_activation", "known_hosts"],
+      "properties": {
+        "host": { "type": "string" },
+        "supported": { "type": "boolean" },
+        "native_activation": { "type": "string" },
+        "known_hosts": { "type": "object" }
+      },
+      "additionalProperties": false
+    },
+    "scope_breakdown": {
+      "type": "object",
+      "required": ["project_components", "global_components"],
+      "properties": {
+        "project_components": { "type": "array", "items": { "type": "string" } },
+        "global_components": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "recent_deployment": {
+      "type": ["object", "null"]
+    },
+    "recovery_points": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "has_conflicts": { "type": "boolean" },
+    "conflicts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "update_available": { "type": "boolean" },
+    "partial": { "type": "boolean" },
+    "route_prediction": { "enum": ["compose", "adoption"] },
+    "unmanaged_assets": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

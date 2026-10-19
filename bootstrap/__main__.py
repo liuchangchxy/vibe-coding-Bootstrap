@@ -7,12 +7,59 @@ import sys
 
 from .core import apply_plan, build_plan, decide, inspect_project, load_json, render_summary, validate_output_path, write_json
 from .experience import harvest_experience, review_experience, verify_evidence
+from .lifecycle import (
+    apply_uninstall, build_uninstall_plan, decide_uninstall, deploy,
+    get_status, render_status_summary, render_uninstall_summary,
+    uninstall, upgrade
+)
 from .recovery import rollback
 
 
 def _parser():
     parser = argparse.ArgumentParser(prog="python -m bootstrap", description="Inspect, plan, confirm once, and apply a project Bootstrap plan.")
     commands = parser.add_subparsers(dest="command", required=True)
+
+    # Standard Lifecycle Commands (Phase 12)
+    status_cmd = commands.add_parser("status", help="Query read-only VCBS status and managed components inventory")
+    status_cmd.add_argument("--project-root", required=True, help="Target project root directory")
+    status_cmd.add_argument("--global-root", help="Global root directory if inspecting global scope")
+    status_cmd.add_argument("--host", choices=("codex", "none"), default="codex")
+    status_cmd.add_argument("--json", action="store_true", help="Output status as structured JSON")
+
+    deploy_cmd = commands.add_parser("deploy", help="Standardized VCBS initial deployment or reconciliation")
+    deploy_cmd.add_argument("--project-root", required=True, help="Target project root directory")
+    deploy_cmd.add_argument("--host", choices=("codex", "none"), default="codex")
+    deploy_cmd.add_argument("--context", help="Project Context file path (required for Compose route)")
+    deploy_cmd.add_argument("--semantic-result", help="Semantic Result file path (required for Adoption route)")
+    deploy_cmd.add_argument("--global-root", help="Global root directory")
+    deploy_cmd.add_argument("--output", help="Save generated plan to output path")
+    deploy_cmd.add_argument("--plan", help="Previously generated and approved plan file path")
+    deploy_cmd.add_argument("--decision", help="Decision file path (if pre-decided)")
+    deploy_cmd.add_argument("--apply", action="store_true", help="Approve and apply the deployment")
+    deploy_cmd.add_argument("--json", action="store_true", help="Output result as JSON")
+
+    upgrade_cmd = commands.add_parser("upgrade", help="Standardized VCBS safe upgrade")
+    upgrade_cmd.add_argument("--project-root", required=True, help="Target project root directory")
+    upgrade_cmd.add_argument("--host", choices=("codex", "none"), default="codex")
+    upgrade_cmd.add_argument("--context", help="Optional updated Project Context file path")
+    upgrade_cmd.add_argument("--global-root", help="Global root directory")
+    upgrade_cmd.add_argument("--output", help="Save generated plan to output path")
+    upgrade_cmd.add_argument("--plan", help="Previously generated and approved upgrade plan file path")
+    upgrade_cmd.add_argument("--decision", help="Decision file path (if pre-decided)")
+    upgrade_cmd.add_argument("--apply", action="store_true", help="Approve and apply the upgrade")
+    upgrade_cmd.add_argument("--json", action="store_true", help="Output result as JSON")
+
+    uninstall_cmd = commands.add_parser("uninstall", help="Standardized VCBS safe uninstall")
+    uninstall_cmd.add_argument("--project-root", required=True, help="Target project root directory")
+    uninstall_cmd.add_argument("--component", "--components", dest="component", help="Optional specific component ID(s) to uninstall (comma-separated)")
+    uninstall_cmd.add_argument("--global-root", help="Global root directory")
+    uninstall_cmd.add_argument("--output", help="Save generated uninstall plan to output path")
+    uninstall_cmd.add_argument("--plan", help="Previously generated and approved uninstall plan file path")
+    uninstall_cmd.add_argument("--decision", help="Decision file path (if pre-decided)")
+    uninstall_cmd.add_argument("--apply", action="store_true", help="Approve and apply the uninstall")
+    uninstall_cmd.add_argument("--json", action="store_true", help="Output result as JSON")
+
+    # Diagnostic & Specialized Commands
     inspect = commands.add_parser("inspect", help="Read target facts and select compose or adoption")
     inspect.add_argument("--project-root", required=True)
     inspect.add_argument("--host", choices=("codex", "none"), default="codex")
@@ -61,7 +108,70 @@ def _parser():
 def main(argv=None):
     args = _parser().parse_args(argv)
     try:
-        if args.command == "rollback":
+        if args.command == "status":
+            value = get_status(args.project_root, host=args.host, global_root=args.global_root)
+            if getattr(args, "json", False):
+                print(json.dumps(value, indent=2, ensure_ascii=False))
+            else:
+                print(render_status_summary(value))
+        elif args.command == "deploy":
+            value = deploy(args.project_root, host=args.host, context_path=args.context,
+                           semantic_result_path=args.semantic_result, global_root=args.global_root,
+                           apply=args.apply, decision=args.decision, plan=args.plan)
+            if args.output and "plan" in value:
+                write_json(args.output, value["plan"], args.project_root)
+            if getattr(args, "json", False):
+                print(json.dumps(value, indent=2, ensure_ascii=False))
+            else:
+                if value.get("status") == "preview":
+                    print(value["summary"])
+                    print("\n[Preview mode] To execute, save the plan (--output <plan.json>), create an approved decision:")
+                    print("  python -m bootstrap decide <plan.json> --decision approve --output <decision.json>")
+                    print("and run with:")
+                    print("  python -m bootstrap deploy --plan <plan.json> --decision <decision.json> --apply")
+                elif value.get("status") == "no_changes":
+                    print(value.get("message", "No changes needed."))
+                else:
+                    print(json.dumps(value, indent=2, ensure_ascii=False))
+        elif args.command == "upgrade":
+            value = upgrade(args.project_root, host=args.host, context_path=args.context,
+                            global_root=args.global_root, apply=args.apply, decision=args.decision,
+                            plan=args.plan)
+            if args.output and "plan" in value:
+                write_json(args.output, value["plan"], args.project_root)
+            if getattr(args, "json", False):
+                print(json.dumps(value, indent=2, ensure_ascii=False))
+            else:
+                if value.get("status") == "preview":
+                    print(value["summary"])
+                    print("\n[Preview mode] To execute, save the plan (--output <plan.json>), create an approved decision:")
+                    print("  python -m bootstrap decide <plan.json> --decision approve --output <decision.json>")
+                    print("and run with:")
+                    print("  python -m bootstrap upgrade --plan <plan.json> --decision <decision.json> --apply")
+                elif value.get("status") == "no_changes":
+                    print(value.get("message", "All components are already up to date."))
+                else:
+                    print(json.dumps(value, indent=2, ensure_ascii=False))
+        elif args.command == "uninstall":
+            value = uninstall(args.project_root, component_id=args.component,
+                              global_root=args.global_root, apply=args.apply, decision=args.decision,
+                              plan=args.plan)
+            if args.output and "plan" in value:
+                write_json(args.output, value["plan"], args.project_root)
+            if getattr(args, "json", False):
+                print(json.dumps(value, indent=2, ensure_ascii=False))
+            else:
+                if value.get("status") == "preview":
+                    print(value["summary"])
+                    print("\n[Preview mode] To execute, save the plan (--output <plan.json>), create an approved decision:")
+                    print("  python -m bootstrap decide <plan.json> --decision approve --output <decision.json>")
+                    print("and run with:")
+                    print("  python -m bootstrap uninstall --plan <plan.json> --decision <decision.json> --apply")
+                elif value.get("status") == "no_changes":
+                    print(value.get("message", "No VCBS-managed components to uninstall."))
+                else:
+                    print(json.dumps(value, indent=2, ensure_ascii=False))
+        elif args.command == "rollback":
             value = rollback(args.project_root, args.deployment, args.apply)
             print(json.dumps(value, indent=2, ensure_ascii=False))
         elif args.command == "inspect":
@@ -76,8 +186,12 @@ def main(argv=None):
             print(render_summary(value))
         elif args.command == "decide":
             plan = load_json(args.plan)
-            value = decide(plan, args.decision)
-            write_json(args.output, value, plan["target"]["path"])
+            if plan.get("operation") == "uninstall":
+                value = decide_uninstall(plan, args.decision)
+            else:
+                value = decide(plan, args.decision)
+            target_path = plan.get("project_root") or plan["target"]["path"]
+            write_json(args.output, value, target_path)
             print(f"Decision: {value['decision']} ({value['plan_digest'][:12]})")
         elif args.command == "harvest":
             value = harvest_experience(args.project_root, args.observation, args.host, args.output)

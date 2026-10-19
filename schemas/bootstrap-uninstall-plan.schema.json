@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/bootstrap-uninstall-plan.schema.json",
+  "title": "Unified Bootstrap Uninstall Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format_version",
+    "operation",
+    "target",
+    "catalog_revision",
+    "profile_sha256",
+    "project_root",
+    "global_root",
+    "items",
+    "activation_items",
+    "removals",
+    "already_absent",
+    "conflicts",
+    "unresolved",
+    "manifest_updates",
+    "manifest_sha256",
+    "activation_manifest_sha256",
+    "remaining_manifest_items",
+    "requires_confirmation",
+    "actual_changes",
+    "executable",
+    "generated_at",
+    "plan_digest"
+  ],
+  "properties": {
+    "format_version": { "const": 1 },
+    "operation": { "const": "uninstall" },
+    "target": {
+      "type": "object",
+      "required": ["commit_sha", "dirty", "path"],
+      "properties": {
+        "repository": { "type": ["string", "null"] },
+        "branch": { "type": ["string", "null"] },
+        "commit_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "remote": { "type": ["string", "null"] },
+        "remote_commit_sha": { "type": ["string", "null"] },
+        "dirty": { "type": "boolean" },
+        "path": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "catalog_revision": { "type": "string" },
+    "profile_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "project_root": { "type": "string" },
+    "global_root": { "type": ["string", "null"] },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["component_id", "source_capability", "scope", "destination", "sha256", "status"],
+        "properties": {
+          "component_id": { "type": "string" },
+          "source_capability": { "type": "string" },
+          "scope": { "enum": ["project", "global", "external"] },
+          "destination": { "type": "string" },
+          "relative_destination": { "type": "string" },
+          "sha256": { "type": "string" },
+          "status": { "enum": ["removable", "already_absent", "conflict"] },
+          "reason": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "activation_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["component_id", "source_capability", "scope", "destination", "sha256", "status"],
+        "properties": {
+          "component_id": { "type": "string" },
+          "source_capability": { "type": "string" },
+          "scope": { "enum": ["project", "global"] },
+          "destination": { "type": "string" },
+          "relative_destination": { "type": "string" },
+          "sha256": { "type": "string" },
+          "status": { "enum": ["removable", "already_absent", "conflict"] },
+          "reason": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "removals": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "already_absent": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "unresolved": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "manifest_updates": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "manifest_sha256": { "type": ["string", "null"] },
+    "activation_manifest_sha256": { "type": ["string", "null"] },
+    "remaining_manifest_items": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "requires_confirmation": { "type": "boolean" },
+    "actual_changes": { "type": "integer", "minimum": 0 },
+    "executable": { "type": "boolean" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "plan_digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

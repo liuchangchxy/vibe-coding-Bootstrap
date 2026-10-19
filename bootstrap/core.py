@@ -588,3 +588,10 @@ def validate_output_path(path, target_root):
 
 def load_json(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+from .lifecycle import (
+    get_status, render_status_summary, deploy, upgrade,
+    build_uninstall_plan, render_uninstall_summary, decide_uninstall,
+    apply_uninstall, uninstall
+)
