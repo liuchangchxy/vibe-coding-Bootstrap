@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 
 from .core import apply_plan, build_plan, decide, inspect_project, load_json, render_summary, validate_output_path, write_json
+from .experience import harvest_experience, review_experience, verify_evidence
 from .recovery import rollback
 
 
@@ -37,6 +38,23 @@ def _parser():
     rollback_cmd.add_argument("--project-root", required=True)
     rollback_cmd.add_argument("--deployment", required=True)
     rollback_cmd.add_argument("--apply", action="store_true", help="Apply the conflict-checked rollback")
+    harvest_cmd = commands.add_parser("harvest", help="Extract candidate Experience from project observation")
+    harvest_cmd.add_argument("--project-root", required=True)
+    harvest_cmd.add_argument("--observation", required=True)
+    harvest_cmd.add_argument("--host", choices=("codex", "none"), default="codex")
+    harvest_cmd.add_argument("--output")
+    verify_cmd = commands.add_parser("verify-evidence", help="Verify candidate Experience evidence prior to approval")
+    verify_cmd.add_argument("experience", help="Candidate experience path or ID")
+    verify_cmd.add_argument("--verifier", required=True, help="Named verifier")
+    verify_cmd.add_argument("--method", required=True, help="Verification method description")
+    verify_cmd.add_argument("--evidence-index", type=int, default=0, help="Index of evidence item to verify (default: 0)")
+    verify_cmd.add_argument("--all", action="store_true", help="Verify all evidence items")
+    verify_cmd.add_argument("--status", choices=("checked", "independently_confirmed"), default="checked")
+    review_cmd = commands.add_parser("review-experience", help="Review and approve/reject candidate Experience for personal reuse")
+    review_cmd.add_argument("experience", help="Candidate experience path or ID")
+    review_cmd.add_argument("--decision", choices=("approve", "reject"), required=True)
+    review_cmd.add_argument("--reviewer", help="Named reviewer (required for approve)")
+    review_cmd.add_argument("--notes")
     return parser
 
 
@@ -61,6 +79,16 @@ def main(argv=None):
             value = decide(plan, args.decision)
             write_json(args.output, value, plan["target"]["path"])
             print(f"Decision: {value['decision']} ({value['plan_digest'][:12]})")
+        elif args.command == "harvest":
+            value = harvest_experience(args.project_root, args.observation, args.host, args.output)
+            print(f"Candidate: {value['id']} ({value['title']})")
+        elif args.command == "verify-evidence":
+            idx = "all" if args.all else args.evidence_index
+            value = verify_evidence(args.experience, idx, args.verifier, args.method, args.status)
+            print(f"Verified evidence for {value['id']}: index {idx} -> {args.status}")
+        elif args.command == "review-experience":
+            value = review_experience(args.experience, args.decision, args.reviewer, args.notes)
+            print(f"Experience {value['id']}: {value['status']} (review: {value['review']['review_status']})")
         else:
             plan = load_json(args.plan)
             decision = load_json(args.decision) if args.decision else None

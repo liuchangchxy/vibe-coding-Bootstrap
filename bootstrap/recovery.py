@@ -77,7 +77,7 @@ def _metadata_dir(project, deployment_id):
 def _deployment_paths(plan, project):
     paths = {}
     for item in plan["project_changes"]:
-        if item.get("result") == "copied":
+        if item.get("result") in {"copied", "upgraded"}:
             destination = Path(item["destination"]).resolve()
             try:
                 rel = destination.relative_to(Path(project).resolve()).as_posix()
@@ -85,7 +85,7 @@ def _deployment_paths(plan, project):
                 raise RecoveryError("SNAPSHOT_UNSAFE: project destination escapes target") from exc
             rel = _safe_rel(rel)
             paths[rel] = {"path": rel, "scope": "project", "source": "materializer", "existed_before": None}
-    if any(item.get("result") == "copied" for item in plan["project_changes"]):
+    if any(item.get("result") in {"copied", "upgraded"} for item in plan["project_changes"]):
         rel = ".vibe-coding-bootstrap/manifest.yaml"
         paths[rel] = {"path": rel, "scope": "project", "source": "materializer_manifest", "existed_before": None}
     for subplan in plan["host_activations"]:
@@ -94,7 +94,7 @@ def _deployment_paths(plan, project):
                 rel = _safe_rel(rel)
                 paths[rel] = {"path": rel, "scope": "project", "source": "codex_activation", "existed_before": None}
     for item in plan["global_changes"]:
-        if item.get("result") == "copied":
+        if item.get("result") in {"copied", "upgraded"}:
             destination = Path(item["destination"]).resolve()
             global_base = Path(plan["global_root"]).resolve()
             try:

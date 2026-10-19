@@ -25,6 +25,7 @@
     },
     "default_capability_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
     "excluded_capability_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "reusable_experience_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
     "created_at": { "type": "string", "format": "date-time" },
     "updated_at": { "type": "string", "format": "date-time" }
   }

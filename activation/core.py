@@ -81,6 +81,8 @@ def build_plan(project_root, capability="testing", host="codex", root=ROOT):
     agents = _contained(project, AGENTS_DESTINATION)
     manifest = _contained(project, MANIFEST_PATH)
     status = "ready"
+    is_upgrade = False
+    old_artifacts = None
     if destination.exists():
         if destination.is_file() and _sha256(destination.read_bytes()) == skill_digest:
             if manifest.exists():
@@ -102,12 +104,33 @@ def build_plan(project_root, capability="testing", host="codex", root=ROOT):
                           and _sha256(agents.read_bytes()) == agents_digest
                           else "review_required")
         else:
-            status = "conflict"
+            if manifest.exists():
+                try:
+                    installed = json.loads(manifest.read_text(encoding="utf-8"))
+                    if (installed.get("format_version") == 1 and installed.get("host") == "codex"
+                            and installed.get("capability") == "testing"
+                            and isinstance(installed.get("artifacts"), list)):
+                        inst_skill = next((a for a in installed["artifacts"] if a.get("destination") == SKILL_DESTINATION), None)
+                        inst_agents = next((a for a in installed["artifacts"] if a.get("destination") == AGENTS_DESTINATION), None)
+                        if (inst_skill and inst_agents
+                                and destination.is_file() and _sha256(destination.read_bytes()) == inst_skill.get("sha256")
+                                and agents.is_file() and _sha256(agents.read_bytes()) == inst_agents.get("sha256")):
+                            status = "ready"
+                            is_upgrade = True
+                            old_artifacts = installed["artifacts"]
+                        else:
+                            status = "conflict"
+                    else:
+                        status = "conflict"
+                except (OSError, AttributeError, json.JSONDecodeError):
+                    status = "conflict"
+            else:
+                status = "conflict"
     if agents.exists() and not manifest.exists():
         if not (destination.is_file() and _sha256(destination.read_bytes()) == skill_digest
                 and agents.is_file() and _sha256(agents.read_bytes()) == agents_digest):
             status = "review_required"
-    elif manifest.exists() and status != "already_active":
+    elif manifest.exists() and status != "already_active" and not is_upgrade:
         status = "conflict"
     plan = {
         "format_version": 1, "host": host, "target": str(project),
@@ -117,6 +140,12 @@ def build_plan(project_root, capability="testing", host="codex", root=ROOT):
         "status": status,
         "requires_confirmation": True,
     }
+    if is_upgrade:
+        plan["is_upgrade"] = True
+        plan["old_artifacts"] = old_artifacts
+        inst_skill = next((a for a in old_artifacts if a.get("destination") == SKILL_DESTINATION), {})
+        plan["old_skill_sha256"] = inst_skill.get("sha256")
+        plan["new_skill_sha256"] = skill_digest
     plan["plan_digest"] = plan_digest(plan)
     return plan
 
@@ -186,7 +215,12 @@ def apply(plan, decision, project_root, root=ROOT):
                 or manifest.get("artifacts") != _owned_artifacts(skill_digest, agents_digest)):
             raise ValueError("Activation ownership conflict")
         return {"status": "already_active", "sha256": skill_digest}
-    if destination.exists() or agents.exists() or manifest_path.exists():
+    if plan.get("is_upgrade"):
+        for art in plan.get("old_artifacts", []):
+            dest = _contained(project, art["destination"])
+            if not dest.is_file() or _sha256(dest.read_bytes()) != art.get("sha256"):
+                raise ValueError("Codex activation target was modified before upgrade; aborted")
+    elif destination.exists() or agents.exists() or manifest_path.exists():
         raise ValueError("Activation destination conflict; existing content was not overwritten")
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_bytes(content)
