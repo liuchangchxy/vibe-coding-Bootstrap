@@ -35,6 +35,7 @@ components:
     name: Claude Code native vcbs-manager Skill
     type: skill
     source: host_adapters/claude/skills/vcbs-manager/SKILL.md
+    destination: .claude/skills/vcbs-manager/SKILL.md
     provider: vibe-coding-bootstrap
     version: '1'
     scope: project
@@ -52,6 +53,7 @@ components:
     name: Antigravity native vcbs-manager Skill
     type: skill
     source: host_adapters/antigravity/skills/vcbs-manager/SKILL.md
+    destination: .agents/skills/vcbs-manager/SKILL.md
     provider: vibe-coding-bootstrap
     version: '1'
     scope: project

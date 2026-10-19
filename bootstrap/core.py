@@ -223,7 +223,7 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
         package = current["semantic_package"]
         semantic_result = json.loads(Path(semantic_result_path).read_text(encoding="utf-8"))
         validate_semantic_result(semantic_result, package, root)
-        adoption_plan = build_adoption_plan(package, semantic_result, project, str(semantic_result_path), root)
+        adoption_plan = build_adoption_plan(package, semantic_result, project, str(semantic_result_path), root, host=host)
         capabilities = sorted(item["capability_id"] for item in adoption_plan["items"]
                               if item["semantic_status"] == "missing" and item["materialization_eligible"])
         if capabilities:
@@ -233,23 +233,47 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
                        (load_yaml(Path(root) / "capabilities" / relative) for relative in catalog["capabilities"])}
             selected_items = [item for item in adoption_plan["items"] if item["materialization_eligible"]]
             components = []
+            parsed_hosts = _parse_hosts(host)
             for item in selected_items:
                 eligible = item["bootstrap_component"]
                 source_record = records[eligible["source_capability"]]
-                component = next(value for value in source_record["components"] if value["id"] == eligible["component_id"])
-                metadata = component["assembly"]
-                entry = {
-                    "component_id": metadata["id"], "component_type": metadata["type"],
-                    "source_capability": eligible["source_capability"], "reason": item["reason"],
-                    "scope": metadata["scope"], "source": metadata["source"],
-                    "delivery": metadata["delivery"], "action": "include",
-                    "capability_version": source_record.get("version", "unspecified"),
-                    "configuration_preview": metadata.get("configuration", {}),
-                    "dependencies": [], "conflicts": [],
-                }
-                if metadata.get("destination"):
-                    entry["destination"] = metadata["destination"]
-                components.append(entry)
+                if eligible["delivery"] == "reference" and len(parsed_hosts) > 1:
+                    for h in parsed_hosts:
+                        th = "claude" if h in {"claude", "claude_code"} else h
+                        matched = next((c for c in source_record["components"]
+                                        if c.get("assembly", {}).get("delivery") == "reference"
+                                        and (c.get("assembly", {}).get("provenance", {}).get("activation_adapter") == th
+                                             or th in c.get("id", ""))), None)
+                        if matched:
+                            metadata = matched["assembly"]
+                            entry = {
+                                "component_id": metadata["id"], "component_type": metadata["type"],
+                                "source_capability": eligible["source_capability"], "reason": item["reason"],
+                                "scope": metadata["scope"], "source": metadata["source"],
+                                "delivery": metadata["delivery"], "action": "include",
+                                "capability_version": source_record.get("version", "unspecified"),
+                                "configuration_preview": metadata.get("configuration", {}),
+                                "dependencies": [], "conflicts": [],
+                            }
+                            if metadata.get("destination"):
+                                entry["destination"] = metadata["destination"]
+                            if not any(c["component_id"] == entry["component_id"] for c in components):
+                                components.append(entry)
+                else:
+                    component = next(value for value in source_record["components"] if value["id"] == eligible["component_id"])
+                    metadata = component["assembly"]
+                    entry = {
+                        "component_id": metadata["id"], "component_type": metadata["type"],
+                        "source_capability": eligible["source_capability"], "reason": item["reason"],
+                        "scope": metadata["scope"], "source": metadata["source"],
+                        "delivery": metadata["delivery"], "action": "include",
+                        "capability_version": source_record.get("version", "unspecified"),
+                        "configuration_preview": metadata.get("configuration", {}),
+                        "dependencies": [], "conflicts": [],
+                    }
+                    if metadata.get("destination"):
+                        entry["destination"] = metadata["destination"]
+                    components.append(entry)
             assembly_plan = {
                 "project_context": {"name": package["project"]["name"], "description": package["project"]["description"],
                                     "project_type": package["project"]["project_type"], "lifecycle": "production",
@@ -269,8 +293,13 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
         if adoption_plan["overall_decision"] in {"review_required", "blocked"}:
             unresolved.append({"kind": "adoption_review", "reason": adoption_plan["overall_decision"]})
     activation_plans = _activation_plan(project, host, capabilities, root, route=route)
-    if any(plan["status"] == "review_required" for plan in activation_plans):
-        unresolved.append({"kind": "host_activation", "reason": "Existing host activation files require review and will not be overwritten."})
+    for plan in activation_plans:
+        if plan["status"] == "review_required":
+            unresolved.append({"kind": "host_activation", "reason": "Existing host activation files require review and will not be overwritten."})
+        elif plan["status"] == "conflict":
+            unresolved.append({"kind": "host_activation", "reason": f"{plan['host'].capitalize()} host activation destination conflict detected."})
+        elif plan["status"] == "unsupported":
+            unresolved.append({"kind": "host_activation", "reason": f"{plan['host'].capitalize()} host activation is unsupported."})
     if any(item["result"] in {"conflict", "unsupported"} for item in rows):
         unresolved.extend({"kind": "materialization", "component_id": item["component_id"], "reason": item.get("reason", item["result"])}
                           for item in rows if item["result"] in {"conflict", "unsupported"})
@@ -632,8 +661,12 @@ def load_json(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
-from .lifecycle import (
-    get_status, render_status_summary, deploy, upgrade,
-    build_uninstall_plan, render_uninstall_summary, decide_uninstall,
-    apply_uninstall, uninstall
-)
+def __getattr__(name):
+    if name in {
+        "get_status", "render_status_summary", "deploy", "upgrade",
+        "build_uninstall_plan", "render_uninstall_summary", "decide_uninstall",
+        "apply_uninstall", "uninstall"
+    }:
+        from . import lifecycle
+        return getattr(lifecycle, name)
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

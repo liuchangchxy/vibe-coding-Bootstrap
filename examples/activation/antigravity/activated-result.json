@@ -1,0 +1,10 @@
+{
+  "evidence_sanitized": true,
+  "run": "NOT_TESTED",
+  "host": "antigravity",
+  "app_location": "/Applications/Antigravity.app",
+  "reason": "Antigravity is installed as a GUI desktop application (/Applications/Antigravity.app) without a headless automation CLI (agy/antigravity) on this system. In strict adherence to Issue #1 acceptance criteria ('If an installed host or its automation interface is unavailable, report NOT_TESTED with the exact reason; never promote unit tests/file existence to full host activation'), host runtime invocation is recorded as NOT_TESTED.",
+  "skill_destination": ".agents/skills/vcbs-manager/SKILL.md",
+  "unit_tests_passed": true,
+  "filesystem_isolation_verified": true
+}

@@ -1,0 +1,17 @@
+{
+  "evidence_sanitized": true,
+  "format_version": 1,
+  "host": "claude",
+  "target": "disposable local pilot (local path redacted)",
+  "target_commit_sha": "9ac4ba5e9b7155124dc135b7392c655b1a61a095",
+  "target_dirty": false,
+  "capability_id": "vcbs-manager",
+  "source": "host_adapters/claude/skills/vcbs-manager/SKILL.md",
+  "destination": ".claude/skills/vcbs-manager/SKILL.md",
+  "agents_destination": null,
+  "status": "ready",
+  "requires_confirmation": true,
+  "plan_digest": "49b5962ca1387d7f7663d27402dc4e9fa71391e6fbe53e6d194726bfcf92e621",
+  "decision": "approve",
+  "note": "Plan target path was redacted for committed evidence; digest is the original applied plan digest."
+}

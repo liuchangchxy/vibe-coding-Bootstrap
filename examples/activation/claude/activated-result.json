@@ -1,0 +1,13 @@
+{
+  "evidence_sanitized": true,
+  "run": "activated",
+  "claude_cli_version": "claude 2.1.303",
+  "target_base_commit": "9ac4ba5e9b7155124dc135b7392c655b1a61a095",
+  "prompt": "Inspect the repo-local skills available to you in .claude/skills and explain what the vcbs-manager skill does in one short sentence.",
+  "prompt_sha256": "4b97779d424b9176378dfeb229d997d9a16f2fc8c6790a6f8149ebffb5cbce43",
+  "activation_mechanism": "repo-local skill directory discovery",
+  "skill_destination": ".claude/skills/vcbs-manager/SKILL.md",
+  "production_skill_sha256": "62cad4b621e0e2fadf38c14b12fb7ba83535d474793759414f5654ecaa8c8c77",
+  "claude_consumed_native_skill": "YES",
+  "final_response_excerpt": "`.claude/skills` contains one skill, `vcbs-manager`, defined solely by its `SKILL.md` (no scripts or references).\n\n**What it does:** `vcbs-manager` guides you through safely inspecting, planning, approving, applying, and rolling back Vibe Coding Bootstrap (VCBS) component deployments in an existing project using only verified `python -m bootstrap` / `./vcbs` CLI commands, with mandatory human approval and fail-closed planning."
+}
