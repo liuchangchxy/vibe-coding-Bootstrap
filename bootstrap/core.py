@@ -358,28 +358,129 @@ def _verify(plan, project, root):
     return True
 
 
-def _validate_materialization_preflight(plan, dry):
-    """Require every approved copy mutation to retain its exact identity and bytes."""
-    def mutations(items):
-        return {
-            (item["source_capability"], item["component_id"], item["scope"], item.get("destination")): {
-                "result": item["result"], "sha256": item.get("sha256"),
-            }
-            for item in items
-            if item.get("delivery") == "copy" and item.get("result") in {
-                "copied", "upgraded", "unchanged", "conflict", "unsupported", "skipped",
-            }
-        }
+def _validate_materialization_preflight(plan, dry, project_root=None, global_root=None):
+    """Require every approved materialization mutation to retain its exact action, hashes, versions, and ownership."""
+    project = Path(project_root or plan["target"]["path"]).resolve()
+    manifest_path = project / ".vibe-coding-bootstrap/manifest.yaml"
+    manifest_entries = []
+    if manifest_path.is_file():
+        try:
+            data = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+            if isinstance(data, dict) and isinstance(data.get("items"), list):
+                manifest_entries = data["items"]
+        except (OSError, yaml.YAMLError):
+            pass
 
-    expected = mutations([*plan["project_changes"], *plan["global_changes"]])
-    expected = {key: value for key, value in expected.items() if value["result"] in {"copied", "upgraded"}}
-    fresh = mutations(dry["items"])
-    for key, approved in expected.items():
-        observed = fresh.get(key)
-        if (observed is None or observed["result"] not in {"copied", "upgraded"}
-                or observed["sha256"] != approved["sha256"]):
+    def item_key(item):
+        return (item["source_capability"], item["component_id"], item["scope"], item.get("destination"))
+
+    # Map approved copy-delivery actions from plan
+    approved_map = {}
+    for item in [*plan["project_changes"], *plan["global_changes"]]:
+        if item.get("delivery") == "copy":
+            approved_map[item_key(item)] = item
+
+    # Map observed copy-delivery actions from dry run
+    observed_map = {}
+    for item in dry.get("items", []):
+        if item.get("delivery") == "copy":
+            observed_map[item_key(item)] = item
+
+    # Filter to approved mutations (copied or upgraded)
+    approved_mutations = {k: v for k, v in approved_map.items() if v.get("result") in {"copied", "upgraded"}}
+
+    # 1. Every approved mutation must be observed and match exact action, versions, and hashes
+    for key, approved in approved_mutations.items():
+        observed = observed_map.get(key)
+        if observed is None:
+            raise ProductLoopError(f"STALE_BOOTSTRAP_PLAN: approved mutation missing in preflight for {approved.get('destination')}")
+
+        # Strict action classification check: copied vs upgraded
+        if observed.get("result") != approved.get("result"):
             raise ProductLoopError(
-                "STALE_BOOTSTRAP_PLAN: materialization source or action changed after planning"
+                f"STALE_BOOTSTRAP_PLAN: materialization action classification drifted from "
+                f"'{approved.get('result')}' to '{observed.get('result')}' for {approved.get('destination')}"
+            )
+
+        # Target new SHA-256 check
+        if observed.get("sha256") != approved.get("sha256"):
+            raise ProductLoopError(
+                f"STALE_BOOTSTRAP_PLAN: target content SHA-256 drifted for {approved.get('destination')}"
+            )
+
+        dest_str = approved.get("destination")
+        dest_path = Path(dest_str) if dest_str else None
+        rel_dest = None
+        if dest_path and _inside(dest_path, project):
+            try:
+                rel_dest = dest_path.resolve().relative_to(project.resolve()).as_posix()
+            except ValueError:
+                pass
+
+        if approved["result"] == "upgraded":
+            # Baseline SHA-256
+            if observed.get("old_sha256") != approved.get("old_sha256"):
+                raise ProductLoopError(
+                    f"STALE_BOOTSTRAP_PLAN: pre-upgrade baseline SHA-256 drifted for {dest_str}"
+                )
+            # Baseline version
+            if observed.get("old_version") != approved.get("old_version"):
+                raise ProductLoopError(
+                    f"STALE_BOOTSTRAP_PLAN: pre-upgrade baseline version drifted for {dest_str}"
+                )
+            # New version
+            if observed.get("new_version") != approved.get("new_version"):
+                raise ProductLoopError(
+                    f"STALE_BOOTSTRAP_PLAN: target upgrade version drifted for {dest_str}"
+                )
+
+            # Ownership check:
+            # File must currently exist on disk and match approved baseline old_sha256
+            if not dest_path or not dest_path.is_file():
+                raise ProductLoopError(
+                    f"STALE_BOOTSTRAP_PLAN: pre-upgrade baseline file missing on disk: {dest_str}"
+                )
+            actual_old_sha = _sha(dest_path.read_bytes())
+            if actual_old_sha != approved.get("old_sha256"):
+                raise ProductLoopError(
+                    f"STALE_BOOTSTRAP_PLAN: pre-upgrade file content on disk differs from approved baseline: {dest_str}"
+                )
+
+            # Bootstrap ownership verification:
+            # Manifest must record this component and its old_sha256
+            if approved.get("scope") == "project":
+                found_in_manifest = any(
+                    entry.get("scope") == "project"
+                    and (entry.get("destination") in {dest_str, rel_dest}
+                         or (entry.get("component_id") == approved.get("component_id")
+                             and entry.get("source_capability") == approved.get("source_capability")))
+                    and entry.get("sha256") == approved.get("old_sha256")
+                    for entry in manifest_entries
+                )
+                if not found_in_manifest:
+                    raise ProductLoopError(
+                        f"STALE_BOOTSTRAP_PLAN: pre-upgrade asset {dest_str} is not recorded as managed in Bootstrap manifest"
+                    )
+
+        elif approved["result"] == "copied":
+            # For a newly copied component, destination must not already exist on disk
+            if dest_path and dest_path.exists():
+                raise ProductLoopError(
+                    f"STALE_BOOTSTRAP_PLAN: destination {dest_str} unexpectedly exists for approved copied action"
+                )
+
+    # 2. No unexpected mutations observed in dry run that were not approved
+    for key, observed in observed_map.items():
+        if observed.get("result") in {"copied", "upgraded"} and key not in approved_mutations:
+            raise ProductLoopError(
+                f"STALE_BOOTSTRAP_PLAN: unexpected unapproved mutation observed for {observed.get('destination')}"
+            )
+
+    # 3. No conflict or unsupported items in dry run
+    for item in dry.get("items", []):
+        if item.get("result") in {"conflict", "unsupported"}:
+            raise ProductLoopError(
+                f"STALE_BOOTSTRAP_PLAN: materialization condition conflict detected for {item.get('destination')}: {item.get('reason')}"
             )
 
 
@@ -422,7 +523,7 @@ def apply_plan(plan, decision, project_root, global_root=None, root=ROOT):
     dry = None
     if material_plan:
         dry = materialize(material_plan, project, global_root, apply=False, root=root)
-        _validate_materialization_preflight(plan, dry)
+        _validate_materialization_preflight(plan, dry, project, global_root)
         if any(item["result"] in {"conflict", "unsupported"} for item in dry["items"]):
             raise ProductLoopError("STALE_BOOTSTRAP_PLAN: materialization conditions changed after planning")
     for subplan in plan["host_activations"]:

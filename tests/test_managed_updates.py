@@ -13,7 +13,7 @@ import yaml
 
 from activation import core as activation
 from assembly.core import assemble
-from bootstrap.core import apply_plan, build_plan, decide, inspect_project, load_json, render_summary
+from bootstrap.core import ProductLoopError, apply_plan, build_plan, decide, inspect_project, load_json, render_summary
 from bootstrap.recovery import load_record, rollback
 from composer.core import ROOT, compose, load_yaml, validate
 from materializer.core import materialize
@@ -207,6 +207,103 @@ class ManagedUpdatesTests(unittest.TestCase):
         self.assertEqual("rolled_back", rb["status"])
         self.assertEqual(v1_skill_content, (self.repo / activation.SKILL_DESTINATION).read_bytes())
         self.assertEqual(v1_guide_content, (self.repo / ".vibe-coding-bootstrap/components/test-guidance.md").read_bytes())
+
+    def test_preflight_detects_action_classification_drift(self):
+        """Negative test: Preflight rejects when an approved 'upgraded' action drifts to 'copied'."""
+        global_root = self.base / "global"
+        # 1. Deploy v1
+        plan1 = build_plan(self.repo, host="codex", context_path=self.context_file, global_root=global_root, root=self.vcbs_root)
+        dec1 = decide(plan1, "approve")
+        apply_plan(plan1, dec1, self.repo, global_root=global_root, root=self.vcbs_root)
+
+        # 2. Update VCBS source to v2
+        (self.vcbs_root / "components/project/test-guidance.md").write_text("# Test Guidance v2\n", encoding="utf-8")
+
+        # 3. Plan upgrade to v2
+        plan2 = build_plan(self.repo, host="codex", context_path=self.context_file, global_root=global_root, root=self.vcbs_root)
+        guide_change = next(c for c in plan2["project_changes"] if c["component_id"] == "project-test-guidance")
+        self.assertEqual("upgraded", guide_change["result"])
+        dec2 = decide(plan2, "approve")
+
+        # 4. Drift: Target file is deleted on disk before apply!
+        target_file = self.repo / ".vibe-coding-bootstrap/components/test-guidance.md"
+        target_file.unlink()
+
+        # 5. Apply plan must reject due to action classification drift (or missing baseline)
+        with self.assertRaises(ProductLoopError) as ctx:
+            apply_plan(plan2, dec2, self.repo, global_root=global_root, root=self.vcbs_root)
+        self.assertIn("STALE_BOOTSTRAP_PLAN", str(ctx.exception))
+
+    def test_preflight_detects_baseline_sha_and_content_drift(self):
+        """Negative test: Preflight rejects when pre-upgrade baseline content on disk is modified."""
+        global_root = self.base / "global"
+        # 1. Deploy v1
+        plan1 = build_plan(self.repo, host="codex", context_path=self.context_file, global_root=global_root, root=self.vcbs_root)
+        dec1 = decide(plan1, "approve")
+        apply_plan(plan1, dec1, self.repo, global_root=global_root, root=self.vcbs_root)
+
+        # 2. Update VCBS source to v2
+        (self.vcbs_root / "components/project/test-guidance.md").write_text("# Test Guidance v2\n", encoding="utf-8")
+
+        # 3. Plan upgrade to v2
+        plan2 = build_plan(self.repo, host="codex", context_path=self.context_file, global_root=global_root, root=self.vcbs_root)
+        dec2 = decide(plan2, "approve")
+
+        # 4. Drift: User edits the managed file on disk before apply
+        target_file = self.repo / ".vibe-coding-bootstrap/components/test-guidance.md"
+        target_file.write_text("# User edited between plan and apply\n", encoding="utf-8")
+
+        # 5. Apply plan must reject
+        with self.assertRaises(ProductLoopError) as ctx:
+            apply_plan(plan2, dec2, self.repo, global_root=global_root, root=self.vcbs_root)
+        self.assertIn("STALE_BOOTSTRAP_PLAN", str(ctx.exception))
+
+    def test_preflight_detects_target_content_drift(self):
+        """Negative test: Preflight rejects when target component content in VCBS changes after planning."""
+        global_root = self.base / "global"
+        # 1. Deploy v1
+        plan1 = build_plan(self.repo, host="codex", context_path=self.context_file, global_root=global_root, root=self.vcbs_root)
+        dec1 = decide(plan1, "approve")
+        apply_plan(plan1, dec1, self.repo, global_root=global_root, root=self.vcbs_root)
+
+        # 2. Update VCBS source to v2
+        (self.vcbs_root / "components/project/test-guidance.md").write_text("# Test Guidance v2\n", encoding="utf-8")
+
+        # 3. Plan upgrade to v2
+        plan2 = build_plan(self.repo, host="codex", context_path=self.context_file, global_root=global_root, root=self.vcbs_root)
+        dec2 = decide(plan2, "approve")
+
+        # 4. Drift: VCBS component changes to v3 before apply
+        (self.vcbs_root / "components/project/test-guidance.md").write_text("# Test Guidance v3\n", encoding="utf-8")
+
+        # 5. Apply plan must reject due to target content SHA-256 drift
+        with self.assertRaises(ProductLoopError) as ctx:
+            apply_plan(plan2, dec2, self.repo, global_root=global_root, root=self.vcbs_root)
+        self.assertIn("STALE_BOOTSTRAP_PLAN", str(ctx.exception))
+
+    def test_preflight_detects_ownership_drift(self):
+        """Negative test: Preflight rejects when asset is missing from Bootstrap manifest."""
+        global_root = self.base / "global"
+        # 1. Deploy v1
+        plan1 = build_plan(self.repo, host="codex", context_path=self.context_file, global_root=global_root, root=self.vcbs_root)
+        dec1 = decide(plan1, "approve")
+        apply_plan(plan1, dec1, self.repo, global_root=global_root, root=self.vcbs_root)
+
+        # 2. Update VCBS source to v2
+        (self.vcbs_root / "components/project/test-guidance.md").write_text("# Test Guidance v2\n", encoding="utf-8")
+
+        # 3. Plan upgrade to v2
+        plan2 = build_plan(self.repo, host="codex", context_path=self.context_file, global_root=global_root, root=self.vcbs_root)
+        dec2 = decide(plan2, "approve")
+
+        # 4. Drift: Manifest is deleted or emptied before apply
+        manifest_path = self.repo / ".vibe-coding-bootstrap/manifest.yaml"
+        manifest_path.write_text("format_version: 1\nitems: []\n", encoding="utf-8")
+
+        # 5. Apply plan must reject because asset is no longer recorded as Bootstrap-managed
+        with self.assertRaises(ProductLoopError) as ctx:
+            apply_plan(plan2, dec2, self.repo, global_root=global_root, root=self.vcbs_root)
+        self.assertIn("STALE_BOOTSTRAP_PLAN", str(ctx.exception))
 
 
 if __name__ == "__main__":

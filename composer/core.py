@@ -115,6 +115,17 @@ def compose(context, root=ROOT):
         if (experience.get("status") != "verified" or not experience.get("review")
                 or experience["review"].get("review_status") != "accepted"):
             raise ValueError(f"Personal reusable experience must link an accepted verified Experience: {experience_id}")
+        evidence_items = experience.get("evidence", [])
+        if not evidence_items or any(item.get("verification", {}).get("status") not in {"checked", "independently_confirmed"} for item in evidence_items):
+            raise ValueError(f"Personal reusable experience contains unverified evidence: {experience_id}")
+        has_qualifying = any(
+            item.get("type") not in {"ai_judgment", "single_attempt"}
+            and item.get("strength") in {"moderate", "strong"}
+            and item.get("verification", {}).get("status") in {"checked", "independently_confirmed"}
+            for item in evidence_items
+        )
+        if not has_qualifying:
+            raise ValueError(f"Personal reusable experience lacks qualifying verified evidence: {experience_id}")
         for cid in experience.get("capability_ids", []):
             require_id(cid)
         experiences.append((entry[0].relative_to(root).as_posix(), experience))

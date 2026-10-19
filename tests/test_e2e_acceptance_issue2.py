@@ -23,7 +23,7 @@ import yaml
 
 from activation import core as activation
 from bootstrap.core import apply_plan, build_plan, decide, inspect_project, render_summary
-from bootstrap.experience import harvest_experience, review_experience
+from bootstrap.experience import ExperienceError, harvest_experience, review_experience, verify_evidence
 from bootstrap.recovery import rollback
 from composer.core import ROOT, compose, load_yaml
 
@@ -120,22 +120,32 @@ class EndToEndIssue2AcceptanceTests(unittest.TestCase):
         self.assertEqual("pending", candidate["review"]["review_status"])
         self.assertEqual("unverified", candidate["evidence"][0]["verification"]["status"])
 
-        # 3. Human reviewer approves candidate
+        # 3. Negative check: approving candidate with unverified evidence fails
+        with self.assertRaises(ExperienceError) as ctx:
+            review_experience(exp_id, "approve", reviewer="Senior Maintainer", root=self.vcbs_root)
+        self.assertIn("UNVERIFIED_EVIDENCE", str(ctx.exception))
+
+        # 4. Independent fact-checking: verify candidate evidence
+        verified_ev = verify_evidence(exp_id, verifier="QA Lead", method="pytest suite passed on Project A commit",
+                                      status="checked", root=self.vcbs_root)
+        self.assertEqual("checked", verified_ev["evidence"][0]["verification"]["status"])
+
+        # 5. Human reviewer approves candidate
         verified = review_experience(exp_id, "approve", reviewer="Senior Maintainer",
                                      notes="Verified test evidence in Project A", root=self.vcbs_root)
         self.assertEqual("verified", verified["status"])
         self.assertEqual("accepted", verified["review"]["review_status"])
         self.assertEqual("checked", verified["evidence"][0]["verification"]["status"])
 
-        # 4. Personal profile contains the reusable experience
+        # 6. Personal profile contains the reusable experience
         profile = load_yaml(self.vcbs_root / "profiles/personal.yaml")
         self.assertIn(exp_id, profile.get("reusable_experience_ids", []))
 
-        # 5. Generic capability catalog was NOT modified
+        # 7. Generic capability catalog was NOT modified
         catalog_testing = load_yaml(self.vcbs_root / "capabilities/quality/testing.yaml")
         self.assertNotIn(exp_id, catalog_testing.get("experience_ids", []))
 
-        # 6. Project B automatically reuses the experience
+        # 8. Project B automatically reuses the experience
         context_b = {
             "name": "project_b", "description": "Second consumer project",
             "project_type": "software-project", "lifecycle": "production",
@@ -148,7 +158,7 @@ class EndToEndIssue2AcceptanceTests(unittest.TestCase):
         self.assertIn(exp_id, reused_ids)
 
     def test_cli_harvest_and_review_experience(self):
-        """Verify CLI commands for harvest and review-experience work seamlessly."""
+        """Verify CLI commands for harvest, verify-evidence, and review-experience work seamlessly."""
         obs = {
             "title": "Use isolated temp directories for filesystem tests",
             "approach": "Used tempfile.TemporaryDirectory per test.",
@@ -169,6 +179,15 @@ class EndToEndIssue2AcceptanceTests(unittest.TestCase):
         res_h = self._run_cli("harvest", "--project-root", self.project_a, "--observation", obs_file)
         self.assertIn("Candidate:", res_h.stdout)
         exp_id = res_h.stdout.split("Candidate:")[1].split("(")[0].strip()
+
+        # CLI: negative check - review-experience fails on unverified evidence
+        res_fail = self._run_cli("review-experience", exp_id, "--decision", "approve", "--reviewer", "Lead Maintainer", check=False)
+        self.assertNotEqual(0, res_fail.returncode)
+        self.assertIn("UNVERIFIED_EVIDENCE", res_fail.stderr)
+
+        # CLI: verify-evidence
+        res_v = self._run_cli("verify-evidence", exp_id, "--verifier", "QA Lead", "--method", "Automated test suite pass")
+        self.assertIn("Verified evidence", res_v.stdout)
 
         # CLI: review-experience approve
         res_r = self._run_cli("review-experience", exp_id, "--decision", "approve", "--reviewer", "Lead Maintainer")

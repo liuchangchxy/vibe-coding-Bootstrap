@@ -177,6 +177,46 @@ def _find_experience(ref, root=ROOT):
     raise ExperienceError(f"EXPERIENCE_NOT_FOUND: cannot locate experience {ref}")
 
 
+def verify_evidence(experience_ref, evidence_index=0, verifier=None, method=None, status="checked", root=ROOT):
+    """Verify one or all evidence items in an experience candidate prior to approval."""
+    root = Path(root).resolve()
+    if status not in {"checked", "independently_confirmed"}:
+        raise ExperienceError(f"INVALID_VERIFICATION_STATUS: status must be 'checked' or 'independently_confirmed' (found {status})")
+    if not verifier or not str(verifier).strip():
+        raise ExperienceError("VERIFIER_REQUIRED: verify_evidence requires a named verifier")
+    if not method or not str(method).strip():
+        raise ExperienceError("METHOD_REQUIRED: verify_evidence requires a verification method description")
+
+    path, record = _find_experience(experience_ref, root)
+    evidence_list = record.get("evidence", [])
+    if not evidence_list:
+        raise ExperienceError("MISSING_EVIDENCE: experience candidate has no evidence items to verify")
+
+    now = _utc()
+    if evidence_index == "all":
+        targets = list(range(len(evidence_list)))
+    else:
+        try:
+            idx = int(evidence_index)
+        except (ValueError, TypeError):
+            raise ExperienceError(f"INVALID_EVIDENCE_INDEX: evidence index must be an integer or 'all' (found {evidence_index})")
+        if idx < 0 or idx >= len(evidence_list):
+            raise ExperienceError(f"INVALID_EVIDENCE_INDEX: index {idx} out of range (0..{len(evidence_list)-1})")
+        targets = [idx]
+
+    for idx in targets:
+        evidence_list[idx]["verification"] = {
+            "status": status,
+            "method": str(method).strip(),
+            "verified_by": str(verifier).strip(),
+            "verified_at": now,
+        }
+
+    validate(record, "experience.schema.json", root)
+    path.write_text(yaml.safe_dump(record, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    return record
+
+
 def review_experience(experience_ref, decision, reviewer=None, notes=None, root=ROOT):
     """Review and approve or reject an Experience candidate for personal reuse."""
     root = Path(root).resolve()
@@ -191,22 +231,39 @@ def review_experience(experience_ref, decision, reviewer=None, notes=None, root=
         if record.get("status") != "candidate":
             raise ExperienceError(f"INVALID_STATE_TRANSITION: only candidate experiences can be approved (found {record.get('status')})")
 
-        # Must have at least one qualifying evidence item
+        # Disallow approving if candidate has unverified evidence
+        evidence_list = record.get("evidence", [])
+        if not evidence_list:
+            raise ExperienceError("MISSING_EVIDENCE: candidate has no evidence items")
+
+        unverified = [
+            i for i, item in enumerate(evidence_list)
+            if item.get("verification", {}).get("status") not in {"checked", "independently_confirmed"}
+        ]
+        if unverified:
+            raise ExperienceError(
+                f"UNVERIFIED_EVIDENCE: cannot approve candidate with unverified evidence (indices: {unverified}); "
+                "verify evidence before human approval"
+            )
+
+        # Must have at least one qualifying non-AI moderate/strong evidence item
         qualifying = False
-        now = _utc()
-        for item in record.get("evidence", []):
-            if item.get("type") not in {"ai_judgment", "single_attempt"} and item.get("strength") in {"moderate", "strong"}:
-                item["verification"] = {
-                    "status": "checked",
-                    "method": f"Reviewed and confirmed by {reviewer}",
-                    "verified_by": str(reviewer).strip(),
-                    "verified_at": now,
-                }
+        for item in evidence_list:
+            v = item.get("verification", {})
+            if (item.get("type") not in {"ai_judgment", "single_attempt"}
+                    and item.get("strength") in {"moderate", "strong"}
+                    and v.get("status") in {"checked", "independently_confirmed"}
+                    and v.get("verified_by")
+                    and v.get("method")):
                 qualifying = True
                 break
         if not qualifying:
-            raise ExperienceError("INSUFFICIENT_EVIDENCE: verified status requires at least one moderate or strong non-AI checked evidence item")
+            raise ExperienceError(
+                "INSUFFICIENT_EVIDENCE: verified status requires at least one moderate or strong "
+                "non-AI checked evidence item with verifier and method"
+            )
 
+        now = _utc()
         record["status"] = "verified"
         record["review"] = {
             "review_status": "accepted",
