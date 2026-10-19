@@ -471,63 +471,63 @@ def _build_upgrade_plan_from_manifest(project_root, host="codex", global_root=No
 
 
 def deploy(project_root, host="codex", context_path=None, semantic_result_path=None,
-           global_root=None, apply=False, decision=None, root=ROOT):
+           global_root=None, apply=False, decision=None, plan=None, root=ROOT):
     """Standardized VCBS initial deployment or reconciliation."""
     st = get_status(project_root, host=host, global_root=global_root, root=root)
     # Check if already installed and up to date without changes
-    if st["deployed"] and st["status"] == "installed" and not context_path and not semantic_result_path:
+    if st["deployed"] and st["status"] == "installed" and not context_path and not semantic_result_path and not plan:
         return {"status": "no_changes", "message": "Environment is already up to date.", "target": st["target"]}
 
-    plan = build_plan(project_root, host=host, context_path=context_path,
-                      semantic_result_path=semantic_result_path, global_root=global_root, root=root)
+    active_plan = load_json(plan) if isinstance(plan, (str, Path)) else plan
+    if active_plan is None:
+        active_plan = build_plan(project_root, host=host, context_path=context_path,
+                                 semantic_result_path=semantic_result_path, global_root=global_root, root=root)
 
-    if plan["actual_changes"] == 0:
-        return {"status": "no_changes", "route": plan["route"], "target": plan["target"], "plan": plan}
+    if active_plan["actual_changes"] == 0:
+        return {"status": "no_changes", "route": active_plan["route"], "target": active_plan["target"], "plan": active_plan}
 
     if not apply:
-        return {"status": "preview", "plan": plan, "summary": render_summary(plan)}
+        return {"status": "preview", "plan": active_plan, "summary": render_summary(active_plan)}
 
-    dec = decision
-    if not dec:
-        dec = decide(plan, "approve")
-    elif isinstance(dec, (str, Path)):
-        dec = load_json(dec)
+    if not decision:
+        raise ProductLoopError("DECISION_REQUIRED: execution requires an explicit approved decision artifact; provide decision")
+    dec = load_json(decision) if isinstance(decision, (str, Path)) else decision
 
-    return apply_plan(plan, dec, project_root, global_root=global_root, root=root)
+    return apply_plan(active_plan, dec, project_root, global_root=global_root, root=root)
 
 
 def upgrade(project_root, host="codex", context_path=None, global_root=None,
-            apply=False, decision=None, root=ROOT):
+            apply=False, decision=None, plan=None, root=ROOT):
     """Standardized VCBS safe upgrade."""
     st = get_status(project_root, host=host, global_root=global_root, root=root)
-    if not st["deployed"] and st["status"] in {"not_installed", "uninstalled"}:
+    if not st["deployed"] and st["status"] in {"not_installed", "uninstalled"} and not plan:
         raise ProductLoopError("NOT_INSTALLED: project does not have VCBS installed; use deploy first")
-    if st["has_conflicts"]:
+    if st["has_conflicts"] and not plan:
         raise ProductLoopError(f"UPGRADE_CONFLICT: cannot upgrade due to existing conflicts: {', '.join(st['conflicts'])}")
 
-    if not st["update_available"] and not context_path:
-        return {"status": "no_changes", "message": "All components are already up to date.", "target": st["target"]}
+    active_plan = load_json(plan) if isinstance(plan, (str, Path)) else plan
+    if active_plan is None:
+        if not st["update_available"] and not context_path:
+            return {"status": "no_changes", "message": "All components are already up to date.", "target": st["target"]}
 
-    if context_path:
-        plan = build_plan(project_root, host=host, context_path=context_path,
-                          global_root=global_root, root=root)
-    else:
-        plan = _build_upgrade_plan_from_manifest(project_root, host=host,
-                                                 global_root=global_root, root=root)
+        if context_path:
+            active_plan = build_plan(project_root, host=host, context_path=context_path,
+                                     global_root=global_root, root=root)
+        else:
+            active_plan = _build_upgrade_plan_from_manifest(project_root, host=host,
+                                                             global_root=global_root, root=root)
 
-    if plan["actual_changes"] == 0:
-        return {"status": "no_changes", "message": "All components are already up to date.", "plan": plan}
+    if active_plan["actual_changes"] == 0:
+        return {"status": "no_changes", "message": "All components are already up to date.", "plan": active_plan}
 
     if not apply:
-        return {"status": "preview", "plan": plan, "summary": render_summary(plan)}
+        return {"status": "preview", "plan": active_plan, "summary": render_summary(active_plan)}
 
-    dec = decision
-    if not dec:
-        dec = decide(plan, "approve")
-    elif isinstance(dec, (str, Path)):
-        dec = load_json(dec)
+    if not decision:
+        raise ProductLoopError("DECISION_REQUIRED: execution requires an explicit approved decision artifact; provide decision")
+    dec = load_json(decision) if isinstance(decision, (str, Path)) else decision
 
-    return apply_plan(plan, dec, project_root, global_root=global_root, root=root)
+    return apply_plan(active_plan, dec, project_root, global_root=global_root, root=root)
 
 
 def build_uninstall_plan(project_root, component_id=None, global_root=None, root=ROOT):
@@ -541,22 +541,33 @@ def build_uninstall_plan(project_root, component_id=None, global_root=None, root
     manifest_path = project / ".vibe-coding-bootstrap/manifest.yaml"
     activation_manifest_path = project / activation.MANIFEST_PATH
 
+    selected_components = None
+    if component_id:
+        if isinstance(component_id, str):
+            selected_components = {c.strip() for c in component_id.split(",") if c.strip()}
+        else:
+            selected_components = {str(c).strip() for c in component_id if str(c).strip()}
+
     items = []
     activation_items = []
     conflicts = []
     unresolved = []
     manifest_updates = []
     remaining_manifest_items = []
+    manifest_sha256 = None
+    activation_manifest_sha256 = None
 
     if manifest_path.is_file():
         try:
-            mdata = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+            mbytes = manifest_path.read_bytes()
+            manifest_sha256 = _sha(mbytes)
+            mdata = yaml.safe_load(mbytes.decode("utf-8"))
             if not isinstance(mdata, dict) or mdata.get("format_version") != 1 or not isinstance(mdata.get("items"), list):
                 unresolved.append({"kind": "corrupt_manifest", "reason": "Manifest is corrupted or invalid structure."})
             else:
                 for entry in mdata.get("items", []):
                     entry_comp_id = entry.get("component_id")
-                    if component_id and entry_comp_id != component_id:
+                    if selected_components and entry_comp_id not in selected_components:
                         remaining_manifest_items.append(entry)
                         continue
 
@@ -617,9 +628,11 @@ def build_uninstall_plan(project_root, component_id=None, global_root=None, root
             unresolved.append({"kind": "manifest_error", "reason": str(exc)})
 
     if activation_manifest_path.is_file():
-        if component_id is None or component_id in {"codex-testing-activation", "testing"}:
-            try:
-                adata = json.loads(activation_manifest_path.read_text(encoding="utf-8"))
+        try:
+            abyles = activation_manifest_path.read_bytes()
+            activation_manifest_sha256 = _sha(abyles)
+            if selected_components is None or any(c in {"codex-testing-activation", "testing"} for c in selected_components):
+                adata = json.loads(abyles.decode("utf-8"))
                 if adata.get("format_version") == 1 and adata.get("host") == "codex":
                     for art in adata.get("artifacts", []):
                         dest_str = art.get("destination", "")
@@ -658,8 +671,8 @@ def build_uninstall_plan(project_root, component_id=None, global_root=None, root
 
                     if activation_items:
                         manifest_updates.append(activation.MANIFEST_PATH)
-            except Exception as exc:
-                unresolved.append({"kind": "activation_manifest_error", "reason": str(exc)})
+        except Exception as exc:
+            unresolved.append({"kind": "activation_manifest_error", "reason": str(exc)})
 
     removals = [item["destination"] for item in (*items, *activation_items) if item["status"] == "removable"]
     already_absent = [item["destination"] for item in (*items, *activation_items) if item["status"] == "already_absent"]
@@ -682,15 +695,16 @@ def build_uninstall_plan(project_root, component_id=None, global_root=None, root
         "conflicts": conflicts,
         "unresolved": unresolved,
         "manifest_updates": manifest_updates,
+        "manifest_sha256": manifest_sha256,
+        "activation_manifest_sha256": activation_manifest_sha256,
+        "remaining_manifest_items": remaining_manifest_items,
         "requires_confirmation": bool(actual_changes and executable),
         "actual_changes": actual_changes,
         "executable": executable,
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
     }
     plan["plan_digest"] = _uninstall_plan_digest(plan)
-    # Stash internal helper list without polluting schema
-    plan["_remaining_manifest_items"] = remaining_manifest_items
-    validate({k: v for k, v in plan.items() if not k.startswith("_")}, "bootstrap-uninstall-plan.schema.json", root)
+    validate(plan, "bootstrap-uninstall-plan.schema.json", root)
     return plan
 
 
@@ -721,7 +735,7 @@ def render_uninstall_summary(plan):
 
 def decide_uninstall(plan, choice):
     """Create a Unified Decision artifact for an Uninstall Plan."""
-    validate({k: v for k, v in plan.items() if not k.startswith("_")}, "bootstrap-uninstall-plan.schema.json")
+    validate(plan, "bootstrap-uninstall-plan.schema.json")
     if plan["plan_digest"] != _uninstall_plan_digest(plan):
         raise ProductLoopError("DECISION_MISMATCH: uninstall plan digest is invalid")
     if choice == "approve" and (not plan["executable"] or not plan["requires_confirmation"]):
@@ -741,8 +755,7 @@ def decide_uninstall(plan, choice):
 
 def apply_uninstall(plan, decision, project_root, global_root=None, root=ROOT):
     """Apply an approved Uninstall Plan: safe removal with snapshot and rollback capability."""
-    clean_plan = {k: v for k, v in plan.items() if not k.startswith("_")}
-    validate(clean_plan, "bootstrap-uninstall-plan.schema.json", root)
+    validate(plan, "bootstrap-uninstall-plan.schema.json", root)
     project = Path(project_root).resolve(strict=True)
 
     if plan["actual_changes"] == 0:
@@ -752,11 +765,12 @@ def apply_uninstall(plan, decision, project_root, global_root=None, root=ROOT):
         raise ProductLoopError("PLAN_BLOCKED: uninstall plan has conflicts or unresolved blockers")
 
     if not decision:
-        raise ProductLoopError("DECISION_REQUIRED: provide the Unified Decision artifact")
-    validate(decision, "bootstrap-decision.schema.json", root)
+        raise ProductLoopError("DECISION_REQUIRED: execution requires an explicit approved decision artifact; provide decision")
+    dec = load_json(decision) if isinstance(decision, (str, Path)) else decision
+    validate(dec, "bootstrap-decision.schema.json", root)
 
-    if (decision["decision"] != "approve" or decision["plan_digest"] != plan["plan_digest"]
-            or decision["target_commit_sha"] != plan["target"]["commit_sha"]
+    if (dec["decision"] != "approve" or dec["plan_digest"] != plan["plan_digest"]
+            or dec["target_commit_sha"] != plan["target"]["commit_sha"]
             or plan["plan_digest"] != _uninstall_plan_digest(plan)):
         raise ProductLoopError("DECISION_MISMATCH: decision does not approve this exact plan and target")
 
@@ -766,6 +780,91 @@ def apply_uninstall(plan, decision, project_root, global_root=None, root=ROOT):
     current = bind_target_revision(project)
     if current["commit_sha"] != plan["target"]["commit_sha"] or current["dirty"] != plan["target"]["dirty"]:
         raise ProductLoopError("STALE_BOOTSTRAP_PLAN: target revision or dirty state changed")
+
+    # Strict Global Root verification
+    planned_global = plan.get("global_root")
+    has_global_items = any(item.get("scope") == "global" for item in plan.get("items", []))
+    if has_global_items:
+        if not global_root:
+            raise ProductLoopError("GLOBAL_ROOT_REQUIRED: uninstall plan contains global components; pass --global-root")
+        actual_global = str(Path(global_root).resolve())
+        if not Path(global_root).resolve().is_dir():
+            raise ProductLoopError(f"GLOBAL_ROOT_NOT_FOUND: global root directory does not exist: {global_root}")
+        if planned_global is None or actual_global != planned_global:
+            raise ProductLoopError(f"GLOBAL_ROOT_MISMATCH: provided global root '{actual_global}' does not match planned global root '{planned_global}'")
+    else:
+        if global_root:
+            actual_global = str(Path(global_root).resolve())
+            if planned_global and actual_global != planned_global:
+                raise ProductLoopError(f"GLOBAL_ROOT_MISMATCH: provided global root '{actual_global}' does not match planned global root '{planned_global}'")
+
+    # Strict Scope Containment verification
+    for item in plan["items"]:
+        dest = Path(item["destination"]).resolve()
+        scope = item.get("scope")
+        if scope == "project":
+            if not _inside(dest, project):
+                raise ProductLoopError(f"DESTINATION_ESCAPE: project component {item['component_id']} destination {dest} escapes project root")
+        elif scope == "global":
+            if not global_root:
+                raise ProductLoopError("GLOBAL_ROOT_REQUIRED: global component destination requires global root")
+            if not _inside(dest, Path(global_root).resolve()):
+                raise ProductLoopError(f"DESTINATION_ESCAPE: global component {item['component_id']} destination {dest} escapes global root")
+        elif scope == "external":
+            if item.get("status") == "removable":
+                raise ProductLoopError(f"UNSUPPORTED_REMOVAL: external reference component {item['component_id']} cannot be uninstalled")
+        else:
+            raise ProductLoopError(f"INVALID_SCOPE: unrecognized scope '{scope}' for item {item.get('component_id')}")
+
+    for item in plan["activation_items"]:
+        dest = Path(item["destination"]).resolve()
+        if not _inside(dest, project):
+            raise ProductLoopError(f"DESTINATION_ESCAPE: activation destination {dest} escapes project root")
+
+    # Strict Manifest Re-verification
+    manifest_path = project / ".vibe-coding-bootstrap/manifest.yaml"
+    expected_msha = plan.get("manifest_sha256")
+    if expected_msha is not None:
+        if not manifest_path.is_file():
+            raise ProductLoopError("STALE_BOOTSTRAP_PLAN: manifest.yaml was deleted after plan approval")
+        actual_msha = _sha(manifest_path.read_bytes())
+        if actual_msha != expected_msha:
+            raise ProductLoopError(f"STALE_BOOTSTRAP_PLAN: manifest.yaml content drifted after plan approval ({actual_msha[:8]} != {expected_msha[:8]})")
+        try:
+            current_mdata = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            raise ProductLoopError(f"STALE_BOOTSTRAP_PLAN: manifest.yaml corrupted: {exc}")
+        if not isinstance(current_mdata, dict) or current_mdata.get("format_version") != 1 or not isinstance(current_mdata.get("items"), list):
+            raise ProductLoopError("STALE_BOOTSTRAP_PLAN: manifest.yaml structure invalid")
+
+        for item in plan["items"]:
+            comp_id = item["component_id"]
+            matched = [it for it in current_mdata.get("items", []) if it.get("component_id") == comp_id and it.get("scope") == item["scope"]]
+            if not matched:
+                raise ProductLoopError(f"STALE_BOOTSTRAP_PLAN: component '{comp_id}' is no longer recorded in manifest.yaml")
+            if any(m.get("sha256") != item["sha256"] for m in matched):
+                raise ProductLoopError(f"STALE_BOOTSTRAP_PLAN: component '{comp_id}' hash changed in manifest.yaml")
+
+        if plan.get("remaining_manifest_items"):
+            planned_removals_ids = {item["component_id"] for item in plan["items"] if item["status"] == "removable"}
+            actual_remaining = [it for it in current_mdata.get("items", []) if it.get("component_id") not in planned_removals_ids]
+            if _sha(_canonical(actual_remaining)) != _sha(_canonical(plan.get("remaining_manifest_items", []))):
+                raise ProductLoopError("STALE_BOOTSTRAP_PLAN: remaining manifest items drifted after plan approval")
+    else:
+        if manifest_path.exists():
+            raise ProductLoopError("STALE_BOOTSTRAP_PLAN: manifest.yaml was created after planning")
+
+    activation_manifest_path = project / activation.MANIFEST_PATH
+    expected_act_msha = plan.get("activation_manifest_sha256")
+    if expected_act_msha is not None:
+        if not activation_manifest_path.is_file():
+            raise ProductLoopError("STALE_BOOTSTRAP_PLAN: activation.json was deleted after plan approval")
+        actual_act_msha = _sha(activation_manifest_path.read_bytes())
+        if actual_act_msha != expected_act_msha:
+            raise ProductLoopError("STALE_BOOTSTRAP_PLAN: activation.json content drifted after plan approval")
+    else:
+        if activation_manifest_path.exists():
+            raise ProductLoopError("STALE_BOOTSTRAP_PLAN: activation.json was created after planning")
 
     # Strict preflight check: files scheduled for removal must STILL match the planned SHA
     for item in plan["items"]:
@@ -790,7 +889,7 @@ def apply_uninstall(plan, decision, project_root, global_root=None, root=ROOT):
             {"destination": item["destination"], "result": "removed", "scope": item["scope"]}
             for item in plan["items"] if item["status"] == "removable" and item["scope"] == "global"
         ],
-        "global_root": str(Path(global_root).resolve()) if global_root else None,
+        "global_root": str(Path(global_root).resolve()) if global_root else planned_global,
         "host_activations": [],
     }
     if any(item["status"] == "removable" for item in plan["activation_items"]):
@@ -850,7 +949,7 @@ def apply_uninstall(plan, decision, project_root, global_root=None, root=ROOT):
         # Update or remove manifests
         manifest_path = project / ".vibe-coding-bootstrap/manifest.yaml"
         if manifest_path.is_file():
-            remaining = plan.get("_remaining_manifest_items", [])
+            remaining = plan.get("remaining_manifest_items", [])
             if remaining:
                 mdata = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
                 mdata["items"] = remaining
@@ -907,21 +1006,21 @@ def apply_uninstall(plan, decision, project_root, global_root=None, root=ROOT):
 
 
 def uninstall(project_root, component_id=None, global_root=None,
-              apply=False, decision=None, root=ROOT):
+              apply=False, decision=None, plan=None, root=ROOT):
     """Standardized VCBS safe uninstall."""
-    plan = build_uninstall_plan(project_root, component_id=component_id,
-                                global_root=global_root, root=root)
+    active_plan = load_json(plan) if isinstance(plan, (str, Path)) else plan
+    if active_plan is None:
+        active_plan = build_uninstall_plan(project_root, component_id=component_id,
+                                           global_root=global_root, root=root)
 
-    if plan["actual_changes"] == 0:
-        return {"status": "no_changes", "message": "No VCBS-managed components to uninstall.", "plan": plan}
+    if active_plan["actual_changes"] == 0:
+        return {"status": "no_changes", "message": "No VCBS-managed components to uninstall.", "plan": active_plan}
 
     if not apply:
-        return {"status": "preview", "plan": plan, "summary": render_uninstall_summary(plan)}
+        return {"status": "preview", "plan": active_plan, "summary": render_uninstall_summary(active_plan)}
 
-    dec = decision
-    if not dec:
-        dec = decide_uninstall(plan, "approve")
-    elif isinstance(dec, (str, Path)):
-        dec = load_json(dec)
+    if not decision:
+        raise ProductLoopError("DECISION_REQUIRED: execution requires an explicit approved decision artifact; provide decision")
+    dec = load_json(decision) if isinstance(decision, (str, Path)) else decision
 
-    return apply_uninstall(plan, dec, project_root, global_root=global_root, root=root)
+    return apply_uninstall(active_plan, dec, project_root, global_root=global_root, root=root)

@@ -33,6 +33,7 @@ def _parser():
     deploy_cmd.add_argument("--semantic-result", help="Semantic Result file path (required for Adoption route)")
     deploy_cmd.add_argument("--global-root", help="Global root directory")
     deploy_cmd.add_argument("--output", help="Save generated plan to output path")
+    deploy_cmd.add_argument("--plan", help="Previously generated and approved plan file path")
     deploy_cmd.add_argument("--decision", help="Decision file path (if pre-decided)")
     deploy_cmd.add_argument("--apply", action="store_true", help="Approve and apply the deployment")
     deploy_cmd.add_argument("--json", action="store_true", help="Output result as JSON")
@@ -43,15 +44,17 @@ def _parser():
     upgrade_cmd.add_argument("--context", help="Optional updated Project Context file path")
     upgrade_cmd.add_argument("--global-root", help="Global root directory")
     upgrade_cmd.add_argument("--output", help="Save generated plan to output path")
+    upgrade_cmd.add_argument("--plan", help="Previously generated and approved upgrade plan file path")
     upgrade_cmd.add_argument("--decision", help="Decision file path (if pre-decided)")
     upgrade_cmd.add_argument("--apply", action="store_true", help="Approve and apply the upgrade")
     upgrade_cmd.add_argument("--json", action="store_true", help="Output result as JSON")
 
     uninstall_cmd = commands.add_parser("uninstall", help="Standardized VCBS safe uninstall")
     uninstall_cmd.add_argument("--project-root", required=True, help="Target project root directory")
-    uninstall_cmd.add_argument("--component", help="Optional specific component ID to uninstall")
+    uninstall_cmd.add_argument("--component", "--components", dest="component", help="Optional specific component ID(s) to uninstall (comma-separated)")
     uninstall_cmd.add_argument("--global-root", help="Global root directory")
     uninstall_cmd.add_argument("--output", help="Save generated uninstall plan to output path")
+    uninstall_cmd.add_argument("--plan", help="Previously generated and approved uninstall plan file path")
     uninstall_cmd.add_argument("--decision", help="Decision file path (if pre-decided)")
     uninstall_cmd.add_argument("--apply", action="store_true", help="Approve and apply the uninstall")
     uninstall_cmd.add_argument("--json", action="store_true", help="Output result as JSON")
@@ -114,7 +117,7 @@ def main(argv=None):
         elif args.command == "deploy":
             value = deploy(args.project_root, host=args.host, context_path=args.context,
                            semantic_result_path=args.semantic_result, global_root=args.global_root,
-                           apply=args.apply, decision=args.decision)
+                           apply=args.apply, decision=args.decision, plan=args.plan)
             if args.output and "plan" in value:
                 write_json(args.output, value["plan"], args.project_root)
             if getattr(args, "json", False):
@@ -122,14 +125,18 @@ def main(argv=None):
             else:
                 if value.get("status") == "preview":
                     print(value["summary"])
-                    print("\n[Preview mode] Run with --apply to approve and execute deployment.")
+                    print("\n[Preview mode] To execute, save the plan (--output <plan.json>), create an approved decision:")
+                    print("  python -m bootstrap decide <plan.json> --decision approve --output <decision.json>")
+                    print("and run with:")
+                    print("  python -m bootstrap deploy --plan <plan.json> --decision <decision.json> --apply")
                 elif value.get("status") == "no_changes":
                     print(value.get("message", "No changes needed."))
                 else:
                     print(json.dumps(value, indent=2, ensure_ascii=False))
         elif args.command == "upgrade":
             value = upgrade(args.project_root, host=args.host, context_path=args.context,
-                            global_root=args.global_root, apply=args.apply, decision=args.decision)
+                            global_root=args.global_root, apply=args.apply, decision=args.decision,
+                            plan=args.plan)
             if args.output and "plan" in value:
                 write_json(args.output, value["plan"], args.project_root)
             if getattr(args, "json", False):
@@ -137,23 +144,29 @@ def main(argv=None):
             else:
                 if value.get("status") == "preview":
                     print(value["summary"])
-                    print("\n[Preview mode] Run with --apply to approve and execute upgrade.")
+                    print("\n[Preview mode] To execute, save the plan (--output <plan.json>), create an approved decision:")
+                    print("  python -m bootstrap decide <plan.json> --decision approve --output <decision.json>")
+                    print("and run with:")
+                    print("  python -m bootstrap upgrade --plan <plan.json> --decision <decision.json> --apply")
                 elif value.get("status") == "no_changes":
                     print(value.get("message", "All components are already up to date."))
                 else:
                     print(json.dumps(value, indent=2, ensure_ascii=False))
         elif args.command == "uninstall":
             value = uninstall(args.project_root, component_id=args.component,
-                              global_root=args.global_root, apply=args.apply, decision=args.decision)
+                              global_root=args.global_root, apply=args.apply, decision=args.decision,
+                              plan=args.plan)
             if args.output and "plan" in value:
-                clean_plan = {k: v for k, v in value["plan"].items() if not k.startswith("_")}
-                write_json(args.output, clean_plan, args.project_root)
+                write_json(args.output, value["plan"], args.project_root)
             if getattr(args, "json", False):
                 print(json.dumps(value, indent=2, ensure_ascii=False))
             else:
                 if value.get("status") == "preview":
                     print(value["summary"])
-                    print("\n[Preview mode] Run with --apply to approve and execute uninstall.")
+                    print("\n[Preview mode] To execute, save the plan (--output <plan.json>), create an approved decision:")
+                    print("  python -m bootstrap decide <plan.json> --decision approve --output <decision.json>")
+                    print("and run with:")
+                    print("  python -m bootstrap uninstall --plan <plan.json> --decision <decision.json> --apply")
                 elif value.get("status") == "no_changes":
                     print(value.get("message", "No VCBS-managed components to uninstall."))
                 else:
@@ -173,8 +186,12 @@ def main(argv=None):
             print(render_summary(value))
         elif args.command == "decide":
             plan = load_json(args.plan)
-            value = decide(plan, args.decision)
-            write_json(args.output, value, plan["target"]["path"])
+            if plan.get("operation") == "uninstall":
+                value = decide_uninstall(plan, args.decision)
+            else:
+                value = decide(plan, args.decision)
+            target_path = plan.get("project_root") or plan["target"]["path"]
+            write_json(args.output, value, target_path)
             print(f"Decision: {value['decision']} ({value['plan_digest'][:12]})")
         elif args.command == "harvest":
             value = harvest_experience(args.project_root, args.observation, args.host, args.output)

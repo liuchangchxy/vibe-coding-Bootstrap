@@ -19,6 +19,9 @@
     "conflicts",
     "unresolved",
     "manifest_updates",
+    "manifest_sha256",
+    "activation_manifest_sha256",
+    "remaining_manifest_items",
     "requires_confirmation",
     "actual_changes",
     "executable",
@@ -101,6 +104,12 @@
     "manifest_updates": {
       "type": "array",
       "items": { "type": "string" }
+    },
+    "manifest_sha256": { "type": ["string", "null"] },
+    "activation_manifest_sha256": { "type": ["string", "null"] },
+    "remaining_manifest_items": {
+      "type": "array",
+      "items": { "type": "object" }
     },
     "requires_confirmation": { "type": "boolean" },
     "actual_changes": { "type": "integer", "minimum": 0 },

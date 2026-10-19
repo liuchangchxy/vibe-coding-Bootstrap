@@ -77,7 +77,7 @@ python -m bootstrap deploy --project-root <project> [--host <host>] [--context <
 - Reuses existing inspect → plan → decide → apply pipeline under the hood.
 - Distinguishes clean Compose from Existing Adoption.
 - Previews the deployment plan by default without writing files.
-- Applying requires an explicit approved decision artifact (`--decision <decision.json>` or generated upon user approval).
+- Execution requires an approved decision artifact (`--decision <decision.json>`) created through explicit confirmation; silent auto-approval at apply time is strictly prohibited.
 - Creates a safety Git snapshot under `refs/vibe-coding-bootstrap/snapshots/<id>` before any disk mutation.
 - Verified post-apply state; repeats are fully idempotent (`no_changes`).
 
@@ -86,14 +86,14 @@ python -m bootstrap deploy --project-root <project> [--host <host>] [--context <
 Managed component upgrade for installed projects.
 
 ```text
-python -m bootstrap upgrade --project-root <project> [--global-root <dir>] [--apply] [--decision <decision.json>]
+python -m bootstrap upgrade --project-root <project> [--global-root <dir>] --decision <decision.json> --apply
 ```
 
 - Reads installed `manifest.yaml` and compares against the current Capability Catalog.
 - Categorizes each item: `up_to_date`, `upgrade_available`, `conflict`.
 - Shows old vs new version, old vs new SHA-256, and patch preview.
 - Modifying an installed file causes a `conflict` block: VCBS refuses to overwrite user modifications.
-- Executes safe upgrade after approval with pre-apply Git snapshot. Rollback can restore exact pre-upgrade state.
+- Executes safe upgrade only with an approved decision artifact (`--decision <decision.json>`) and pre-apply Git snapshot; silent auto-approval is prohibited. Rollback can restore exact pre-upgrade state.
 - Repeating an upgrade run immediately yields `no_changes`.
 
 ### 4. Safe Uninstall (`vcbs uninstall`)
@@ -101,14 +101,16 @@ python -m bootstrap upgrade --project-root <project> [--global-root <dir>] [--ap
 Strict, ownership-verified uninstallation of VCBS-deployed assets.
 
 ```text
-python -m bootstrap uninstall --project-root <project> [--components <id1,id2>] [--global-root <dir>] [--apply] [--decision <decision.json>]
+python -m bootstrap uninstall --project-root <project> [--component <id>] [--components <id1,id2>] [--global-root <dir>] --decision <decision.json> --apply
 ```
 
+- Explicit Approval Requirement: Execution with `--apply` requires an approved decision artifact (`--decision <decision.json>`) created through explicit human confirmation; silent auto-approval is strictly prohibited.
 - Strict Ownership Verification: Assets are only uninstalled if recorded in `manifest.yaml` and their on-disk SHA-256 matches the manifest digest.
 - Never guesses ownership by file name or directory scanning; never performs recursive `rm -rf`.
 - Never touches project source code, unmanaged AI configurations (user rules, skills, MCP configs), or consumer Git state.
 - Conflict blocking: If a managed file was edited by the user (`conflict: modified_by_user`), uninstall plan marks it as blocked and refuses removal unless reconciled.
 - Scope support: Safely uninstalls project-scope files, global-scope files (with per-file backup), and Codex Native Activation (`.agents/skills/bootstrap-testing/SKILL.md`).
+- Strict Pre-apply Verification: `apply_uninstall` re-verifies the exact manifest content, ownership, and remaining component records, as well as the exact global root and path containment. Any drift aborts execution before any disk write.
 - Clean pruning: Removes empty parent directories created for VCBS components without affecting non-empty directories.
 - Clean manifest lifecycle: Removes `manifest.yaml` if all managed items are uninstalled, or updates it if partial component uninstall is selected.
 - Rollback support: Apply takes a pre-uninstall Git snapshot. Exact pre-uninstall files and manifests can be restored via `python -m bootstrap rollback`.

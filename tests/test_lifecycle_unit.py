@@ -11,7 +11,7 @@ import unittest
 import yaml
 
 from activation import core as activation
-from bootstrap.core import ProductLoopError, ROOT
+from bootstrap.core import ProductLoopError, ROOT, decide, apply_plan
 from bootstrap.lifecycle import (
     apply_uninstall, build_uninstall_plan, decide_uninstall, deploy,
     get_status, render_status_summary, render_uninstall_summary,
@@ -69,6 +69,13 @@ class LifecycleUnitTests(unittest.TestCase):
     def _git(self, project, *args):
         return subprocess.run(["git", "-C", str(project), *args], check=True, capture_output=True, text=True).stdout.strip()
 
+    def _deploy_initial(self):
+        p = deploy(self.project, host="codex", context_path=self.context_file,
+                   global_root=self.global_root, apply=False, root=self.vcbs_root)
+        return deploy(self.project, host="codex", context_path=self.context_file,
+                      global_root=self.global_root, apply=True, decision=decide(p["plan"], "approve"),
+                      plan=p["plan"], root=self.vcbs_root)
+
     def test_status_uninstalled_repo(self):
         """Status on a fresh repo returns not_installed with accurate git and route info."""
         status = get_status(self.project, host="codex", root=self.vcbs_root)
@@ -93,8 +100,8 @@ class LifecycleUnitTests(unittest.TestCase):
         self.assertIn("Unmanaged Pre-existing Environment Assets:", summary)
         self.assertIn("CLAUDE.md", summary)
 
-    def test_deploy_preview_and_apply(self):
-        """Deploy without apply previews; with apply installs components and activation."""
+    def test_deploy_preview_and_apply_with_decision(self):
+        """Deploy without apply previews; apply without decision raises DECISION_REQUIRED; with decision installs cleanly."""
         # 1. Preview
         prev = deploy(self.project, host="codex", context_path=self.context_file,
                       global_root=self.global_root, apply=False, root=self.vcbs_root)
@@ -102,30 +109,37 @@ class LifecycleUnitTests(unittest.TestCase):
         self.assertIn("summary", prev)
         self.assertFalse((self.project / ".vibe-coding-bootstrap/manifest.yaml").exists())
 
-        # 2. Apply
+        # 2. Apply without decision fails closed
+        with self.assertRaises(ProductLoopError) as ctx:
+            deploy(self.project, host="codex", context_path=self.context_file,
+                   global_root=self.global_root, apply=True, decision=None, plan=prev["plan"], root=self.vcbs_root)
+        self.assertIn("DECISION_REQUIRED", str(ctx.exception))
+
+        # 3. Apply with approved decision succeeds
+        dec = decide(prev["plan"], "approve")
         res = deploy(self.project, host="codex", context_path=self.context_file,
-                     global_root=self.global_root, apply=True, root=self.vcbs_root)
+                     global_root=self.global_root, apply=True, decision=dec, plan=prev["plan"], root=self.vcbs_root)
         self.assertEqual("applied", res["status"])
         self.assertTrue((self.project / ".vibe-coding-bootstrap/manifest.yaml").is_file())
         self.assertTrue((self.project / activation.MANIFEST_PATH).is_file())
         self.assertTrue((self.project / activation.SKILL_DESTINATION).is_file())
 
-        # 3. Status after deploy
+        # 4. Status after deploy
         st = get_status(self.project, host="codex", global_root=self.global_root, root=self.vcbs_root)
         self.assertEqual("installed", st["status"])
         self.assertTrue(st["deployed"])
         self.assertEqual("active", st["codex_activation"]["status"])
         self.assertFalse(st["has_conflicts"])
 
-        # 4. Repeated deploy returns no_changes
+        # 5. Repeated deploy returns no_changes
         repeat = deploy(self.project, host="codex", context_path=self.context_file,
                         global_root=self.global_root, apply=True, root=self.vcbs_root)
         self.assertEqual("no_changes", repeat["status"])
 
     def test_upgrade_flow_and_no_changes(self):
-        """Deploy v1, update VCBS source to v2, upgrade applies cleanly, then repeat is no_changes."""
-        deploy(self.project, host="codex", context_path=self.context_file,
-               global_root=self.global_root, apply=True, root=self.vcbs_root)
+        """Deploy v1, update VCBS source to v2, upgrade requires decision, then repeat is no_changes."""
+        # Initial deploy
+        self._deploy_initial()
 
         # Mutate VCBS testing capability to v2
         (self.vcbs_root / activation.SKILL_SOURCE).write_text("# Skill v2\nUpdated.\n", encoding="utf-8")
@@ -143,9 +157,16 @@ class LifecycleUnitTests(unittest.TestCase):
         self.assertEqual("preview", up_prev["status"])
         self.assertIn("Upgrades:", up_prev["summary"])
 
-        # Upgrade apply
+        # Upgrade without decision fails closed
+        with self.assertRaises(ProductLoopError) as ctx:
+            upgrade(self.project, host="codex", global_root=self.global_root,
+                    apply=True, decision=None, plan=up_prev["plan"], root=self.vcbs_root)
+        self.assertIn("DECISION_REQUIRED", str(ctx.exception))
+
+        # Upgrade with decision succeeds
+        up_dec = decide(up_prev["plan"], "approve")
         up_res = upgrade(self.project, host="codex", global_root=self.global_root,
-                         apply=True, root=self.vcbs_root)
+                         apply=True, decision=up_dec, plan=up_prev["plan"], root=self.vcbs_root)
         self.assertEqual("applied", up_res["status"])
         self.assertEqual("# Skill v2\nUpdated.\n", (self.project / activation.SKILL_DESTINATION).read_text(encoding="utf-8"))
 
@@ -162,8 +183,7 @@ class LifecycleUnitTests(unittest.TestCase):
     def test_uninstall_flow_removes_assets_and_preserves_user_files(self):
         """Uninstall cleanly removes VCBS assets and manifests without touching user files."""
         # Deploy
-        deploy(self.project, host="codex", context_path=self.context_file,
-               global_root=self.global_root, apply=True, root=self.vcbs_root)
+        self._deploy_initial()
 
         # Add user file
         user_file = self.project / "my_custom_code.py"
@@ -174,8 +194,14 @@ class LifecycleUnitTests(unittest.TestCase):
         self.assertEqual("preview", u_prev["status"])
         self.assertGreater(len(u_prev["plan"]["removals"]), 0)
 
-        # Uninstall apply
-        u_res = uninstall(self.project, global_root=self.global_root, apply=True, root=self.vcbs_root)
+        # Uninstall without decision fails closed
+        with self.assertRaises(ProductLoopError) as ctx:
+            uninstall(self.project, global_root=self.global_root, apply=True, decision=None, plan=u_prev["plan"], root=self.vcbs_root)
+        self.assertIn("DECISION_REQUIRED", str(ctx.exception))
+
+        # Uninstall apply with decision
+        u_dec = decide_uninstall(u_prev["plan"], "approve")
+        u_res = uninstall(self.project, global_root=self.global_root, apply=True, decision=u_dec, plan=u_prev["plan"], root=self.vcbs_root)
         self.assertEqual("applied", u_res["status"])
 
         # Verification: VCBS files removed
@@ -201,8 +227,7 @@ class LifecycleUnitTests(unittest.TestCase):
 
     def test_user_modified_file_blocks_uninstall(self):
         """If user modified an installed managed file, uninstall detects conflict and refuses to delete."""
-        deploy(self.project, host="codex", context_path=self.context_file,
-               global_root=self.global_root, apply=True, root=self.vcbs_root)
+        self._deploy_initial()
 
         # User modifies skill file
         skill = self.project / activation.SKILL_DESTINATION
@@ -218,19 +243,13 @@ class LifecycleUnitTests(unittest.TestCase):
         self.assertFalse(u_prev["plan"]["executable"])
         self.assertGreater(len(u_prev["plan"]["conflicts"]), 0)
 
-        # Applying uninstall raises ProductLoopError
-        with self.assertRaises(ProductLoopError) as ctx:
-            uninstall(self.project, global_root=self.global_root, apply=True, root=self.vcbs_root)
-        self.assertIn("PLAN_BLOCKED", str(ctx.exception))
-
         # Skill file was NOT deleted
         self.assertTrue(skill.is_file())
         self.assertEqual("# User edited this skill directly\n", skill.read_text())
 
     def test_corrupted_manifest_fails_safely(self):
         """Corrupted manifest.yaml prevents unauthorized operations."""
-        deploy(self.project, host="codex", context_path=self.context_file,
-               global_root=self.global_root, apply=True, root=self.vcbs_root)
+        self._deploy_initial()
 
         # Corrupt the manifest
         (self.project / ".vibe-coding-bootstrap/manifest.yaml").write_text("corrupted: yaml: content: [", encoding="utf-8")
@@ -242,3 +261,68 @@ class LifecycleUnitTests(unittest.TestCase):
         # Uninstall is blocked
         plan = build_uninstall_plan(self.project, global_root=self.global_root, root=self.vcbs_root)
         self.assertFalse(plan["executable"])
+
+    def test_manifest_drift_after_approval_blocks_apply_uninstall(self):
+        """If manifest.yaml drifts after approval, apply_uninstall rejects execution."""
+        self._deploy_initial()
+
+        # Build plan and approve
+        plan = build_uninstall_plan(self.project, global_root=self.global_root, root=self.vcbs_root)
+        dec = decide_uninstall(plan, "approve")
+
+        # Modify manifest.yaml directly to create drift
+        mpath = self.project / ".vibe-coding-bootstrap/manifest.yaml"
+        mdata = yaml.safe_load(mpath.read_text(encoding="utf-8"))
+        mdata["items"][0]["sha256"] = "0" * 64
+        mpath.write_text(yaml.safe_dump(mdata), encoding="utf-8")
+
+        with self.assertRaises(ProductLoopError) as ctx:
+            apply_uninstall(plan, dec, self.project, global_root=self.global_root, root=self.vcbs_root)
+        self.assertIn("STALE_BOOTSTRAP_PLAN", str(ctx.exception))
+
+    def test_global_root_verification_in_apply_uninstall(self):
+        """apply_uninstall validates that actual global root matches planned global root exactly."""
+        self._deploy_initial()
+
+        plan = build_uninstall_plan(self.project, global_root=self.global_root, root=self.vcbs_root)
+        dec = decide_uninstall(plan, "approve")
+
+        # 1. Missing global root when plan has global components
+        with self.assertRaises(ProductLoopError) as ctx:
+            apply_uninstall(plan, dec, self.project, global_root=None, root=self.vcbs_root)
+        self.assertIn("GLOBAL_ROOT_REQUIRED", str(ctx.exception))
+
+        # 2. Mismatched global root
+        other_global = self.base / "other_global"
+        other_global.mkdir()
+        with self.assertRaises(ProductLoopError) as ctx:
+            apply_uninstall(plan, dec, self.project, global_root=other_global, root=self.vcbs_root)
+        self.assertIn("GLOBAL_ROOT_MISMATCH", str(ctx.exception))
+
+    def test_partial_uninstall_preserves_remaining_components(self):
+        """Partial uninstall of a specific component leaves unselected components and manifest intact."""
+        self._deploy_initial()
+
+        # Target only project component project-test-guidance
+        plan = build_uninstall_plan(self.project, component_id="project-test-guidance",
+                                    global_root=self.global_root, root=self.vcbs_root)
+        self.assertEqual(1, len(plan["removals"]))
+        self.assertGreater(len(plan["remaining_manifest_items"]), 0)
+
+        dec = decide_uninstall(plan, "approve")
+        res = apply_uninstall(plan, dec, self.project, global_root=self.global_root, root=self.vcbs_root)
+        self.assertEqual("applied", res["status"])
+
+        # test-guidance removed
+        self.assertFalse((self.project / ".vibe-coding-bootstrap/components/test-guidance.md").exists())
+
+        # Codex activation and global components preserved
+        self.assertTrue((self.project / activation.SKILL_DESTINATION).is_file())
+        self.assertTrue((self.global_root / "components/reviewable-changes.md").is_file())
+
+        # manifest.yaml exists and still records remaining components
+        mpath = self.project / ".vibe-coding-bootstrap/manifest.yaml"
+        self.assertTrue(mpath.is_file())
+        mdata = yaml.safe_load(mpath.read_text(encoding="utf-8"))
+        self.assertFalse(any(it["component_id"] == "project-test-guidance" for it in mdata["items"]))
+        self.assertTrue(any(it["component_id"] == "reviewable-changes" for it in mdata["items"]))
