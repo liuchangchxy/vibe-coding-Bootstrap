@@ -11,6 +11,7 @@ import unittest
 import yaml
 
 from activation import core as activation
+from bootstrap import __version__
 from bootstrap.__main__ import _parser, main
 from bootstrap.core import ProductLoopError, ROOT, decide, apply_plan
 from bootstrap.lifecycle import (
@@ -350,6 +351,9 @@ class LifecycleUnitTests(unittest.TestCase):
 
     def test_cli_version_flag(self):
         """Top-level --version flag displays 0.1.0 and exits 0 via python -m bootstrap and ./vcbs."""
+        # 0. Package __version__
+        self.assertEqual("0.1.0", __version__)
+
         # 1. python -m bootstrap --version
         res_m = self._run_cli("--version")
         self.assertEqual(0, res_m.returncode)

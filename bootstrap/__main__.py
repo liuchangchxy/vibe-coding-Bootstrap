@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import sys
 
+from . import __version__
 from .core import apply_plan, build_plan, decide, inspect_project, load_json, render_summary, validate_output_path, write_json
 from .experience import harvest_experience, review_experience, verify_evidence
 from .lifecycle import (
@@ -17,7 +18,7 @@ from .recovery import rollback
 
 def _parser():
     parser = argparse.ArgumentParser(prog="python -m bootstrap", description="Inspect, plan, confirm once, and apply a project Bootstrap plan.")
-    parser.add_argument("--version", action="version", version="0.1.0")
+    parser.add_argument("--version", action="version", version=__version__)
     commands = parser.add_subparsers(dest="command", required=True)
 
     # Standard Lifecycle Commands (Phase 12)
