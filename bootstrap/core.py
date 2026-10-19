@@ -76,7 +76,10 @@ def _owned_state(project):
         try:
             data = json.loads(activation_manifest.read_text(encoding="utf-8"))
             if data.get("format_version") == 1:
-                for item in data.get("artifacts", []):
+                raw_items = list(data.get("artifacts", []))
+                for act in data.get("activations", []):
+                    raw_items.extend(act.get("artifacts", []))
+                for item in raw_items:
                     dest = item.get("destination", "")
                     try:
                         p = Path(dest)
@@ -315,6 +318,13 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
     blocked = bool(unresolved)
     profile_sha = _profile_digest(root)
     catalog_revision = recommendation["catalog_revision"] if recommendation else _current_catalog_revision(root)
+    if any(p.get("host") == "antigravity" for p in activation_plans) or "antigravity" in _parse_hosts(host):
+        shared_notice = (
+            "Antigravity skill destination '.agents/skills/vcbs-manager/SKILL.md' shares the '.agents/skills' "
+            "root with Codex. Codex discovers this directory, but will not invoke the skill without an AGENTS.md trigger."
+        )
+        if shared_notice not in warnings:
+            warnings.append(shared_notice)
     value = {
         "format_version": 1, "target": current["target"], "host": host, "route": route,
         "project_context": context or (adoption_plan and current["semantic_package"]["project"]),
@@ -372,6 +382,10 @@ def render_summary(plan):
         else:
             lines.append("Host activation: " + ", ".join(f"{item['host']}:{item['status']}" for item in plan["host_activations"]))
     lines.extend((f"References: {len(plan['references'])}", f"Unchanged: {len(plan['unchanged'])}"))
+    if plan.get("warnings"):
+        lines.append("Warnings:")
+        for w in plan["warnings"]:
+            lines.append(f"  ! {w}")
     lines.append("Blocked: " + ("; ".join(item.get("reason", item.get("kind", "conflict")) for item in plan["unresolved"]) if plan["unresolved"] else "none"))
     lines.append("Confirmation: " + ("1 approval required" if plan["requires_confirmation"] else "none"))
     return "\n".join(lines)

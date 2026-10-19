@@ -256,6 +256,14 @@ def get_status(project_root, host="codex", global_root=None, root=ROOT):
                         "actual_sha256": act_actual_sha,
                         "desired_sha256": desired_act_sha,
                     }
+                    if act_host == "antigravity":
+                        act_record["shared_surface_with"] = "codex"
+                        act_record["shared_surface_notice"] = (
+                            "Shares .agents/skills discovery root with Codex; unmanaged in Codex without AGENTS.md trigger."
+                        )
+                    else:
+                        act_record["shared_surface_with"] = None
+                        act_record["shared_surface_notice"] = None
                     native_activations.append(act_record)
 
                     if act_host == "codex" and act_cap == "testing":
@@ -501,6 +509,13 @@ def _build_upgrade_plan_from_manifest(project_root, host="codex", global_root=No
 
     unresolved = []
     warnings = []
+    if any(p.get("host") == "antigravity" for p in activation_plans) or "antigravity" in parsed_hosts:
+        shared_notice = (
+            "Antigravity skill destination '.agents/skills/vcbs-manager/SKILL.md' shares the '.agents/skills' "
+            "root with Codex. Codex discovers this directory, but will not invoke the skill without an AGENTS.md trigger."
+        )
+        if shared_notice not in warnings:
+            warnings.append(shared_notice)
     if any(item["result"] in {"conflict", "unsupported"} for item in rows):
         unresolved.extend({"kind": "materialization", "component_id": item["component_id"], "reason": item.get("reason", item["result"])}
                           for item in rows if item["result"] in {"conflict", "unsupported"})
@@ -618,6 +633,22 @@ def upgrade(project_root, host="codex", context_path=None, global_root=None,
     return apply_plan(active_plan, dec, project_root, global_root=global_root, root=root)
 
 
+def _matches_component_selection(comp_id, source_cap, selected_components):
+    if selected_components is None:
+        return True
+    aliases = {comp_id}
+    if source_cap:
+        aliases.add(source_cap)
+    for (h, c) in activation.ACTIVATION_TARGETS:
+        skill_cid = f"{h}-native-{c}-skill"
+        act_cid = "codex-testing-activation" if h == "codex" and c == "testing" else f"{h}-{c}-activation"
+        if comp_id in {skill_cid, act_cid}:
+            aliases.update({skill_cid, act_cid, c, h})
+            if h == "claude":
+                aliases.add("claude_code")
+    return any(c in aliases for c in selected_components)
+
+
 def build_uninstall_plan(project_root, component_id=None, global_root=None, root=ROOT):
     """Generate a revision-bound, conflict-checked Uninstall Plan."""
     project = Path(project_root).resolve(strict=True)
@@ -655,7 +686,7 @@ def build_uninstall_plan(project_root, component_id=None, global_root=None, root
             else:
                 for entry in mdata.get("items", []):
                     entry_comp_id = entry.get("component_id")
-                    if selected_components and entry_comp_id not in selected_components:
+                    if not _matches_component_selection(entry_comp_id, entry.get("source_capability"), selected_components):
                         remaining_manifest_items.append(entry)
                         continue
 
@@ -710,7 +741,7 @@ def build_uninstall_plan(project_root, component_id=None, global_root=None, root
                         item_record["reason"] = reason
                     items.append(item_record)
 
-                if items:
+                if len(remaining_manifest_items) != len(mdata.get("items", [])):
                     manifest_updates.append(".vibe-coding-bootstrap/manifest.yaml")
         except Exception as exc:
             unresolved.append({"kind": "manifest_error", "reason": str(exc)})
@@ -735,10 +766,7 @@ def build_uninstall_plan(project_root, component_id=None, global_root=None, root
                     cap = act.get("capability")
                     cid = "codex-testing-activation" if h == "codex" and cap == "testing" else f"{h}-{cap}-activation"
                     skill_cid = f"{h}-native-{cap}-skill"
-                    is_selected = (
-                        selected_components is None
-                        or any(c in {cid, skill_cid, cap, h, f"{h}_code"} for c in selected_components)
-                    )
+                    is_selected = _matches_component_selection(cid, cap, selected_components)
                     if not is_selected:
                         continue
 
@@ -999,6 +1027,7 @@ def apply_uninstall(plan, decision, project_root, global_root=None, root=ROOT):
         ],
         "global_root": str(Path(global_root).resolve()) if global_root else planned_global,
         "host_activations": [],
+        "manifest_updates": plan.get("manifest_updates", []),
     }
     removable_acts = [item for item in plan["activation_items"] if item["status"] == "removable"]
     seen_host_caps = set()
@@ -1006,7 +1035,7 @@ def apply_uninstall(plan, decision, project_root, global_root=None, root=ROOT):
         cid = item.get("component_id", "")
         if cid.startswith("codex-"):
             h = "codex"
-        elif cid.startswith("claude-"):
+        elif cid.startswith("claude-") or cid.startswith("claude_code-"):
             h = "claude"
         elif cid.startswith("antigravity-"):
             h = "antigravity"
@@ -1075,7 +1104,7 @@ def apply_uninstall(plan, decision, project_root, global_root=None, root=ROOT):
 
         # Update or remove manifests
         manifest_path = project / ".vibe-coding-bootstrap/manifest.yaml"
-        if manifest_path.is_file():
+        if manifest_path.is_file() and ".vibe-coding-bootstrap/manifest.yaml" in plan.get("manifest_updates", []):
             remaining = plan.get("remaining_manifest_items", [])
             if remaining:
                 mdata = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
@@ -1092,7 +1121,7 @@ def apply_uninstall(plan, decision, project_root, global_root=None, root=ROOT):
                     cid = item.get("component_id", "")
                     if cid.startswith("codex-"):
                         h = "codex"
-                    elif cid.startswith("claude-"):
+                    elif cid.startswith("claude-") or cid.startswith("claude_code-"):
                         h = "claude"
                     elif cid.startswith("antigravity-"):
                         h = "antigravity"

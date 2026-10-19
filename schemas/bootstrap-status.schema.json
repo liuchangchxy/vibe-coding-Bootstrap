@@ -92,7 +92,9 @@
           "destination": { "type": ["string", "null"] },
           "installed_sha256": { "type": ["string", "null"] },
           "actual_sha256": { "type": ["string", "null"] },
-          "desired_sha256": { "type": ["string", "null"] }
+          "desired_sha256": { "type": ["string", "null"] },
+          "shared_surface_with": { "type": ["string", "null"] },
+          "shared_surface_notice": { "type": ["string", "null"] }
         },
         "additionalProperties": false
       }

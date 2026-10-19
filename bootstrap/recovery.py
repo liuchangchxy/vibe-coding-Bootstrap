@@ -85,7 +85,8 @@ def _deployment_paths(plan, project):
                 raise RecoveryError("SNAPSHOT_UNSAFE: project destination escapes target") from exc
             rel = _safe_rel(rel)
             paths[rel] = {"path": rel, "scope": "project", "source": "materializer", "existed_before": None}
-    if any(item.get("result") in {"copied", "upgraded", "removed", "uninstalled", "reference_only"} for item in plan.get("project_changes", [])):
+    if (any(item.get("result") in {"copied", "upgraded", "removed", "uninstalled", "reference_only"} for item in plan.get("project_changes", []))
+            or ".vibe-coding-bootstrap/manifest.yaml" in plan.get("manifest_updates", [])):
         rel = ".vibe-coding-bootstrap/manifest.yaml"
         paths[rel] = {"path": rel, "scope": "project", "source": "materializer_manifest", "existed_before": None}
     for subplan in plan.get("host_activations", []):

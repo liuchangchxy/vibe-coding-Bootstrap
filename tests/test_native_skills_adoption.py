@@ -1,5 +1,6 @@
 """Tests for Claude Code and Antigravity native Skill adoption and activation."""
 
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -11,6 +12,7 @@ import yaml
 from activation.core import (
     MANIFEST_PATH, apply as activation_apply, build_plan as activation_build_plan,
     deactivate as activation_deactivate, make_decision as activation_make_decision,
+    plan_digest,
 )
 from bootstrap.core import (
     ProductLoopError, apply_plan, build_plan, decide, inspect_project, render_summary,
@@ -451,69 +453,249 @@ class NativeSkillsAdoptionTests(unittest.TestCase):
         plan = build_plan(self.project, host="claude", semantic_result_path=sem_path, root=ROOT)
         apply_plan(plan, decide(plan, "approve"), self.project, root=ROOT)
 
+        skill_file = self.project / ".claude/skills/vcbs-manager/SKILL.md"
+        manifest_file = self.project / ".vibe-coding-bootstrap/manifest.yaml"
+        self.assertTrue(skill_file.is_file())
+        self.assertTrue(manifest_file.is_file())
+        pre_uninstall_skill_bytes = skill_file.read_bytes()
+        pre_uninstall_manifest_bytes = manifest_file.read_bytes()
+        pre_uninstall_act_bytes = (self.project / MANIFEST_PATH).read_bytes()
+
         # Uninstall Claude native skill
         u_plan = build_uninstall_plan(self.project, component_id="claude-native-vcbs-manager-skill", root=ROOT)
         self.assertEqual(1, len(u_plan["removals"]))
         self.assertTrue(u_plan["executable"])
+        self.assertIn(".vibe-coding-bootstrap/manifest.yaml", u_plan.get("manifest_updates", []))
 
         u_res = apply_uninstall(u_plan, decide_uninstall(u_plan, "approve"), self.project, root=ROOT)
         self.assertEqual("applied", u_res["status"])
-        self.assertFalse((self.project / ".claude/skills/vcbs-manager/SKILL.md").exists())
+        self.assertTrue(u_res["rollback_available"])
+        self.assertFalse(skill_file.exists())
         self.assertFalse((self.project / MANIFEST_PATH).exists())
+        self.assertFalse(manifest_file.exists())
+
+        st = get_status(self.project, host="claude", root=ROOT)
+        self.assertEqual("uninstalled", st["status"])
+
+        # Second uninstall is no_changes
+        u_plan2 = build_uninstall_plan(self.project, component_id="claude-native-vcbs-manager-skill", root=ROOT)
+        self.assertEqual(0, u_plan2["actual_changes"])
+        self.assertEqual([], u_plan2["removals"])
+        res_no_changes = uninstall(self.project, component_id="claude-native-vcbs-manager-skill", root=ROOT)
+        self.assertEqual("no_changes", res_no_changes["status"])
+
+        # Rollback restores manifest.yaml, activation.json, and skill byte-for-byte
+        rb = rollback(self.project, u_res["deployment_id"], apply=True)
+        self.assertEqual("rolled_back", rb["status"])
+        self.assertTrue(skill_file.is_file())
+        self.assertTrue(manifest_file.is_file())
+        self.assertTrue((self.project / MANIFEST_PATH).is_file())
+        self.assertEqual(pre_uninstall_skill_bytes, skill_file.read_bytes())
+        self.assertEqual(pre_uninstall_manifest_bytes, manifest_file.read_bytes())
+        self.assertEqual(pre_uninstall_act_bytes, (self.project / MANIFEST_PATH).read_bytes())
+
+        # Clean uninstall Claude before Antigravity check
+        u_clean = build_uninstall_plan(self.project, component_id="claude-native-vcbs-manager-skill", root=ROOT)
+        apply_uninstall(u_clean, decide_uninstall(u_clean, "approve"), self.project, root=ROOT)
 
         # 2. Antigravity uninstall
         sem_path_ag = Path(self.temp.name) / "sem-un-ag.json"
         self._make_semantic_result(inspected["semantic_package"], sem_path_ag)
         plan_ag = build_plan(self.project, host="antigravity", semantic_result_path=sem_path_ag, root=ROOT)
         apply_plan(plan_ag, decide(plan_ag, "approve"), self.project, root=ROOT)
-        self.assertTrue((self.project / ".agents/skills/vcbs-manager/SKILL.md").is_file())
+        ag_skill_file = self.project / ".agents/skills/vcbs-manager/SKILL.md"
+        self.assertTrue(ag_skill_file.is_file())
 
         u_plan_ag = build_uninstall_plan(self.project, component_id="antigravity-native-vcbs-manager-skill", root=ROOT)
         self.assertEqual(1, len(u_plan_ag["removals"]))
+        self.assertIn(".vibe-coding-bootstrap/manifest.yaml", u_plan_ag.get("manifest_updates", []))
         u_res_ag = apply_uninstall(u_plan_ag, decide_uninstall(u_plan_ag, "approve"), self.project, root=ROOT)
         self.assertEqual("applied", u_res_ag["status"])
-        self.assertFalse((self.project / ".agents/skills/vcbs-manager/SKILL.md").exists())
+        self.assertFalse(ag_skill_file.exists())
+        self.assertFalse((self.project / MANIFEST_PATH).exists())
+        self.assertFalse(manifest_file.exists())
+
+    def test_uninstall_by_activation_component_id_or_alias(self):
+        """Uninstalling by activation ID or host alias cleans both manifest.yaml and activation.json without stale rows."""
+        (self.project / "CLAUDE.md").write_text("# Guidelines\n", encoding="utf-8")
+        git(self.project, "add", ".")
+        git(self.project, "commit", "-qm", "guidelines")
+
+        inspected = inspect_project(self.project, host="claude", root=ROOT)
+        sem_path = Path(self.temp.name) / "sem-alias.json"
+        self._make_semantic_result(inspected["semantic_package"], sem_path)
+
+        plan = build_plan(self.project, host="claude", semantic_result_path=sem_path, root=ROOT)
+        apply_plan(plan, decide(plan, "approve"), self.project, root=ROOT)
+
+        # Verify initial state
+        self.assertTrue((self.project / ".claude/skills/vcbs-manager/SKILL.md").is_file())
+        m_data = yaml.safe_load((self.project / ".vibe-coding-bootstrap/manifest.yaml").read_text(encoding="utf-8"))
+        self.assertEqual(1, len(m_data["items"]))
+        self.assertEqual("claude-native-vcbs-manager-skill", m_data["items"][0]["component_id"])
+
+        # Uninstall using the activation ID instead of manifest component ID
+        u_plan = build_uninstall_plan(self.project, component_id="claude-vcbs-manager-activation", root=ROOT)
+        self.assertTrue(u_plan["executable"])
+        self.assertEqual(1, len(u_plan["removals"]))
+        self.assertIn(".vibe-coding-bootstrap/manifest.yaml", u_plan.get("manifest_updates", []))
+
+        u_res = apply_uninstall(u_plan, decide_uninstall(u_plan, "approve"), self.project, root=ROOT)
+        self.assertEqual("applied", u_res["status"])
+        self.assertFalse((self.project / ".claude/skills/vcbs-manager/SKILL.md").exists())
+        self.assertFalse((self.project / MANIFEST_PATH).exists())
+        # manifest.yaml must have no stale rows and be removed/unlinked
+        self.assertFalse((self.project / ".vibe-coding-bootstrap/manifest.yaml").exists())
+
+        st = get_status(self.project, host="claude", root=ROOT)
+        self.assertEqual("uninstalled", st["status"])
+
+        # Re-deploy works cleanly
+        plan_re = build_plan(self.project, host="claude", semantic_result_path=sem_path, root=ROOT)
+        res_re = apply_plan(plan_re, decide(plan_re, "approve"), self.project, root=ROOT)
+        self.assertEqual("applied", res_re["status"])
+        self.assertTrue((self.project / ".claude/skills/vcbs-manager/SKILL.md").is_file())
+
+        # Test uninstall by host alias "claude"
+        u_plan_alias = build_uninstall_plan(self.project, component_id="claude", root=ROOT)
+        self.assertTrue(u_plan_alias["executable"])
+        u_res_alias = apply_uninstall(u_plan_alias, decide_uninstall(u_plan_alias, "approve"), self.project, root=ROOT)
+        self.assertEqual("applied", u_res_alias["status"])
+        self.assertFalse((self.project / ".claude/skills/vcbs-manager/SKILL.md").exists())
         self.assertFalse((self.project / MANIFEST_PATH).exists())
 
-    def test_uninstall_coexistence_codex_and_claude(self):
-        """Uninstalling Claude skill preserves Codex activation in activation.json and AGENTS.md."""
+    def test_coexistence_codex_and_claude_adoption_uninstall_and_rollback(self):
+        """Coexistence: uninstalling adopted Claude leaves Codex intact; rollback restores Claude byte-for-byte."""
         # 1. Direct activation of Codex testing
         p_codex = activation_build_plan(self.project, capability="testing", host="codex")
         activation_apply(p_codex, activation_make_decision(p_codex, "approve"), self.project)
 
-        # 2. Direct activation of Claude vcbs-manager
-        p_claude = activation_build_plan(self.project, capability="vcbs-manager", host="claude")
-        activation_apply(p_claude, activation_make_decision(p_claude, "approve"), self.project)
+        # 2. Adopt Claude vcbs-manager
+        (self.project / "CLAUDE.md").write_text("# Guidelines\n", encoding="utf-8")
+        git(self.project, "add", ".")
+        git(self.project, "commit", "-qm", "guidelines")
 
-        manifest = json.loads((self.project / MANIFEST_PATH).read_text(encoding="utf-8"))
-        self.assertEqual(2, len(manifest["activations"]))
+        inspected = inspect_project(self.project, host="claude", root=ROOT)
+        sem_path = Path(self.temp.name) / "sem-coexist.json"
+        self._make_semantic_result(inspected["semantic_package"], sem_path)
 
-        # 3. Build uninstall plan for Claude only
-        u_plan = build_uninstall_plan(self.project, component_id="claude-vcbs-manager-activation", root=ROOT)
+        plan = build_plan(self.project, host="claude", semantic_result_path=sem_path, root=ROOT)
+        apply_plan(plan, decide(plan, "approve"), self.project, root=ROOT)
+
+        codex_skill = self.project / ".agents/skills/bootstrap-testing/SKILL.md"
+        claude_skill = self.project / ".claude/skills/vcbs-manager/SKILL.md"
+        manifest_file = self.project / ".vibe-coding-bootstrap/manifest.yaml"
+        self.assertTrue(codex_skill.is_file())
+        self.assertTrue(claude_skill.is_file())
+        self.assertTrue(manifest_file.is_file())
+
+        pre_codex_skill_bytes = codex_skill.read_bytes()
+        pre_claude_skill_bytes = claude_skill.read_bytes()
+        pre_manifest_bytes = manifest_file.read_bytes()
+        pre_act_bytes = (self.project / MANIFEST_PATH).read_bytes()
+
+        # 3. Uninstall Claude only
+        u_plan = build_uninstall_plan(self.project, component_id="claude-native-vcbs-manager-skill", root=ROOT)
         self.assertEqual(1, len(u_plan["removals"]))
-        apply_uninstall(u_plan, decide_uninstall(u_plan, "approve"), self.project, root=ROOT)
+        self.assertIn(".vibe-coding-bootstrap/manifest.yaml", u_plan.get("manifest_updates", []))
+
+        u_res = apply_uninstall(u_plan, decide_uninstall(u_plan, "approve"), self.project, root=ROOT)
+        self.assertEqual("applied", u_res["status"])
 
         # Claude skill removed
-        self.assertFalse((self.project / ".claude/skills/vcbs-manager/SKILL.md").exists())
+        self.assertFalse(claude_skill.exists())
 
-        # Codex skill and AGENTS.md still exist!
-        self.assertTrue((self.project / ".agents/skills/bootstrap-testing/SKILL.md").is_file())
+        # Codex skill, AGENTS.md, and Codex activation remain intact!
+        self.assertTrue(codex_skill.is_file())
+        self.assertEqual(pre_codex_skill_bytes, codex_skill.read_bytes())
         self.assertTrue((self.project / "AGENTS.md").is_file())
-
-        # activation.json still exists and has Codex entry
         self.assertTrue((self.project / MANIFEST_PATH).is_file())
-        manifest2 = json.loads((self.project / MANIFEST_PATH).read_text(encoding="utf-8"))
-        self.assertEqual(1, len(manifest2["activations"]))
-        self.assertEqual("codex", manifest2["activations"][0]["host"])
+        act_data = json.loads((self.project / MANIFEST_PATH).read_text(encoding="utf-8"))
+        self.assertEqual(1, len(act_data["activations"]))
+        self.assertEqual("codex", act_data["activations"][0]["host"])
 
-        # 4. Uninstall Codex testing
-        u_plan2 = build_uninstall_plan(self.project, component_id="codex-testing-activation", root=ROOT)
-        apply_uninstall(u_plan2, decide_uninstall(u_plan2, "approve"), self.project, root=ROOT)
+        # Second uninstall is no_changes
+        u_plan_repeat = build_uninstall_plan(self.project, component_id="claude-native-vcbs-manager-skill", root=ROOT)
+        self.assertEqual(0, u_plan_repeat["actual_changes"])
+        self.assertEqual([], u_plan_repeat["removals"])
+        res_no_changes = uninstall(self.project, component_id="claude-native-vcbs-manager-skill", root=ROOT)
+        self.assertEqual("no_changes", res_no_changes["status"])
 
-        # Both skills and activation manifest are completely removed
-        self.assertFalse((self.project / ".agents/skills/bootstrap-testing/SKILL.md").exists())
-        self.assertFalse((self.project / "AGENTS.md").exists())
-        self.assertFalse((self.project / MANIFEST_PATH).exists())
+        # Rollback restores Claude byte-for-byte alongside Codex
+        rb = rollback(self.project, u_res["deployment_id"], apply=True)
+        self.assertEqual("rolled_back", rb["status"])
+        self.assertTrue(claude_skill.is_file())
+        self.assertEqual(pre_claude_skill_bytes, claude_skill.read_bytes())
+        self.assertEqual(pre_codex_skill_bytes, codex_skill.read_bytes())
+        self.assertEqual(pre_manifest_bytes, manifest_file.read_bytes())
+        self.assertEqual(pre_act_bytes, (self.project / MANIFEST_PATH).read_bytes())
+
+    def test_antigravity_codex_shared_surface_warning_and_status(self):
+        """Antigravity plan emits shared-surface warning for Codex, rendered in summary, and reported in status."""
+        (self.project / "CLAUDE.md").write_text("# Project Guidelines\n", encoding="utf-8")
+        git(self.project, "add", ".")
+        git(self.project, "commit", "-qm", "guidelines")
+
+        inspected = inspect_project(self.project, host="antigravity", root=ROOT)
+        sem_path = Path(self.temp.name) / "sem-ag-warning.json"
+        self._make_semantic_result(inspected["semantic_package"], sem_path)
+
+        # Plan with antigravity
+        plan = build_plan(self.project, host="antigravity", semantic_result_path=sem_path, root=ROOT)
+        self.assertIn("warnings", plan)
+        ag_warning = next((w for w in plan["warnings"] if "Codex" in w and ".agents/skills" in w), None)
+        self.assertIsNotNone(ag_warning, f"Expected Antigravity shared-surface warning in plan: {plan.get('warnings')}")
+        self.assertIn("AGENTS.md", ag_warning)
+
+        # Summary renders warning
+        summary = render_summary(plan)
+        self.assertIn("Codex", summary)
+        self.assertIn(".agents/skills", summary)
+
+        # Apply plan
+        res = apply_plan(plan, decide(plan, "approve"), self.project, root=ROOT)
+        self.assertEqual("applied", res["status"])
+
+        # Status inspection reports shared surface
+        st_ag = get_status(self.project, host="antigravity", root=ROOT)
+        self.assertEqual("installed", st_ag["status"])
+        self.assertTrue(len(st_ag.get("native_activations", [])) > 0)
+        ag_act = next((a for a in st_ag["native_activations"] if a.get("host") == "antigravity"), None)
+        self.assertIsNotNone(ag_act)
+        self.assertEqual("codex", ag_act.get("shared_surface_with"))
+        self.assertIn("Codex", ag_act.get("shared_surface_notice", ""))
+
+        # Codex status inspection on the same repo handles presence cleanly without conflicts
+        st_codex = get_status(self.project, host="codex", root=ROOT)
+        self.assertEqual("installed", st_codex["status"])
+        self.assertFalse(st_codex["has_conflicts"])
+
+    def test_committed_evidence_recomputable_plan_and_skill_digests(self):
+        """Committed activation evidence in examples/activation/claude/ is authentic and recomputable."""
+        plan_path = ROOT / "examples/activation/claude/activation-plan.json"
+        result_path = ROOT / "examples/activation/claude/activated-result.json"
+
+        self.assertTrue(plan_path.is_file())
+        self.assertTrue(result_path.is_file())
+
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        result = json.loads(result_path.read_text(encoding="utf-8"))
+
+        # Recompute plan_digest directly from disk representation
+        recomputed_plan_digest = plan_digest(plan)
+        self.assertEqual(plan["plan_digest"], recomputed_plan_digest)
+        self.assertEqual("17999427b88c7f8786773a6f1b8dc41e1a97ef58e22862ed4612120b97c43f94", recomputed_plan_digest)
+
+        # Verify exact skill file digest recomputes from template
+        skill_template = ROOT / "host_adapters/claude/skills/vcbs-manager/SKILL.md"
+        expected_skill_sha = hashlib.sha256(skill_template.read_bytes()).hexdigest()
+        self.assertEqual(result["production_skill_sha256"], expected_skill_sha)
+
+        # Verify result status and honest reporting
+        self.assertEqual("NOT_TESTED", result["run"])
+        self.assertIn("interactive permission approval", result["reason"])
+        self.assertTrue(result["unit_tests_passed"])
+        self.assertTrue(result["filesystem_isolation_verified"])
 
     def test_upgrade_native_skill_claude_and_antigravity(self):
         """Upgrades to host_adapters template in VCBS root are detected and applied cleanly."""

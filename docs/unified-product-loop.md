@@ -141,12 +141,13 @@ When targeting either host or both (`--host claude,antigravity`), VCBS provides 
 4. **None (`host: none`)**:
    - No native host activations or Skill files are installed. Standard managed assets in `manifest.yaml` are materialized as planned.
 
-### Shared `.agents` Ownership Isolation Rules
+### Shared `.agents` Ownership Isolation & Discovery Rules
 
-Both Codex and Google Antigravity utilize the repo-local `.agents/` hierarchy:
-- Codex installs skills under `.agents/skills/bootstrap-testing/` and triggers in `AGENTS.md`.
-- Antigravity installs skills under `.agents/skills/vcbs-manager/` without modifying `AGENTS.md`.
-- Isolation: Each host skill is confined to its own distinct subdirectory under `.agents/skills/<name>/`.
+Both Codex and Google Antigravity utilize the repo-local `.agents/skills/` hierarchy:
+- Shared Discovery Root: Both Codex and Antigravity inspect `.agents/skills/`. Deploying an Antigravity skill places it on Codex's discovery surface.
+- Trigger Isolation: Codex requires an explicit trigger line in `AGENTS.md` to invoke skills. Antigravity activation does not mutate `AGENTS.md`, preventing unintended automatic Codex execution.
+- Informed Consent: Planning for Antigravity surfaces an explicit warning alerting the user to the shared discovery root with Codex.
+- Subdirectory Isolation: Codex owns `.agents/skills/bootstrap-testing/`; Antigravity owns `.agents/skills/vcbs-manager/`. Paths never collide.
 - Ownership tracking: The target manifest `.vibe-coding-bootstrap/activation.json` records individual activations per `(host, capability)` tuple, tracking artifact paths, sources, and SHA-256 digests. Multi-host activation manifests record `host: "multiple"` while preserving per-activation entries.
 - Coexistence: Installing, upgrading, or uninstalling an Antigravity skill does not affect Codex's `bootstrap-testing` skill or `AGENTS.md`, and vice versa.
 

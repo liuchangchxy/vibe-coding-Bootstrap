@@ -33,20 +33,36 @@ Host | Capability | Repo-Local Skill Destination | Invocation / Recognition Trig
 
 ---
 
-## 3. Shared `.agents/skills` Ownership Isolation Rules
+## 3. Shared `.agents/skills` Ownership Isolation & Cross-Host Discovery Rules
 
-Both OpenAI Codex and Google Antigravity utilize the repo-local `.agents/skills/` tree:
-1. **Subdirectory Isolation**:
-   - Codex owns only `.agents/skills/bootstrap-testing/SKILL.md`.
-   - Antigravity owns only `.agents/skills/vcbs-manager/SKILL.md`.
-   - Each skill resides in its own isolated subfolder; paths never collide.
-2. **Instruction File Isolation**:
-   - Codex activation manages its trigger line in `AGENTS.md`.
+Both OpenAI Codex and Google Antigravity utilize the repo-local `.agents/skills/` tree as their standard workspace skill discovery surface:
+
+1. **Discovery Surfaces & Cross-Host Overlap**:
+   - **Codex**: Discovers repo-local skills in `.agents/skills/<name>/SKILL.md`.
+   - **Antigravity**: Discovers workspace skills in `.agents/skills/<name>/SKILL.md` (as documented in the Antigravity Customization System Guide).
+   - **Consequence**: Deploying an Antigravity skill to `.agents/skills/vcbs-manager/SKILL.md` physically places that skill file inside Codex's repo-local discovery hierarchy.
+
+2. **Trigger Isolation & Codex Inactivity**:
+   - Under the authoritative Codex Native Activation contract (`docs/codex-native-activation.md`), Codex v1 requires an explicit trigger phrase appended to `AGENTS.md` (`For implementation or bug-fix tasks that change observable behavior, use the $bootstrap-testing skill.`) in order to activate or invoke a skill.
    - Antigravity activation **never touches** `AGENTS.md` or `GEMINI.md`.
-3. **Manifest Ownership**:
-   - The ownership manifest `.vibe-coding-bootstrap/activation.json` records distinct entries in its `activations` array for each `(host, capability)` pair.
-   - Deploying, upgrading, or uninstalling an Antigravity activation preserves existing Codex activations, and vice versa.
-   - When multiple hosts are active, `activation.json` records `host: "multiple"` while preserving each host's exact artifacts and digests.
+   - Consequently, while `.agents/skills/vcbs-manager/SKILL.md` is visible within the `.agents/skills/` tree, Codex will not automatically invoke it without an `AGENTS.md` trigger line.
+
+3. **Explicit Plan Surfacing & Human Consent**:
+   - Because `.agents/skills` is shared, cross-host exposure is **never silent**.
+   - During planning (`vcbs plan --host antigravity`), VCBS explicitly surfaces a dedicated warning:
+     `"Antigravity skill destination '.agents/skills/vcbs-manager/SKILL.md' shares the '.agents/skills' root with Codex. Codex discovers this directory, but will not invoke the skill without an AGENTS.md trigger."`
+   - This warning is rendered in the human-facing plan summary before approval, ensuring explicit informed consent prior to running `vcbs apply`.
+
+4. **Status Transparency**:
+   - In `vcbs status`, each entry in `native_activations` reports:
+     - `shared_surface_with: "codex"` (for Antigravity activations)
+     - `shared_surface_notice: "Shares .agents/skills discovery root with Codex; unmanaged in Codex without AGENTS.md trigger."`
+   - This ensures continuous observability over the shared discovery root.
+
+5. **Subdirectory & Manifest Isolation**:
+   - **Path Boundaries**: Codex owns only `.agents/skills/bootstrap-testing/SKILL.md`, while Antigravity owns only `.agents/skills/vcbs-manager/SKILL.md`. Each skill resides in its own isolated subfolder; paths never collide.
+   - **Manifest Ownership**: The ownership manifest `.vibe-coding-bootstrap/activation.json` records distinct entries in its `activations` array for each `(host, capability)` pair.
+   - **Independent Lifecycle**: Deploying, upgrading, uninstalling, or rolling back an Antigravity activation preserves existing Codex activations and `AGENTS.md`, and vice versa.
 
 ---
 
