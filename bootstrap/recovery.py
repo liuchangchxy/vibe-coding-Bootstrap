@@ -135,10 +135,14 @@ def _snapshot(project, head, deployment_id):
 
 
 def prepare_deployment(plan, project, global_root=None):
-    deployment_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + plan["plan_digest"][:12]
+    base_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + plan["plan_digest"][:12]
+    deployment_id = base_id
+    counter = 1
     metadata = _metadata_dir(project, deployment_id)
-    if metadata.exists():
-        raise RecoveryError("SNAPSHOT_FAILED: deployment metadata already exists")
+    while metadata.exists():
+        deployment_id = f"{base_id}-{counter:02d}"
+        metadata = _metadata_dir(project, deployment_id)
+        counter += 1
     head = _git(project, "rev-parse", "HEAD")
     actions = _deployment_paths(plan, project)
     try:

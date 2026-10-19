@@ -505,15 +505,41 @@ class NativeSkillsAdoptionTests(unittest.TestCase):
         apply_plan(plan_ag, decide(plan_ag, "approve"), self.project, root=ROOT)
         ag_skill_file = self.project / ".agents/skills/vcbs-manager/SKILL.md"
         self.assertTrue(ag_skill_file.is_file())
+        self.assertTrue((self.project / MANIFEST_PATH).is_file())
+        self.assertTrue(manifest_file.is_file())
+        pre_ag_skill_bytes = ag_skill_file.read_bytes()
+        pre_ag_manifest_bytes = manifest_file.read_bytes()
+        pre_ag_act_bytes = (self.project / MANIFEST_PATH).read_bytes()
 
         u_plan_ag = build_uninstall_plan(self.project, component_id="antigravity-native-vcbs-manager-skill", root=ROOT)
         self.assertEqual(1, len(u_plan_ag["removals"]))
         self.assertIn(".vibe-coding-bootstrap/manifest.yaml", u_plan_ag.get("manifest_updates", []))
         u_res_ag = apply_uninstall(u_plan_ag, decide_uninstall(u_plan_ag, "approve"), self.project, root=ROOT)
         self.assertEqual("applied", u_res_ag["status"])
+        self.assertTrue(u_res_ag["rollback_available"])
         self.assertFalse(ag_skill_file.exists())
         self.assertFalse((self.project / MANIFEST_PATH).exists())
         self.assertFalse(manifest_file.exists())
+
+        st_ag = get_status(self.project, host="antigravity", root=ROOT)
+        self.assertEqual("uninstalled", st_ag["status"])
+
+        # Second uninstall is no_changes
+        u_plan_ag2 = build_uninstall_plan(self.project, component_id="antigravity-native-vcbs-manager-skill", root=ROOT)
+        self.assertEqual(0, u_plan_ag2["actual_changes"])
+        self.assertEqual([], u_plan_ag2["removals"])
+        res_ag_no_changes = uninstall(self.project, component_id="antigravity-native-vcbs-manager-skill", root=ROOT)
+        self.assertEqual("no_changes", res_ag_no_changes["status"])
+
+        # Rollback restores manifest.yaml, activation.json, and skill byte-for-byte
+        rb_ag = rollback(self.project, u_res_ag["deployment_id"], apply=True)
+        self.assertEqual("rolled_back", rb_ag["status"])
+        self.assertTrue(ag_skill_file.is_file())
+        self.assertTrue(manifest_file.is_file())
+        self.assertTrue((self.project / MANIFEST_PATH).is_file())
+        self.assertEqual(pre_ag_skill_bytes, ag_skill_file.read_bytes())
+        self.assertEqual(pre_ag_manifest_bytes, manifest_file.read_bytes())
+        self.assertEqual(pre_ag_act_bytes, (self.project / MANIFEST_PATH).read_bytes())
 
     def test_uninstall_by_activation_component_id_or_alias(self):
         """Uninstalling by activation ID or host alias cleans both manifest.yaml and activation.json without stale rows."""
@@ -748,4 +774,14 @@ class NativeSkillsAdoptionTests(unittest.TestCase):
         # Repeat upgrade is no_changes
         repeat = upgrade(self.project, host="claude", apply=False, root=vcbs_root)
         self.assertEqual("no_changes", repeat["status"])
+
+    def test_rapid_consecutive_deployments_disambiguate_deployment_id(self):
+        """Rapid consecutive deployments in the same second disambiguate deployment_id without SNAPSHOT_FAILED."""
+        from bootstrap.recovery import prepare_deployment
+        plan = {"plan_digest": "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890", "project_changes": [], "host_activations": []}
+        dep1 = prepare_deployment(plan, self.project)
+        dep2 = prepare_deployment(plan, self.project)
+        self.assertNotEqual(dep1["deployment_id"], dep2["deployment_id"])
+        self.assertTrue(dep2["deployment_id"].startswith(dep1["deployment_id"] + "-"))
+
 
