@@ -26,4 +26,24 @@ The Host presents `render_summary` output and asks once. It must create an appro
 
 Plans bind target revision, route, Host, Catalog snapshot, Profile hash, exact materialization actions, activation subplans, and classifications. Apply reruns materialization preflight and requires planned copy actions, classifications, and hashes to remain identical to the approved Unified Plan before snapshot creation. Artifact files are created exclusively outside the target. Apply preflights every action, rejects stale inputs and conflicts without snapshots, applies Codex activation before materialization, and verifies the promised outputs. Global writes require an explicit root at planning and application. Existing files are never force-overwritten. A no-op needs no decision and creates no snapshot or deployment record.
 
+## Managed Updates
+
+Bootstrap manages safe upgrades of its owned assets (both Materializer copy components and Codex-native activation):
+- If destination bytes match the prior owned manifest digest and the desired source has updated, the plan classifies the item as an upgrade with old/new versions, digests, and delta shown.
+- If destination bytes differ from the manifest digest (user modified the file), Bootstrap detects a conflict and refuses to overwrite.
+- Unmanaged files remain project-owned and are never taken over.
+- Applying an upgrade takes a pre-apply Git snapshot; rollback restores the exact pre-update bytes.
+- Repeating an upgrade run is idempotent and returns `no_changes`.
+
+## Experience Learning Loop v1
+
+```text
+python -m bootstrap harvest --project-root <project> --observation <observation.yaml>
+python -m bootstrap review-experience <candidate-id> --decision approve --reviewer <name>
+```
+
+- `harvest`: Bounded semantic distillation from Host AI is bound with target repository facts, commit revision, and unverified evidence to produce a candidate Experience. Privacy guardrails reject credentials, API keys, host absolute paths, bulk code dumps, and raw chat logs.
+- `review-experience`: An explicit human review approves or rejects the candidate. Upon approval by a named reviewer, qualifying evidence is checked, the record is verified, and it is registered in `profiles/personal.yaml#reusable_experience_ids`.
+- Cross-project reuse: When Composer plans for another project matching the capability and project context, verified personal experiences are automatically included without editing generic Capability Catalog definitions.
+
 Supported Hosts: `codex` and `none`. Native activation is Codex-only and Compose-only when testing is selected. Adoption remains conservative and does not add Host activation. No automatic Git add, commit, or push occurs in a consumer project.

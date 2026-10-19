@@ -95,12 +95,18 @@ def materialize(assembly_plan, project_root, global_root=None, apply=False,
                 existing_digest = _sha256(target.read_bytes()) if target.is_file() else None
                 old_entry = next((entry for entry in (previous or {}).get("items", [])
                                   if entry.get("scope") == item["scope"]
-                                  and entry.get("destination") == destination_relative.as_posix()), None)
+                                  and entry.get("destination") in (destination_relative.as_posix(), str(target))), None)
                 if old_entry and existing_digest != old_entry.get("sha256"):
                     state = "conflict"
                     reason = "Bootstrap-managed destination was modified; it was not overwritten."
                 elif existing_digest == digest:
                     state = "unchanged"
+                elif old_entry and existing_digest == old_entry.get("sha256") and digest != existing_digest:
+                    state = "upgraded"
+                    result["old_sha256"] = old_entry.get("sha256")
+                    result["old_version"] = old_entry.get("capability_version", "unspecified")
+                    result["new_version"] = item.get("capability_version", "unspecified")
+                    reason = f"Upgrading Bootstrap-managed asset from {result['old_version']} ({result['old_sha256'][:8]}) to {result['new_version']} ({digest[:8]})."
                 else:
                     state = "conflict"
                     reason = "Destination already exists with different content; it was not overwritten."
@@ -119,23 +125,23 @@ def materialize(assembly_plan, project_root, global_root=None, apply=False,
     conflicts = [item for item in items if item["result"] == "conflict"]
     if not valid_manifest:
         for item in items:
-            if item["result"] in {"copied", "unchanged", "reference_only"}:
+            if item["result"] in {"copied", "upgraded", "unchanged", "reference_only"}:
                 item["result"] = "conflict"
                 item["reason"] = "Existing manifest is not a Bootstrap materialization manifest; it was not overwritten."
         conflicts = [item for item in items if item["result"] == "conflict"]
     manifest_path = str(manifest) if apply and not conflicts else None
     if apply and not conflicts:
         for target, content, result in pending:
-            if result["result"] == "copied":
+            if result["result"] in {"copied", "upgraded"}:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(content)
         manifest_items = []
         if previous:
             manifest_items = previous.get("items", [])
-        keyed = {(entry["source_capability"], entry["component_id"], entry["scope"], entry["destination"]): entry
+        keyed = {(entry["source_capability"], entry["component_id"], entry["scope"]): entry
                  for entry in manifest_items}
         for item in items:
-            if item["result"] in {"copied", "unchanged", "reference_only"}:
+            if item["result"] in {"copied", "upgraded", "unchanged", "reference_only"}:
                 entry = {
                     "component_id": item["component_id"],
                     "source_capability": item["source_capability"],
@@ -146,7 +152,7 @@ def materialize(assembly_plan, project_root, global_root=None, apply=False,
                 }
                 if "sha256" in item:
                     entry["sha256"] = item["sha256"]
-                key = (entry["source_capability"], entry["component_id"], entry["scope"], entry["destination"])
+                key = (entry["source_capability"], entry["component_id"], entry["scope"])
                 keyed[key] = entry
         manifest_data = {
             "format_version": 1, "assembly_source": assembly_source,

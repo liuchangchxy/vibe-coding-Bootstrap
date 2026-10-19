@@ -1,0 +1,264 @@
+"""Experience harvest and human review for personal reuse."""
+
+from datetime import datetime, timezone
+import hashlib
+import json
+from pathlib import Path
+import re
+import subprocess
+
+import yaml
+
+from composer.core import ROOT, load_yaml, validate
+
+
+class ExperienceError(ValueError):
+    """User-facing experience workflow error."""
+
+
+def _utc():
+    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def _git(project, *args):
+    result = subprocess.run(["git", "-C", str(project), *args], capture_output=True, text=True)
+    if result.returncode:
+        raise ExperienceError(f"CANNOT_INSPECT_GIT: {result.stderr.strip() or 'Git command failed'}")
+    return result.stdout.strip()
+
+
+# Regex checks for secrets and leaked tokens
+SECRET_PATTERNS = [
+    re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
+    re.compile(r"\b(sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{20,}|bearer\s+[a-zA-Z0-9_\-\.]+)\b", re.IGNORECASE),
+    re.compile(r"(?i)\b(password|secret|api_key|token)\s*[:=]\s*[\"']?[^\s\"']{8,}"),
+]
+
+LEAKED_PATH_PATTERNS = [
+    re.compile(r"/Users/[a-zA-Z0-9_\.\-]+/"),
+    re.compile(r"/home/[a-zA-Z0-9_\.\-]+/"),
+    re.compile(r"[a-zA-Z]:\\[a-zA-Z0-9_\.\-]+\\"),
+]
+
+
+def _check_privacy(value, path=""):
+    """Enforce strict guardrails against secrets, transcripts, and host absolute paths."""
+    if isinstance(value, dict):
+        for k, v in value.items():
+            if str(k).lower() in {"messages", "transcript", "chat_history", "raw_conversation"}:
+                raise ExperienceError(f"HARVEST_PRIVACY_VIOLATION: unrestricted chat logs not allowed ({k})")
+            _check_privacy(v, f"{path}.{k}" if path else str(k))
+    elif isinstance(value, list):
+        for i, item in enumerate(value):
+            _check_privacy(item, f"{path}[{i}]")
+    elif isinstance(value, str):
+        if len(value) > 5000:
+            raise ExperienceError(f"HARVEST_PRIVACY_VIOLATION: bulk content dump exceeding size limit at {path}")
+        for pattern in SECRET_PATTERNS:
+            if pattern.search(value):
+                raise ExperienceError(f"HARVEST_PRIVACY_VIOLATION: potential credential or secret detected at {path}")
+        for pattern in LEAKED_PATH_PATTERNS:
+            if pattern.search(value):
+                raise ExperienceError(f"HARVEST_PRIVACY_VIOLATION: host absolute path escaping project detected at {path}")
+
+
+def harvest_experience(project_root, observation, host="codex", output_path=None, root=ROOT):
+    """Harvest bounded project observation into a candidate Experience."""
+    root = Path(root).resolve()
+    project = Path(project_root).resolve(strict=True)
+    if not project.is_dir():
+        raise ExperienceError(f"INVALID_PROJECT_ROOT: {project_root} is not a directory")
+
+    if isinstance(observation, (str, Path)):
+        obs_path = Path(observation)
+        if not obs_path.is_file():
+            raise ExperienceError(f"OBSERVATION_FILE_NOT_FOUND: {observation}")
+        raw_text = obs_path.read_text(encoding="utf-8")
+        try:
+            obs = yaml.safe_load(raw_text)
+        except yaml.YAMLError:
+            obs = json.loads(raw_text)
+    elif isinstance(observation, dict):
+        obs = observation
+    else:
+        raise ExperienceError("INVALID_OBSERVATION: observation must be a dict or file path")
+
+    if not isinstance(obs, dict):
+        raise ExperienceError("INVALID_OBSERVATION: observation must be a structured mapping")
+
+    # Enforce privacy and leak prevention
+    _check_privacy(obs)
+
+    # Required semantic fields from Host AI
+    for req in ("title", "approach", "outcome", "observation", "solution", "lesson", "reasoning", "capability_ids", "evidence"):
+        if req not in obs:
+            raise ExperienceError(f"MISSING_OBSERVATION_FIELD: observation requires '{req}'")
+
+    if not isinstance(obs["evidence"], list) or not obs["evidence"]:
+        raise ExperienceError("MISSING_EVIDENCE: candidate requires at least one evidence item")
+
+    commit_sha = _git(project, "rev-parse", "HEAD")
+    project_name = project.name
+    recorded_at = _utc()
+
+    title_slug = re.sub(r"[^a-z0-9]+", "-", obs["title"].lower()).strip("-")[:32]
+    content_hash = hashlib.sha256(f"{project_name}:{commit_sha}:{title_slug}".encode()).hexdigest()[:8]
+    exp_id = f"exp-{title_slug}-{content_hash}"
+
+    # Build evidence with unverified status on harvest
+    evidence_items = []
+    for item in obs["evidence"]:
+        if not isinstance(item, dict):
+            raise ExperienceError("INVALID_EVIDENCE: evidence item must be a mapping")
+        evidence_items.append({
+            "type": item.get("type", "project_result"),
+            "source": item.get("source", f"git:{commit_sha[:7]}"),
+            "description": item.get("description", "Observed outcome in project"),
+            "strength": item.get("strength", "moderate"),
+            "verification": {"status": "unverified"},
+            "observed_at": item.get("observed_at", recorded_at),
+            "limits": item.get("limits", []),
+        })
+
+    project_context = obs.get("project_context", {
+        "project_type": obs.get("project_type", "software-project"),
+        "goal": obs.get("goal", f"Maintain behavior in {project_name}"),
+        "technologies": obs.get("technologies", []),
+        "constraints": obs.get("constraints", []),
+    })
+
+    candidate = {
+        "id": exp_id,
+        "identity": exp_id,
+        "title": obs["title"],
+        "project_context": project_context,
+        "approach": obs["approach"],
+        "capability_ids": obs["capability_ids"],
+        "outcome": obs["outcome"],
+        "evidence": evidence_items,
+        "confidence": obs.get("confidence", "medium"),
+        "lesson": obs["lesson"],
+        "recorded_by": obs.get("recorded_by", f"host-{host}-harvest"),
+        "recorded_at": recorded_at,
+        "source": {
+            "project": project_name,
+            "recorded_by": obs.get("recorded_by", f"host-{host}-harvest"),
+            "record_uri": f"commit:{commit_sha}",
+            "recorded_at": recorded_at,
+        },
+        "context": obs.get("context", f"Observed during work on {project_name} at commit {commit_sha[:7]}"),
+        "observation": obs["observation"],
+        "solution": obs["solution"],
+        "scope": obs.get("scope", [project_name]),
+        "reasoning": obs["reasoning"],
+        "status": "candidate",
+        "review": {
+            "review_status": "pending",
+        },
+    }
+
+    validate(candidate, "experience.schema.json", root)
+
+    dest = Path(output_path).resolve() if output_path else root / "experiences/candidate" / f"{exp_id}.yaml"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(yaml.safe_dump(candidate, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    return candidate
+
+
+def _find_experience(ref, root=ROOT):
+    root = Path(root).resolve()
+    target_path = Path(ref)
+    if target_path.is_file():
+        return target_path, load_yaml(target_path)
+    for state in ("candidate", "verified", "rejected", "raw", "archived"):
+        candidate_path = root / "experiences" / state / f"{ref}.yaml"
+        if candidate_path.is_file():
+            return candidate_path, load_yaml(candidate_path)
+    raise ExperienceError(f"EXPERIENCE_NOT_FOUND: cannot locate experience {ref}")
+
+
+def review_experience(experience_ref, decision, reviewer=None, notes=None, root=ROOT):
+    """Review and approve or reject an Experience candidate for personal reuse."""
+    root = Path(root).resolve()
+    if decision not in {"approve", "reject"}:
+        raise ExperienceError("INVALID_DECISION: review decision must be approve or reject")
+
+    path, record = _find_experience(experience_ref, root)
+
+    if decision == "approve":
+        if not reviewer or not str(reviewer).strip():
+            raise ExperienceError("REVIEWER_REQUIRED: approve decision requires a named reviewer")
+        if record.get("status") != "candidate":
+            raise ExperienceError(f"INVALID_STATE_TRANSITION: only candidate experiences can be approved (found {record.get('status')})")
+
+        # Must have at least one qualifying evidence item
+        qualifying = False
+        now = _utc()
+        for item in record.get("evidence", []):
+            if item.get("type") not in {"ai_judgment", "single_attempt"} and item.get("strength") in {"moderate", "strong"}:
+                item["verification"] = {
+                    "status": "checked",
+                    "method": f"Reviewed and confirmed by {reviewer}",
+                    "verified_by": str(reviewer).strip(),
+                    "verified_at": now,
+                }
+                qualifying = True
+                break
+        if not qualifying:
+            raise ExperienceError("INSUFFICIENT_EVIDENCE: verified status requires at least one moderate or strong non-AI checked evidence item")
+
+        record["status"] = "verified"
+        record["review"] = {
+            "review_status": "accepted",
+            "reviewer": str(reviewer).strip(),
+            "reviewed_at": now,
+            "notes": notes or f"Approved for personal reuse by {reviewer}",
+        }
+
+        validate(record, "experience.schema.json", root)
+
+        target_path = root / "experiences/verified" / f"{record['id']}.yaml"
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        target_path.write_text(yaml.safe_dump(record, sort_keys=False, allow_unicode=True), encoding="utf-8")
+        if path != target_path and path.is_file():
+            path.unlink()
+
+        # Update Personal Profile with reusable_experience_ids
+        profile_path = root / "profiles/personal.yaml"
+        profile = load_yaml(profile_path)
+        reusable = profile.setdefault("reusable_experience_ids", [])
+        if record["id"] not in reusable:
+            reusable.append(record["id"])
+        profile["updated_at"] = now
+        validate(profile, "profile.schema.json", root)
+        profile_path.write_text(yaml.safe_dump(profile, sort_keys=False, allow_unicode=True), encoding="utf-8")
+        return record
+
+    else:
+        # Rejection
+        now = _utc()
+        record["status"] = "rejected"
+        record["review"] = {
+            "review_status": "rejected",
+            "reviewer": str(reviewer).strip() if reviewer else "reviewer",
+            "reviewed_at": now,
+            "notes": notes or "Rejected during human review",
+        }
+        validate(record, "experience.schema.json", root)
+
+        target_path = root / "experiences/rejected" / f"{record['id']}.yaml"
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        target_path.write_text(yaml.safe_dump(record, sort_keys=False, allow_unicode=True), encoding="utf-8")
+        if path != target_path and path.is_file():
+            path.unlink()
+
+        # Remove from personal profile if present
+        profile_path = root / "profiles/personal.yaml"
+        profile = load_yaml(profile_path)
+        reusable = profile.get("reusable_experience_ids", [])
+        if record["id"] in reusable:
+            reusable.remove(record["id"])
+            profile["updated_at"] = now
+            validate(profile, "profile.schema.json", root)
+            profile_path.write_text(yaml.safe_dump(profile, sort_keys=False, allow_unicode=True), encoding="utf-8")
+        return record

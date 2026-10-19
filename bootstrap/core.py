@@ -59,11 +59,16 @@ def _owned_state(project):
                 for item in data.get("items", []):
                     if item.get("scope") != "project" or item.get("state") != "materialized":
                         continue
-                    relative = item.get("destination", "")
-                    path = project / relative
-                    if (relative and path.is_file() and item.get("sha256")
+                    dest = item.get("destination", "")
+                    try:
+                        p = Path(dest)
+                        rel = p.resolve().relative_to(project.resolve()).as_posix() if p.is_absolute() else p.as_posix()
+                    except ValueError:
+                        rel = dest
+                    path = project / rel
+                    if (rel and path.is_file() and item.get("sha256")
                             and _sha(path.read_bytes()) == item["sha256"]):
-                        managed.add(relative)
+                        managed.add(rel)
         except (OSError, yaml.YAMLError):
             pass
     activation_manifest = project / activation.MANIFEST_PATH
@@ -72,11 +77,16 @@ def _owned_state(project):
             data = json.loads(activation_manifest.read_text(encoding="utf-8"))
             if data.get("format_version") == 1 and data.get("host") == "codex":
                 for item in data.get("artifacts", []):
-                    relative = item.get("destination", "")
-                    path = project / relative
-                    if (relative and path.is_file() and item.get("sha256")
+                    dest = item.get("destination", "")
+                    try:
+                        p = Path(dest)
+                        rel = p.resolve().relative_to(project.resolve()).as_posix() if p.is_absolute() else p.as_posix()
+                    except ValueError:
+                        rel = dest
+                    path = project / rel
+                    if (rel and path.is_file() and item.get("sha256")
                             and _sha(path.read_bytes()) == item["sha256"]):
-                        managed.add(relative)
+                        managed.add(rel)
         except (OSError, json.JSONDecodeError):
             pass
     signals = []
@@ -146,7 +156,8 @@ def _unified_changes(items, scope):
         if item["scope"] != scope:
             continue
         result.append({key: item[key] for key in item if key in {
-            "component_id", "source_capability", "scope", "delivery", "destination", "result", "reason", "sha256"
+            "component_id", "source_capability", "scope", "delivery", "destination", "result", "reason", "sha256",
+            "old_sha256", "old_version", "new_version", "delta"
         }})
     return result
 
@@ -234,7 +245,7 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
     for plan in activation_plans:
         if plan["status"] == "already_active":
             unchanged.append("codex-testing-activation")
-    actual_writes = sum(item["result"] == "copied" for item in rows)
+    actual_writes = sum(item["result"] in {"copied", "upgraded"} for item in rows)
     actual_writes += sum(plan["status"] == "ready" for plan in activation_plans)
     blocked = bool(unresolved)
     profile_sha = _profile_digest(root)
@@ -269,8 +280,27 @@ def render_summary(plan):
         lines.extend((f"Covered: {covered} capabilities", f"Gaps for review: {gaps}"))
     else:
         lines.append("Selected: " + (", ".join(plan["capabilities"]) or "none"))
-    lines.extend((f"Project changes: {sum(x['result'] == 'copied' for x in plan['project_changes'])}",
-                  f"Global changes: {sum(x['result'] == 'copied' for x in plan['global_changes'])}"))
+    project_writes = sum(x['result'] in {'copied', 'upgraded'} for x in plan['project_changes'])
+    global_writes = sum(x['result'] in {'copied', 'upgraded'} for x in plan['global_changes'])
+    lines.extend((f"Project changes: {project_writes}", f"Global changes: {global_writes}"))
+    upgrades = [item for item in [*plan["project_changes"], *plan["global_changes"]] if item.get("result") == "upgraded" or item.get("old_sha256")]
+    for subplan in plan.get("host_activations", []):
+        if subplan.get("is_upgrade"):
+            upgrades.append({
+                "component_id": "codex-testing-activation",
+                "old_sha256": subplan.get("old_skill_sha256", "")[:8],
+                "sha256": subplan.get("new_skill_sha256", "")[:8],
+                "old_version": "v1",
+                "new_version": "v2",
+            })
+    if upgrades:
+        lines.append(f"Upgrades: {len(upgrades)}")
+        for item in upgrades:
+            old_v = item.get("old_version", "v1")
+            new_v = item.get("new_version", "v2")
+            old_h = (item.get("old_sha256") or "")[:8]
+            new_h = (item.get("sha256") or "")[:8]
+            lines.append(f"  - {item['component_id']} ({old_v} [{old_h}] -> {new_v} [{new_h}])")
     if plan["host_activations"]:
         lines.append("Codex activation: " + ", ".join(item["status"] for item in plan["host_activations"]))
     lines.extend((f"References: {len(plan['references'])}", f"Unchanged: {len(plan['unchanged'])}"))
@@ -304,13 +334,13 @@ def _current_catalog_revision(root):
 
 def _verify(plan, project, root):
     for action in [*plan["project_changes"], *plan["global_changes"]]:
-        if action["result"] != "copied":
+        if action["result"] not in {"copied", "upgraded"}:
             continue
         base = Path(project) if action["scope"] == "project" else Path(plan["global_root"])
         target = base / action["destination"]
         if not target.is_file() or _sha(target.read_bytes()) != action["sha256"]:
             raise ProductLoopError(f"POST_APPLY_VERIFICATION_FAILED: {action['destination']}")
-    if plan["project_changes"] and any(x["result"] == "copied" for x in plan["project_changes"]):
+    if plan["project_changes"] and any(x["result"] in {"copied", "upgraded"} for x in plan["project_changes"]):
         manifest = Path(project) / ".vibe-coding-bootstrap/manifest.yaml"
         if not manifest.is_file():
             raise ProductLoopError("POST_APPLY_VERIFICATION_FAILED: materializer manifest missing")
@@ -337,16 +367,16 @@ def _validate_materialization_preflight(plan, dry):
             }
             for item in items
             if item.get("delivery") == "copy" and item.get("result") in {
-                "copied", "unchanged", "conflict", "unsupported", "skipped",
+                "copied", "upgraded", "unchanged", "conflict", "unsupported", "skipped",
             }
         }
 
     expected = mutations([*plan["project_changes"], *plan["global_changes"]])
-    expected = {key: value for key, value in expected.items() if value["result"] == "copied"}
+    expected = {key: value for key, value in expected.items() if value["result"] in {"copied", "upgraded"}}
     fresh = mutations(dry["items"])
     for key, approved in expected.items():
         observed = fresh.get(key)
-        if (observed is None or observed["result"] != "copied"
+        if (observed is None or observed["result"] not in {"copied", "upgraded"}
                 or observed["sha256"] != approved["sha256"]):
             raise ProductLoopError(
                 "STALE_BOOTSTRAP_PLAN: materialization source or action changed after planning"
@@ -418,7 +448,7 @@ def apply_plan(plan, decision, project_root, global_root=None, root=ROOT):
             applied = materialize(material_plan, project, global_root, apply=True, root=root)
             if any(item["result"] in {"conflict", "unsupported"} for item in applied["items"]):
                 raise ProductLoopError("PARTIAL_APPLY: materializer failed after activation")
-            completed.extend(item["component_id"] for item in applied["items"] if item["result"] == "copied")
+            completed.extend(item["component_id"] for item in applied["items"] if item["result"] in {"copied", "upgraded"})
     except Exception as exc:
         mutated = update_record_after_failure(project, deployment)
         if mutated:

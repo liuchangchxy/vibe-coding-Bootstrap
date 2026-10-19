@@ -27,8 +27,12 @@
         "delivery": {"enum": ["reference", "copy", "symlink", "native_install", "generated"]},
         "source": {"type": "string", "minLength": 1},
         "destination": {"type": "string", "minLength": 1},
-        "result": {"enum": ["copied", "unchanged", "reference_only", "skipped", "unsupported", "conflict"]},
+        "result": {"enum": ["copied", "upgraded", "unchanged", "reference_only", "skipped", "unsupported", "conflict"]},
         "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "old_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "old_version": {"type": "string"},
+        "new_version": {"type": "string"},
+        "delta": {"type": "string"},
         "reason": {"type": "string", "minLength": 1}
       }
     }

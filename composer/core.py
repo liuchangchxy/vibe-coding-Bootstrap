@@ -107,6 +107,18 @@ def compose(context, root=ROOT):
                 raise ValueError(f"Capability experience_ids must link an accepted verified Experience for {record['id']}: {experience_id}")
             experiences.append((entry[0].relative_to(root).as_posix(), experience))
 
+    for experience_id in profile.get("reusable_experience_ids", []):
+        entry = lifecycle.get(experience_id)
+        if not entry or entry[0].parent.name != "verified":
+            raise ValueError(f"Personal reusable experience must resolve to a verified Experience: {experience_id}")
+        experience = entry[1]
+        if (experience.get("status") != "verified" or not experience.get("review")
+                or experience["review"].get("review_status") != "accepted"):
+            raise ValueError(f"Personal reusable experience must link an accepted verified Experience: {experience_id}")
+        for cid in experience.get("capability_ids", []):
+            require_id(cid)
+        experiences.append((entry[0].relative_to(root).as_posix(), experience))
+
     candidates = {}
 
     def add(cid, reason, confidence, source):
@@ -163,7 +175,8 @@ def compose(context, root=ROOT):
         for path, experience in experiences:
             if (experience["project_context"]["project_type"] == context["project_type"]
                     and cid in experience.get("capability_ids", [])):
-                supporting.append({"source": path, "record": experience})
+                if not any(item["record"]["id"] == experience["id"] for item in supporting):
+                    supporting.append({"source": path, "record": experience})
         recommendations.append({
             "capability_id": cid,
             "reason": " ".join(match["reason"] for match in matches),
@@ -185,7 +198,7 @@ def compose(context, root=ROOT):
         "project_context": context,
         "catalog_revision": f"sha256:{digest.hexdigest()}",
         "profile_source": "profiles/personal.yaml",
-        "experience_sources": [path for path, _ in experiences],
+        "experience_sources": sorted(list(dict.fromkeys(path for path, _ in experiences))),
         "recommendations": recommendations,
         "excluded": [{"capability_id": cid, "reason": reason} for cid, reason in excluded.items()],
         "conflicts": [list(pair) for pair in conflicts],

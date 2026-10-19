@@ -16,7 +16,11 @@ Records use `schemas/experience.schema.json`. Phase 1 records without lifecycle 
 
 `verified` confirms what was observed in one project. It does not establish that a practice caused the outcome, applies to every project, or automatically promotes a Capability.
 
-For Composer reuse, `verified` alone is insufficient. A verified Experience becomes eligible only after an explicitly authorized Capability edit adds its ID to `experience_ids`; the record must have an accepted review and name that Capability in `capability_ids`. Composer still matches project type and does not infer a new candidate or change rule confidence.
+For Composer reuse, an Experience becomes eligible either through:
+1. Personal Reusable Layer: An accepted verified Experience explicitly registered in `profiles/personal.yaml#reusable_experience_ids`. This enables immediate personal cross-project reuse without editing generic Capability Catalog files.
+2. Generic Capability Promotion: An explicitly authorized Capability edit adds its ID to `experience_ids` in the Capability Catalog; the record must have an accepted review and name that Capability in `capability_ids`.
+
+In both pathways, Composer still matches project type and does not infer a new candidate or change rule confidence. Unapproved, candidate, rejected, or out-of-scope experiences are strictly excluded.
 
 ## Review path
 
