@@ -152,10 +152,12 @@ class GuidedSetupTests(unittest.TestCase):
 
     def test_web_project_detection_and_selection(self):
         self.put("package.json", '{"name":"consumer-web","scripts":{"test":"node --test"}}\n')
+        (self.project / "pyproject.toml").unlink()
         self.git("add", ".")
+        self.git("add", "-u")
         self.git("commit", "-m", "Add web runtime marker")
         inspected = inspect_setup(self.project, "none")
-        self.assertIn("JavaScript", inspected["project"]["technologies"])
+        self.assertEqual(["JavaScript"], inspected["project"]["technologies"])
         context = build_context(self.project, goal="Document project interfaces")
         plan = build_plan(self.project, host="none", context_value=context,
                           selected_capability_ids=["documentation"], excluded_component_ids=["reference"],
@@ -172,6 +174,16 @@ class GuidedSetupTests(unittest.TestCase):
         applied = apply_plan(global_plan, decide(global_plan, "approve"), self.project, global_root)
         self.assertEqual("applied", applied["status"])
         self.assertTrue((global_root / "components/reviewable-changes.md").is_file())
+
+        plan = build_plan(self.project, host="none", context_value=context,
+                          selected_capability_ids=["documentation"], excluded_component_ids=["reference"],
+                          scope="project")
+        applied = apply_plan(plan, decide(plan, "approve"), self.project)
+        self.assertEqual("applied", applied["status"])
+        self.assertTrue((self.project / ".vibe-coding-bootstrap/components/documentation-outline.md").is_file())
+        status = get_status(self.project, host="none", global_root=global_root)
+        self.assertEqual("installed", status["status"])
+        self.assertFalse(status["has_conflicts"])
 
 
 if __name__ == "__main__":

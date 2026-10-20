@@ -193,9 +193,6 @@ class UnifiedLoopTests(unittest.TestCase):
         self.assertEqual([], eligible["host_activations"])
         self.assertTrue(any("Codex native testing activation was omitted" in warning
                             for warning in eligible["warnings"]))
-        self.assertEqual([], eligible["host_activations"])
-        self.assertTrue(any("Codex native testing activation was omitted" in warning
-                            for warning in eligible["warnings"]))
         self.assertEqual([item["component_id"] for item in eligible["project_changes"] if item["result"] == "copied"], ["project-test-guidance"])
         approval = decide(eligible, "approve")
         applied = apply_plan(eligible, approval, self.repo)
