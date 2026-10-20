@@ -9,7 +9,8 @@ import unittest
 
 import yaml
 
-from bootstrap.experience import ExperienceError, harvest_experience, review_experience, verify_evidence
+from bootstrap.experience import (ExperienceError, harvest_experience, harvest_successful_event,
+                                  review_experience, verify_evidence)
 from composer.core import ROOT, compose, load_yaml, validate
 
 
@@ -72,6 +73,131 @@ class ExperienceLearningTests(unittest.TestCase):
                 "constraints": ["solo-dev"],
             },
         }
+
+    def _successful_merge_event(self):
+        head_sha = self._git(self.project_a, "rev-parse", "HEAD")
+        if "origin" not in self._git(self.project_a, "remote").splitlines():
+            self._git(self.project_a, "remote", "add", "origin", "https://github.com/example/project_a.git")
+        return {
+            "format_version": 1,
+            "event_source": "vccp",
+            "trigger": {"event_type": "pull_request.closed", "event_id": "delivery-001",
+                        "identity": "experience-task:bootstrap", "occurred_at": "2026-10-20T10:00:00Z"},
+            "repository": {"full_name": "example/project_a", "url": "https://github.com/example/project_a"},
+            "issue": {"number": 22, "url": "https://github.com/example/project_a/issues/22", "state": "closed"},
+            "pull_request": {"number": 37, "url": "https://github.com/example/project_a/pull/37",
+                             "state": "closed", "merged": True, "head_sha": head_sha,
+                             "merge_commit_sha": head_sha, "merged_at": "2026-10-20T09:59:00Z"},
+            "ci": {"name": "test", "run_id": 98765,
+                   "url": "https://github.com/example/project_a/actions/runs/98765",
+                   "head_sha": head_sha, "conclusion": "success", "completed_at": "2026-10-20T09:58:00Z"},
+            "reviews": [{"review_id": 876, "reviewer": "reviewer-a", "state": "approved",
+                          "commit_sha": head_sha,
+                          "url": "https://github.com/example/project_a/pull/37#pullrequestreview-876",
+                          "submitted_at": "2026-10-20T09:55:00Z"}],
+        }
+
+    def test_success_event_capture_is_provenance_bound_unverified_and_idempotent(self):
+        event = self._successful_merge_event()
+        pending = json.loads(json.dumps(event))
+        pending["pull_request"]["merged"] = False
+        with self.assertRaisesRegex(ExperienceError, "EVENT_NOT_SUCCESSFUL"):
+            harvest_successful_event(self.project_a, pending, self._valid_observation(), root=self.vcbs_root)
+        self.assertEqual([], list((self.vcbs_root / "experiences/candidate").glob("exp-event-*.yaml")))
+
+        created = harvest_successful_event(self.project_a, event, self._valid_observation(), root=self.vcbs_root)
+        self.assertTrue(created["created"])
+        self.assertEqual("external_delivery_unverified", created["event_hook_status"])
+        candidate = created["candidate"]
+        self.assertEqual("candidate", candidate["status"])
+        self.assertEqual("pending", candidate["review"]["review_status"])
+        self.assertEqual("host_semantic_inference_after_successful_event", candidate["capture_method"])
+        self.assertEqual("example/project_a", candidate["source"]["repository"])
+        self.assertEqual(22, candidate["source"]["issue_number"])
+        self.assertEqual(37, candidate["source"]["pull_request_number"])
+        self.assertEqual(event["pull_request"]["head_sha"], candidate["source"]["commit_sha"])
+        self.assertEqual(event["pull_request"]["merge_commit_sha"], candidate["source"]["merge_commit_sha"])
+        self.assertEqual("delivery-001", candidate["trigger"]["event_id"])
+        self.assertTrue(candidate["trigger"]["deduplication_key"])
+        self.assertTrue(candidate["trigger"]["similarity_key"])
+        self.assertEqual({"project_result", "ci_result", "reviewer_confirmation"},
+                         {item["type"] for item in candidate["evidence"] if item["source"].startswith("https://")})
+        self.assertTrue(all(item["verification"]["status"] == "unverified" for item in candidate["evidence"]))
+        self.assertNotIn(candidate["id"], load_yaml(self.vcbs_root / "profiles/personal.yaml").get("reusable_experience_ids", []))
+        with self.assertRaisesRegex(ExperienceError, "UNVERIFIED_EVIDENCE"):
+            review_experience(self.vcbs_root / "experiences/candidate" / f"{candidate['id']}.yaml",
+                              "approve", reviewer="Maintainer", root=self.vcbs_root)
+
+        replay = json.loads(json.dumps(event))
+        replay["trigger"]["event_type"] = "workflow_run.completed"
+        replay["trigger"]["event_id"] = "delivery-002"
+        replay["trigger"]["identity"] = "experience-task:bootstrap-retry"
+        duplicate = harvest_successful_event(self.project_a, replay, self._valid_observation(), root=self.vcbs_root)
+        self.assertFalse(duplicate["created"])
+        self.assertEqual("repeated_event", duplicate["reason"])
+        self.assertEqual(candidate["id"], duplicate["candidate"]["id"])
+        self.assertEqual(1, len(list((self.vcbs_root / "experiences/candidate").glob("exp-event-*.yaml"))))
+
+        similar = json.loads(json.dumps(replay))
+        similar["issue"].update(number=23, url="https://github.com/example/project_a/issues/23")
+        similar["pull_request"].update(number=38, url="https://github.com/example/project_a/pull/38")
+        similar["trigger"]["event_id"] = "delivery-003"
+        similar_duplicate = harvest_successful_event(self.project_a, similar, self._valid_observation(), root=self.vcbs_root)
+        self.assertFalse(similar_duplicate["created"])
+        self.assertEqual("similar_candidate", similar_duplicate["reason"])
+
+        candidate_path = self.vcbs_root / "experiences/candidate" / f"{candidate['id']}.yaml"
+        verify_evidence(candidate_path, "all", verifier="QA Lead",
+                        method="Independently checked merged PR and exact-head CI artifacts", root=self.vcbs_root)
+        reviewed = review_experience(candidate_path, "approve", reviewer="Maintainer", root=self.vcbs_root)
+        self.assertEqual("verified", reviewed["status"])
+        self.assertIn(candidate["id"], load_yaml(self.vcbs_root / "profiles/personal.yaml")["reusable_experience_ids"])
+
+    def test_failed_ci_open_pr_and_wrong_head_events_create_no_candidate(self):
+        event = self._successful_merge_event()
+        event["ci"]["conclusion"] = "failure"
+        with self.assertRaisesRegex(ExperienceError, "EVENT_NOT_SUCCESSFUL"):
+            harvest_successful_event(self.project_a, event, self._valid_observation(), root=self.vcbs_root)
+
+        event = self._successful_merge_event()
+        event["trigger"]["event_type"] = "pull_request.opened"
+        event["pull_request"]["merged"] = False
+        event["pull_request"]["state"] = "open"
+        event["issue"]["state"] = "open"
+        with self.assertRaisesRegex(ExperienceError, "EVENT_NOT_SUCCESSFUL"):
+            harvest_successful_event(self.project_a, event, self._valid_observation(), root=self.vcbs_root)
+
+        event = self._successful_merge_event()
+        event["ci"]["head_sha"] = "0" * 40
+        with self.assertRaisesRegex(ExperienceError, "EVENT_HEAD_MISMATCH"):
+            harvest_successful_event(self.project_a, event, self._valid_observation(), root=self.vcbs_root)
+        self.assertEqual([], list((self.vcbs_root / "experiences/candidate").glob("exp-event-*.yaml")))
+
+    def test_success_event_capture_rejects_private_payloads(self):
+        event = self._successful_merge_event()
+        event["transcript"] = "private discussion"
+        with self.assertRaisesRegex(ExperienceError, "PRIVACY"):
+            harvest_successful_event(self.project_a, event, self._valid_observation(), root=self.vcbs_root)
+
+        event = self._successful_merge_event()
+        observation = self._valid_observation()
+        observation["evidence"][0]["description"] = "api_key=abcdefghijklmnop"
+        with self.assertRaisesRegex(ExperienceError, "HARVEST_PRIVACY_VIOLATION"):
+            harvest_successful_event(self.project_a, event, observation, root=self.vcbs_root)
+
+    def test_workflow_completion_before_merge_is_ignored_then_merge_is_captured(self):
+        event = self._successful_merge_event()
+        event["trigger"]["event_type"] = "workflow_run.completed"
+        event["pull_request"]["merged"] = False
+        event["pull_request"]["state"] = "open"
+        with self.assertRaisesRegex(ExperienceError, "EVENT_NOT_SUCCESSFUL"):
+            harvest_successful_event(self.project_a, event, self._valid_observation(), root=self.vcbs_root)
+
+        merged = self._successful_merge_event()
+        merged["trigger"]["event_type"] = "pull_request.closed"
+        captured = harvest_successful_event(self.project_a, merged, self._valid_observation(), root=self.vcbs_root)
+        self.assertTrue(captured["created"])
+        self.assertEqual(1, len(list((self.vcbs_root / "experiences/candidate").glob("exp-event-*.yaml"))))
 
     def test_p0_a_harvest_creates_candidate_with_provenance_and_unverified_evidence(self):
         obs = self._valid_observation()
