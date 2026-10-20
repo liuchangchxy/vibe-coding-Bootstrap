@@ -43,7 +43,7 @@ def validate(value, schema_name, root=ROOT):
     Draft202012Validator(schema, registry=registry, format_checker=FormatChecker()).validate(value)
 
 
-def compose(context, root=ROOT):
+def compose(context, root=ROOT, selected_capability_ids=None, excluded_capability_ids=None):
     validate(context, "project-context.schema.json", root)
     catalog = load_yaml(root / "capabilities/catalog.yaml")
     validate(catalog, "catalog.schema.json", root)
@@ -78,6 +78,18 @@ def compose(context, root=ROOT):
                 for cid in profile.get("excluded_capability_ids", [])}
     for cid in [*defaults, *excluded]:
         require_id(cid)
+    selected = list(dict.fromkeys(selected_capability_ids or []))
+    declined = list(dict.fromkeys(excluded_capability_ids or []))
+    for cid in selected:
+        require_id(cid)
+        if cid in excluded:
+            raise ValueError(f"CAPABILITY_EXCLUDED: {cid} is excluded by profiles/personal.yaml")
+    for cid in declined:
+        require_id(cid)
+    if set(selected).intersection(declined):
+        raise ValueError("CAPABILITY_SELECTION_CONFLICT: a capability cannot be both selected and declined")
+    for cid in declined:
+        excluded[cid] = "Declined in guided setup; it will not be installed."
 
     experiences = []
     lifecycle = {}
@@ -149,9 +161,17 @@ def compose(context, root=ROOT):
             for cid in rule["recommend"]:
                 add(cid, f"{rule['reason']} Matched: {facts}.", rule["confidence"],
                     f"composer/rules.yaml#{rule['id']}")
-    for cid in defaults:
-        add(cid, "Explicit personal profile default; applicability still needs review.",
-            "medium", "profiles/personal.yaml#default_capability_ids")
+    if selected:
+        # An explicit guided selection is the user's chosen set; dependencies below
+        # remain visible and are added only when the Catalog requires them.
+        candidates.clear()
+    else:
+        for cid in defaults:
+            add(cid, "Explicit personal profile default; applicability still needs review.",
+                "medium", "profiles/personal.yaml#default_capability_ids")
+    for cid in selected:
+        add(cid, "Explicitly selected by the project owner; applicability constraints still require review.",
+            "medium", "guided setup selection")
 
     visited = set()
 

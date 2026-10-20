@@ -2,6 +2,25 @@
 
 The normal user flow is `inspect → plan → confirm once → apply`. Users do not need to call or understand Composer, Assembly, Materializer, Adoption, or Activation directly. Those CLIs remain available for advanced and diagnostic use.
 
+## Guided setup
+
+The user-facing `setup` command provides the same lifecycle without requiring users to author VCBS YAML:
+
+```text
+vcbs setup inspect --project-root <project> --host <codex|claude|antigravity|none> --json
+vcbs setup plan --project-root <project> --host <host> --goal <goal> [--capability <id>] [--exclude-capability <id>] [--exclude-component <id>] --scope <project|global|both> --output <plan.json>
+vcbs setup approve --plan <plan.json>
+vcbs setup apply --project-root <project> --plan <plan.json> --decision <decision.json>
+```
+
+`setup inspect` reports deterministic file and runtime-command detection, the current Compose or Adoption route, existing project assets, the Profile/Composer shortlist, Catalog applicability constraints, and component delivery status. On Adoption targets, it also returns the bounded semantic review package for the selected Host; the Host may create the result, but the CLI never claims to call a model. A missing Host executable is reported separately from workspace file support, and file presence never proves host consumption.
+
+Codex testing Skills are also available during Adoption when the existing Activation preflight can add the exact trigger safely. An existing unmanaged `AGENTS.md` stays protected and may make native activation review-required; it is never rewritten automatically.
+
+`setup plan` derives a Project Context from detected language markers and explicit options (`--goal`, `--project-type`, `--lifecycle`, `--technology`, `--platform`, `--collaboration`, `--constraint`). A supplied `--capability` list is an exact user selection, with Catalog prerequisites added and disclosed. Without it, Composer recommendations remain suggestions. `--exclude-capability` declines a recommendation, and `--exclude-component` removes one optional registered item from the plan. Profile exclusions remain binding. Scope defaults to `project`; global-copy plans require an explicit root and applying them requires the same resolved root. Global scope does not activate repo-local Host Skills.
+
+The generated plan is saved outside the consumer project. `setup approve` is the explicit human decision for that exact digest and target revision; `setup apply` delegates to the existing revision-bound, ownership-checked lifecycle. Stale inputs, unknown selections, pre-existing files, and changed managed files fail without overwriting them. No-ops need no approval or apply.
+
 ```text
 python -m bootstrap inspect --project-root <project> --host codex
 python -m bootstrap plan --project-root <project> --host codex --context <context.yaml> --output <plan.json>

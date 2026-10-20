@@ -163,15 +163,20 @@ def inspect_project(project_root, host="codex", root=ROOT):
     return value
 
 
-def _activation_plan(project, host, capabilities, root, route="compose"):
+def _activation_plan(project, host, capabilities, root, route="compose", notices=None):
     parsed = _parse_hosts(host)
     plans = []
     for h in parsed:
         if h == "none":
             continue
         if h == "codex":
-            if "testing" in capabilities and route == "compose":
-                plans.append(activation.build_plan(project, "testing", "codex", root))
+            if "testing" in capabilities:
+                plan = activation.build_plan(project, "testing", "codex", root)
+                if route == "adoption" and plan["status"] in {"review_required", "conflict"}:
+                    if notices is not None:
+                        notices.append("Codex native testing activation was omitted because existing project files require review; those files were not changed.")
+                else:
+                    plans.append(plan)
         elif h in {"claude", "claude_code"}:
             if "vcbs-manager" in capabilities:
                 plans.append(activation.build_plan(project, "vcbs-manager", "claude", root))
@@ -184,6 +189,33 @@ def _activation_plan(project, host, capabilities, root, route="compose"):
 def _materializer_rows(assembly_plan, project, global_root, root):
     result = materialize(assembly_plan, project, global_root, apply=False, root=root)
     return result, [dict(item) for item in result["items"]]
+
+
+def _exclude_assembly_components(assembly_plan, excluded_ids, root):
+    excluded_ids = set(excluded_ids or [])
+    if not excluded_ids:
+        return
+    catalog = load_yaml(Path(root) / "capabilities/catalog.yaml")
+    known = set()
+    resolved_ids = set()
+    for relative in catalog["capabilities"]:
+        record = load_yaml(Path(root) / "capabilities" / relative)
+        for item in record.get("components", []):
+            metadata = item.get("assembly", {})
+            assembly_id = metadata.get("id", item["id"])
+            aliases = {item["id"], assembly_id}
+            known.update(aliases)
+            if aliases.intersection(excluded_ids):
+                resolved_ids.add(assembly_id)
+    unknown = excluded_ids - known
+    if unknown:
+        raise ProductLoopError(f"INVALID_SELECTION: unknown component ID(s): {', '.join(sorted(unknown))}")
+    removed = [item for item in assembly_plan["components"] if item["component_id"] in resolved_ids]
+    assembly_plan["components"] = [item for item in assembly_plan["components"] if item["component_id"] not in resolved_ids]
+    assembly_plan["skipped_components"].extend({**item, "action": "skip",
+        "reason": "Declined in guided setup; this component will not be installed."} for item in removed)
+    if removed:
+        assembly_plan["warnings"].append("One or more optional components were declined in guided setup.")
 
 
 def _unified_changes(items, scope):
@@ -199,7 +231,11 @@ def _unified_changes(items, scope):
 
 
 def build_plan(project_root, host="codex", context_path=None, semantic_result_path=None,
-               global_root=None, root=ROOT):
+               global_root=None, root=ROOT, context_value=None,
+               selected_capability_ids=None, excluded_capability_ids=None,
+               excluded_component_ids=None, scope="both"):
+    if scope not in {"project", "global", "both"}:
+        raise ProductLoopError(f"INVALID_SCOPE: unsupported installation scope '{scope}'")
     current = inspect_project(project_root, host, root)
     project = Path(project_root).resolve(strict=True)
     route = current["route"]
@@ -208,11 +244,22 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
     warnings, unresolved, capabilities = [], [], []
     materialized = {"items": []}
     if route == "compose":
-        if not context_path:
+        if context_value is None and not context_path:
             raise ProductLoopError("PROJECT_CONTEXT_REQUIRED: provide an explicit Project Context file")
-        context = load_yaml(context_path)
-        recommendation = compose(context, root)
+        context = context_value if context_value is not None else load_yaml(context_path)
+        recommendation = compose(context, root, selected_capability_ids=selected_capability_ids,
+                                 excluded_capability_ids=excluded_capability_ids)
         assembly_plan = assemble(recommendation, root)
+        _exclude_assembly_components(assembly_plan, excluded_component_ids, root)
+        if scope != "both":
+            excluded = [item for item in assembly_plan["components"]
+                        if item["scope"] in {"project", "global"} and item["scope"] != scope]
+            assembly_plan["components"] = [item for item in assembly_plan["components"]
+                                            if item not in excluded]
+            assembly_plan["skipped_components"].extend({**item, "action": "skip",
+                "reason": f"Not selected for {scope} scope."} for item in excluded)
+            assembly_plan["warnings"].append(f"Only {scope}-scope components were selected for installation.")
+            validate(assembly_plan, "assembly-plan.schema.json", root)
         capabilities = assembly_plan["selected_capabilities"]
         materialized, rows = _materializer_rows(assembly_plan, project, global_root, root)
         warnings.extend(assembly_plan["warnings"])
@@ -227,14 +274,28 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
         semantic_result = json.loads(Path(semantic_result_path).read_text(encoding="utf-8"))
         validate_semantic_result(semantic_result, package, root)
         adoption_plan = build_adoption_plan(package, semantic_result, project, str(semantic_result_path), root, host=host)
-        capabilities = sorted(item["capability_id"] for item in adoption_plan["items"]
-                              if item["semantic_status"] == "missing" and item["materialization_eligible"])
+        eligible_ids = {item["capability_id"] for item in adoption_plan["items"]
+                        if item["semantic_status"] == "missing" and item["materialization_eligible"]}
+        known_ids = {item["id"] for item in package["capability_catalog"]}
+        declined_ids = set(excluded_capability_ids or [])
+        selected_ids = set(selected_capability_ids) if selected_capability_ids is not None else eligible_ids
+        invalid_ids = (selected_ids | declined_ids) - known_ids
+        if invalid_ids:
+            raise ProductLoopError(f"INVALID_SELECTION: unknown capability ID(s): {', '.join(sorted(invalid_ids))}")
+        if selected_ids.intersection(declined_ids):
+            raise ProductLoopError("CAPABILITY_SELECTION_CONFLICT: a capability cannot be both selected and declined")
+        requested_ids = selected_ids - declined_ids
+        if not requested_ids.issubset(eligible_ids):
+            invalid = ", ".join(sorted(requested_ids - eligible_ids))
+            raise ProductLoopError(f"INVALID_SELECTION: Adoption selection is not an eligible reviewed component: {invalid}")
+        capabilities = sorted(requested_ids)
         if capabilities:
             # Resolve only the exact eligible component recorded in Adoption Plan.
             catalog = load_yaml(Path(root) / "capabilities/catalog.yaml")
             records = {record["id"]: record for record in
                        (load_yaml(Path(root) / "capabilities" / relative) for relative in catalog["capabilities"])}
-            selected_items = [item for item in adoption_plan["items"] if item["materialization_eligible"]]
+            selected_items = [item for item in adoption_plan["items"]
+                              if item["materialization_eligible"] and item["capability_id"] in requested_ids]
             components = []
             parsed_hosts = _parse_hosts(host)
             for item in selected_items:
@@ -288,6 +349,16 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
                 "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
             }
             validate(assembly_plan, "assembly-plan.schema.json", root)
+            _exclude_assembly_components(assembly_plan, excluded_component_ids, root)
+            if scope != "both":
+                excluded = [item for item in assembly_plan["components"]
+                            if item["scope"] in {"project", "global"} and item["scope"] != scope]
+                assembly_plan["components"] = [item for item in assembly_plan["components"]
+                                                if item not in excluded]
+                assembly_plan["skipped_components"].extend({**item, "action": "skip",
+                    "reason": f"Not selected for {scope} scope."} for item in excluded)
+                assembly_plan["warnings"].append(f"Only {scope}-scope components were selected for installation.")
+                validate(assembly_plan, "assembly-plan.schema.json", root)
             materialized, rows = _materializer_rows(assembly_plan, project, None, root)
         else:
             rows = []
@@ -295,7 +366,18 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
                         if adoption_plan["items"][i]["disposition"] in {"review_gap", "review_conflict"})
         if adoption_plan["overall_decision"] in {"review_required", "blocked"}:
             unresolved.append({"kind": "adoption_review", "reason": adoption_plan["overall_decision"]})
-    activation_plans = _activation_plan(project, host, capabilities, root, route=route)
+    activation_notices = []
+    activation_plans = [] if scope == "global" else _activation_plan(
+        project, host, capabilities, root, route=route, notices=activation_notices)
+    warnings.extend(activation_notices)
+    excluded_components = set(excluded_component_ids or [])
+    activation_ids = {
+        ("codex", "testing"): "codex-native-testing-skill",
+        ("claude", "vcbs-manager"): "claude-native-vcbs-manager-skill",
+        ("antigravity", "vcbs-manager"): "antigravity-native-vcbs-manager-skill",
+    }
+    activation_plans = [p for p in activation_plans
+                        if activation_ids.get((p["host"], p["capability_id"])) not in excluded_components]
     for plan in activation_plans:
         if plan["status"] == "review_required":
             unresolved.append({"kind": "host_activation", "reason": "Existing host activation files require review and will not be overwritten."})
@@ -318,7 +400,7 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
     blocked = bool(unresolved)
     profile_sha = _profile_digest(root)
     catalog_revision = recommendation["catalog_revision"] if recommendation else _current_catalog_revision(root)
-    if any(p.get("host") == "antigravity" for p in activation_plans) or "antigravity" in _parse_hosts(host):
+    if scope != "global" and (any(p.get("host") == "antigravity" for p in activation_plans) or "antigravity" in _parse_hosts(host)):
         shared_notice = (
             "Antigravity skill destination '.agents/skills/vcbs-manager/SKILL.md' shares the '.agents/skills' "
             "root with Codex. Codex discovers this directory, but will not invoke the skill without an AGENTS.md trigger."
