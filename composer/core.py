@@ -9,7 +9,9 @@ from jsonschema import Draft202012Validator, FormatChecker
 from referencing import Registry, Resource
 
 
-ROOT = Path(__file__).resolve().parents[1]
+_SOURCE_ROOT = Path(__file__).resolve().parents[1]
+_PACKAGED_ROOT = Path(__file__).resolve().parent.parent / "bootstrap" / "data"
+ROOT = _PACKAGED_ROOT if (_PACKAGED_ROOT / "schemas").is_dir() else _SOURCE_ROOT
 
 
 class UniqueKeyLoader(yaml.SafeLoader):
@@ -93,17 +95,31 @@ def compose(context, root=ROOT, selected_capability_ids=None, excluded_capabilit
 
     experiences = []
     lifecycle = {}
-    lifecycle_paths = sorted(path for state in ("raw", "candidate", "verified", "rejected", "archived")
-                             for path in (root / "experiences" / state).glob("*.yaml"))
-    for path in lifecycle_paths:
-        experience = load_yaml(path)
-        validate(experience, "experience.schema.json", root)
-        if experience["id"] in lifecycle:
-            raise ValueError(f"Duplicate Experience ID: {experience['id']}")
-        lifecycle[experience["id"]] = (path, experience)
+    referenced_ids = {experience_id for record in records.values()
+                      for experience_id in record.get("experience_ids", [])}
+    referenced_ids.update(profile.get("reusable_experience_ids", []))
+    for experience_id in sorted(referenced_ids):
+        matches = sorted((root / "experiences" / "verified").glob("*.yaml"))
+        entry = None
+        for path in matches:
+            if path.stem not in {experience_id, experience_id.removeprefix("exp-")}:
+                continue
+            experience = load_yaml(path)
+            validate(experience, "experience.schema.json", root)
+            if experience.get("id") != experience_id:
+                raise ValueError(f"Experience filename and ID do not match: {path}")
+            entry = (path, experience)
+            break
+        if entry:
+            lifecycle[experience_id] = entry
+
+    # Legacy root-level records remain eligible, but malformed unlinked records are irrelevant.
     for path in sorted((root / "experiences").glob("*.yaml")):
-        experience = load_yaml(path)
-        validate(experience, "experience.schema.json", root)
+        try:
+            experience = load_yaml(path)
+            validate(experience, "experience.schema.json", root)
+        except Exception:
+            continue
         for cid in experience.get("capability_ids", []):
             require_id(cid)
         experiences.append((path.relative_to(root).as_posix(), experience))

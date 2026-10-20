@@ -100,7 +100,18 @@ def materialize(assembly_plan, project_root, global_root=None, apply=False,
                     state = "conflict"
                     reason = "Bootstrap-managed destination was modified; it was not overwritten."
                 elif existing_digest == digest:
-                    state = "unchanged"
+                    if not old_entry:
+                        state = "conflict"
+                        reason = "Destination contains matching content but is not recorded as Bootstrap-owned; it was not adopted."
+                    elif (old_entry.get("capability_version", "unspecified")
+                          != item.get("capability_version", "unspecified")):
+                        state = "upgraded"
+                        result["old_sha256"] = old_entry.get("sha256")
+                        result["old_version"] = old_entry.get("capability_version", "unspecified")
+                        result["new_version"] = item.get("capability_version", "unspecified")
+                        reason = f"Refreshing ownership metadata from {result['old_version']} to {result['new_version']}."
+                    else:
+                        state = "unchanged"
                 elif old_entry and existing_digest == old_entry.get("sha256") and digest != existing_digest:
                     state = "upgraded"
                     result["old_sha256"] = old_entry.get("sha256")

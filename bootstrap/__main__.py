@@ -8,7 +8,7 @@ import sys
 from . import __version__
 from .core import apply_plan, build_plan, decide, inspect_project, load_json, render_summary, validate_output_path, write_json
 from .guided import build_context, inspect_setup
-from .experience import harvest_experience, review_experience, verify_evidence
+from .experience import harvest_experience, harvest_successful_event, review_experience, verify_evidence
 from .lifecycle import (
     apply_uninstall, build_uninstall_plan, decide_uninstall, deploy,
     get_status, render_status_summary, render_uninstall_summary,
@@ -76,7 +76,7 @@ def _parser():
 
     upgrade_cmd = commands.add_parser("upgrade", help="Standardized VCBS safe upgrade")
     upgrade_cmd.add_argument("--project-root", default=".", help="Target project root directory")
-    upgrade_cmd.add_argument("--host", default="codex", help="Target AI host adapter (codex, claude, claude_code, antigravity, none)")
+    upgrade_cmd.add_argument("--host", default="all", help="Hosts to upgrade (default: all installed hosts; codex, claude, antigravity, none)")
     upgrade_cmd.add_argument("--context", help="Optional updated Project Context file path")
     upgrade_cmd.add_argument("--global-root", help="Global root directory")
     upgrade_cmd.add_argument("--output", help="Save generated plan to output path")
@@ -126,6 +126,13 @@ def _parser():
     harvest_cmd.add_argument("--observation", required=True)
     harvest_cmd.add_argument("--host", default="codex", help="Target AI host adapter (codex, claude, claude_code, antigravity, none)")
     harvest_cmd.add_argument("--output")
+    event_harvest_cmd = commands.add_parser(
+        "harvest-event", help="Create an unverified candidate from a successful exact-head merge event"
+    )
+    event_harvest_cmd.add_argument("--project-root", required=True)
+    event_harvest_cmd.add_argument("--event", required=True, help="Normalized VCCP/GitHub event evidence (JSON or YAML)")
+    event_harvest_cmd.add_argument("--observation", required=True, help="Host-produced bounded Experience observation")
+    event_harvest_cmd.add_argument("--host", default="codex")
     verify_cmd = commands.add_parser("verify-evidence", help="Verify candidate Experience evidence prior to approval")
     verify_cmd.add_argument("experience", help="Candidate experience path or ID")
     verify_cmd.add_argument("--verifier", required=True, help="Named verifier")
@@ -288,6 +295,15 @@ def main(argv=None):
         elif args.command == "harvest":
             value = harvest_experience(args.project_root, args.observation, args.host, args.output)
             print(f"Candidate: {value['id']} ({value['title']})")
+        elif args.command == "harvest-event":
+            value = harvest_successful_event(args.project_root, args.event, args.observation, args.host)
+            candidate = value["candidate"]
+            print(json.dumps({"status": "created" if value["created"] else "duplicate",
+                              "reason": value["reason"], "experience_id": candidate["id"],
+                              "candidate_status": candidate["status"],
+                              "event_hook_status": value["event_hook_status"],
+                              "note": "Caller-supplied event facts and AI inference remain unverified."},
+                             indent=2, ensure_ascii=False))
         elif args.command == "verify-evidence":
             idx = "all" if args.all else args.evidence_index
             value = verify_evidence(args.experience, idx, args.verifier, args.method, args.status)

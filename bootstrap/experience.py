@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+from urllib.parse import urlparse
 
 import yaml
 
@@ -62,29 +63,177 @@ def _check_privacy(value, path=""):
                 raise ExperienceError(f"HARVEST_PRIVACY_VIOLATION: host absolute path escaping project detected at {path}")
 
 
-def harvest_experience(project_root, observation, host="codex", output_path=None, root=ROOT):
+def _load_mapping(value, label):
+    if isinstance(value, (str, Path)):
+        source = Path(value)
+        if not source.is_file():
+            raise ExperienceError(f"{label.upper()}_FILE_NOT_FOUND: {value}")
+        raw_text = source.read_text(encoding="utf-8")
+        try:
+            value = yaml.safe_load(raw_text)
+        except yaml.YAMLError:
+            value = json.loads(raw_text)
+    if not isinstance(value, dict):
+        raise ExperienceError(f"INVALID_{label.upper()}: expected a structured mapping")
+    return value
+
+
+def _repository_name_from_remote(remote):
+    if "://" in remote:
+        path = urlparse(remote).path
+    elif "@" in remote and ":" in remote:
+        path = remote.split(":", 1)[1]
+    else:
+        path = remote
+    return path.strip("/").removesuffix(".git").casefold()
+
+
+def _repository_name_from_url(value):
+    return urlparse(value).path.strip("/").split("/")[:2]
+
+
+def _event_similarity_key(repository, observation):
+    normalize = lambda value: " ".join(str(value).casefold().split())
+    payload = {
+        "repository": repository.casefold(),
+        "title": normalize(observation["title"]),
+        "capability_ids": sorted(observation["capability_ids"]),
+        "lesson": normalize(observation["lesson"]),
+    }
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _existing_event_candidate(root, deduplication_key, similarity_key):
+    for state in ("candidate", "verified", "rejected", "raw", "archived"):
+        for path in sorted((Path(root) / "experiences" / state).glob("*.yaml")):
+            try:
+                record = load_yaml(path)
+            except (OSError, yaml.YAMLError) as exc:
+                raise ExperienceError(f"EXISTING_EXPERIENCE_UNREADABLE: {path.name}: {exc}") from exc
+            trigger = record.get("trigger", {}) if isinstance(record, dict) else {}
+            if not isinstance(trigger, dict):
+                raise ExperienceError(f"EXISTING_EXPERIENCE_UNREADABLE: invalid trigger in {path.name}")
+            if trigger.get("deduplication_key") == deduplication_key:
+                return record, "repeated_event"
+            if trigger.get("similarity_key") == similarity_key:
+                return record, "similar_candidate"
+    return None, None
+
+
+def _validate_success_event(project, event, root):
+    validate(event, "experience-event.schema.json", root)
+    if event["trigger"]["event_type"] == "pull_request.opened":
+        raise ExperienceError("EVENT_NOT_SUCCESSFUL: opened pull requests do not produce Experience candidates")
+    pr, issue, ci = event["pull_request"], event["issue"], event["ci"]
+    if pr["state"] != "closed" or not pr["merged"] or issue["state"] != "closed":
+        raise ExperienceError("EVENT_NOT_SUCCESSFUL: linked Issue and pull request must be closed, with the PR merged")
+    if ci["conclusion"] != "success":
+        raise ExperienceError(f"EVENT_NOT_SUCCESSFUL: CI conclusion is {ci['conclusion']}, not success")
+    if ci["head_sha"] != pr["head_sha"]:
+        raise ExperienceError("EVENT_HEAD_MISMATCH: successful CI must belong to the merged pull request head SHA")
+
+    expected_repo = event["repository"]["full_name"].casefold()
+    remote = _git(project, "remote", "get-url", "origin")
+    if _repository_name_from_remote(remote) != expected_repo:
+        raise ExperienceError("EVENT_REPOSITORY_MISMATCH: event repository does not match the local origin remote")
+    for label, value in (("repository", event["repository"]["url"]), ("issue", issue["url"]),
+                         ("pull request", pr["url"]), ("CI run", ci["url"])):
+        path_parts = _repository_name_from_url(value)
+        if len(path_parts) < 2 or "/".join(path_parts).casefold() != expected_repo:
+            raise ExperienceError(f"EVENT_PROVENANCE_MISMATCH: {label} URL does not belong to {expected_repo}")
+    if not issue["url"].rstrip("/").endswith(f"/issues/{issue['number']}"):
+        raise ExperienceError("EVENT_PROVENANCE_MISMATCH: Issue URL does not match its number")
+    if not pr["url"].rstrip("/").endswith(f"/pull/{pr['number']}"):
+        raise ExperienceError("EVENT_PROVENANCE_MISMATCH: pull request URL does not match its number")
+    if not ci["url"].rstrip("/").endswith(f"/runs/{ci['run_id']}"):
+        raise ExperienceError("EVENT_PROVENANCE_MISMATCH: CI URL does not match its run ID")
+
+    if _git(project, "rev-parse", "HEAD") != pr["merge_commit_sha"]:
+        raise ExperienceError("EVENT_CHECKOUT_MISMATCH: checkout must be the exact merged commit before harvesting")
+    if _git(project, "status", "--porcelain"):
+        raise ExperienceError("EVENT_CHECKOUT_DIRTY: event harvesting requires a clean checkout")
+
+
+def harvest_successful_event(project_root, event, observation, host="codex", root=ROOT):
+    """Create one unverified candidate from exact-head merged PR and successful CI facts."""
+    root = Path(root).resolve()
+    project = Path(project_root).resolve(strict=True)
+    if not project.is_dir():
+        raise ExperienceError(f"INVALID_PROJECT_ROOT: {project_root} is not a directory")
+    event_data = _load_mapping(event, "event")
+    observation_data = _load_mapping(observation, "observation")
+    _check_privacy(event_data)
+    _check_privacy(observation_data)
+    _validate_success_event(project, event_data, root)
+
+    pr, issue, ci = event_data["pull_request"], event_data["issue"], event_data["ci"]
+    repository = event_data["repository"]["full_name"]
+    dedupe_payload = f"{repository.casefold()}#{pr['number']}@{pr['head_sha']}"
+    deduplication_key = hashlib.sha256(dedupe_payload.encode("utf-8")).hexdigest()
+    similarity_key = _event_similarity_key(repository, observation_data)
+    existing, reason = _existing_event_candidate(root, deduplication_key, similarity_key)
+    if existing:
+        return {"created": False, "reason": reason, "candidate": existing,
+                "event_hook_status": "external_delivery_unverified"}
+
+    observation_data = dict(observation_data)
+    observation_data["evidence"] = list(observation_data["evidence"])
+    observation_data["evidence"].extend([
+        {"type": "project_result", "source": pr["url"],
+         "description": f"Pull request #{pr['number']} was merged at commit {pr['merge_commit_sha']}.",
+         "strength": "moderate"},
+        {"type": "ci_result", "source": ci["url"],
+         "description": f"{ci['name']} completed successfully for exact PR head {pr['head_sha']}.",
+         "strength": "moderate"},
+    ])
+    for review in event_data.get("reviews", []):
+        if review["state"] == "approved" and review["commit_sha"] == pr["head_sha"]:
+            observation_data["evidence"].append({
+                "type": "reviewer_confirmation", "source": review["url"],
+                "description": f"{review['reviewer']} approved exact PR head {pr['head_sha']}.",
+                "strength": "moderate",
+            })
+
+    metadata = {
+        "event_source": event_data["event_source"],
+        "event_type": event_data["trigger"]["event_type"],
+        "event_id": event_data["trigger"]["event_id"],
+        "identity": event_data["trigger"]["identity"],
+        "deduplication_key": deduplication_key,
+        "similarity_key": similarity_key,
+        "occurred_at": event_data["trigger"]["occurred_at"],
+        "repository": repository,
+        "issue_number": issue["number"],
+        "pull_request_number": pr["number"],
+        "pull_request_url": pr["url"],
+        "commit_sha": pr["head_sha"],
+        "merge_commit_sha": pr["merge_commit_sha"],
+        "ci_run_url": ci["url"],
+    }
+    event_id = f"exp-event-{deduplication_key[:16]}"
+    try:
+        candidate = harvest_experience(project, observation_data, host=host, root=root,
+                                       event_metadata=metadata, event_candidate_id=event_id)
+    except FileExistsError:
+        existing, reason = _existing_event_candidate(root, deduplication_key, similarity_key)
+        if existing:
+            return {"created": False, "reason": reason or "repeated_event", "candidate": existing,
+                    "event_hook_status": "external_delivery_unverified"}
+        raise
+    return {"created": True, "reason": "successful_event", "candidate": candidate,
+            "event_hook_status": "external_delivery_unverified"}
+
+
+def harvest_experience(project_root, observation, host="codex", output_path=None, root=ROOT,
+                       event_metadata=None, event_candidate_id=None):
     """Harvest bounded project observation into a candidate Experience."""
     root = Path(root).resolve()
     project = Path(project_root).resolve(strict=True)
     if not project.is_dir():
         raise ExperienceError(f"INVALID_PROJECT_ROOT: {project_root} is not a directory")
 
-    if isinstance(observation, (str, Path)):
-        obs_path = Path(observation)
-        if not obs_path.is_file():
-            raise ExperienceError(f"OBSERVATION_FILE_NOT_FOUND: {observation}")
-        raw_text = obs_path.read_text(encoding="utf-8")
-        try:
-            obs = yaml.safe_load(raw_text)
-        except yaml.YAMLError:
-            obs = json.loads(raw_text)
-    elif isinstance(observation, dict):
-        obs = observation
-    else:
-        raise ExperienceError("INVALID_OBSERVATION: observation must be a dict or file path")
-
-    if not isinstance(obs, dict):
-        raise ExperienceError("INVALID_OBSERVATION: observation must be a structured mapping")
+    obs = _load_mapping(observation, "observation")
 
     # Enforce privacy and leak prevention
     _check_privacy(obs)
@@ -103,7 +252,7 @@ def harvest_experience(project_root, observation, host="codex", output_path=None
 
     title_slug = re.sub(r"[^a-z0-9]+", "-", obs["title"].lower()).strip("-")[:32]
     content_hash = hashlib.sha256(f"{project_name}:{commit_sha}:{title_slug}".encode()).hexdigest()[:8]
-    exp_id = f"exp-{title_slug}-{content_hash}"
+    exp_id = event_candidate_id or f"exp-{title_slug}-{content_hash}"
 
     # Build evidence with unverified status on harvest
     evidence_items = []
@@ -152,16 +301,34 @@ def harvest_experience(project_root, observation, host="codex", output_path=None
         "scope": obs.get("scope", [project_name]),
         "reasoning": obs["reasoning"],
         "status": "candidate",
+        "capture_method": "host_semantic_inference_after_successful_event" if event_metadata else "host_semantic_harvest",
         "review": {
             "review_status": "pending",
         },
     }
+    if event_metadata:
+        candidate["source"].update({
+            key: event_metadata[key] for key in (
+                "repository", "issue_number", "pull_request_number", "pull_request_url",
+                "commit_sha", "merge_commit_sha", "ci_run_url",
+            )
+        })
+        candidate["source"]["record_uri"] = event_metadata["pull_request_url"]
+        candidate["trigger"] = {key: event_metadata[key] for key in (
+            "event_source", "event_type", "event_id", "identity", "deduplication_key",
+            "similarity_key", "occurred_at",
+        )}
 
     validate(candidate, "experience.schema.json", root)
 
     dest = Path(output_path).resolve() if output_path else root / "experiences/candidate" / f"{exp_id}.yaml"
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(yaml.safe_dump(candidate, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    serialized = yaml.safe_dump(candidate, sort_keys=False, allow_unicode=True)
+    if event_metadata:
+        with dest.open("x", encoding="utf-8", newline="\n") as stream:
+            stream.write(serialized)
+    else:
+        dest.write_text(serialized, encoding="utf-8")
     return candidate
 
 

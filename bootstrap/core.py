@@ -178,11 +178,9 @@ def _activation_plan(project, host, capabilities, root, route="compose", notices
                 else:
                     plans.append(plan)
         elif h in {"claude", "claude_code"}:
-            if "vcbs-manager" in capabilities:
-                plans.append(activation.build_plan(project, "vcbs-manager", "claude", root))
+            plans.append(activation.build_plan(project, "vcbs-manager", "claude", root))
         elif h == "antigravity":
-            if "vcbs-manager" in capabilities:
-                plans.append(activation.build_plan(project, "vcbs-manager", "antigravity", root))
+            plans.append(activation.build_plan(project, "vcbs-manager", "antigravity", root))
     return plans
 
 

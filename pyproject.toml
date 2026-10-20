@@ -15,3 +15,12 @@ dependencies = [
 
 [project.scripts]
 vcbs = "bootstrap.__main__:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["bootstrap*", "composer*", "materializer*", "activation*", "adoption*", "assembly*"]
+
+[tool.setuptools.package-data]
+bootstrap = ["data/**/*"]

@@ -19,6 +19,8 @@ For an existing project, pass the Host-generated semantic result with `--semanti
 
 The `approve` command records explicit consent for the exact plan digest and target revision. `apply` refuses a missing or mismatched decision and rechecks ownership, revision, scope, and conflicts before writing.
 
+`vcbs harvest-event` can capture a caller-supplied successful merge event as an unverified Experience candidate. The pinned VCCP integration currently has no post-merge delivery hook; see [Experience Event Capture](docs/experience-events.md).
+
 ### Lifecycle operations
 
 VCBS provides four standardized lifecycle operations for end users:

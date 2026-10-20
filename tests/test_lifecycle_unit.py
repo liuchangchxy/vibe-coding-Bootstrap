@@ -88,9 +88,25 @@ class LifecycleUnitTests(unittest.TestCase):
         self.assertFalse(status["has_conflicts"])
         self.assertEqual("compose", status["route_prediction"])
         self.assertFalse(status["target"]["dirty"])
+
+    def test_global_assets_without_global_root_are_unknown_not_missing(self):
+        self._deploy_initial()
+        status = get_status(self.project, host="codex", root=self.vcbs_root)
+        global_items = [item for item in status["components"] if item["scope"] == "global"]
+        self.assertTrue(global_items)
+        self.assertTrue(all(item["status"] == "location_unknown" for item in global_items))
+        self.assertEqual("installed", status["status"])
         summary = render_status_summary(status)
-        self.assertIn("VCBS Status: NOT_INSTALLED", summary)
-        self.assertIn("Managed Components: none", summary)
+        self.assertIn("reviewable-changes [global] (v1, location_unknown)", summary)
+
+    def test_installed_project_can_plan_an_additional_host(self):
+        self._deploy_initial()
+        result = deploy(self.project, host="codex,claude", context_path=self.context_file,
+                        global_root=self.global_root, root=self.vcbs_root)
+        self.assertEqual("preview", result["status"])
+        hosts = {plan["host"] for plan in result["plan"]["host_activations"]}
+        self.assertIn("codex", hosts)
+        self.assertIn("claude", hosts)
 
     def test_status_detects_unmanaged_ai_assets(self):
         """Pre-existing AI configs are detected as unmanaged assets and predict adoption route."""
