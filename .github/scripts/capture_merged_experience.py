@@ -49,6 +49,10 @@ def main():
         run = sorted(matches, key=lambda item: item["run_number"])[-1]
         ci_url, conclusion, run_id = run["html_url"], run["conclusion"], run["id"]
         occurred_at = pr["closed_at"]
+        ci_completed_at = run["updated_at"]
+
+    if trigger == "workflow_run":
+        ci_completed_at = occurred_at
 
     issue = gh_json(f"repos/{repo}/issues/{number}")
     repository_url = f"https://github.com/{repo}"
@@ -65,7 +69,7 @@ def main():
                          "merged": pr["merged"], "head_sha": head_sha,
                          "merge_commit_sha": pr["merge_commit_sha"], "merged_at": pr["merged_at"]},
         "ci": {"name": "CI", "run_id": run_id, "url": ci_url, "head_sha": head_sha,
-               "conclusion": conclusion, "completed_at": occurred_at},
+               "conclusion": conclusion, "completed_at": ci_completed_at},
     }
     observation = {
         "title": pr["title"],
