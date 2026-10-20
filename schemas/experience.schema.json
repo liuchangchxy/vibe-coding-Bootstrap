@@ -40,6 +40,7 @@
     "confidence": { "enum": ["low", "medium", "high"] },
     "lesson": { "type": "string", "description": "A cautious, reusable takeaway, including known limits." },
     "recorded_by": { "type": "string", "minLength": 1 },
+    "capture_method": { "type": "string", "minLength": 1 },
     "recorded_at": { "type": "string", "format": "date-time" },
     "identity": { "type": "string", "minLength": 1 },
     "source": {
@@ -49,10 +50,31 @@
         "project": { "type": "string", "minLength": 1 },
         "recorded_by": { "type": "string", "minLength": 1 },
         "record_uri": { "type": "string", "format": "uri-reference" },
-        "recorded_at": { "type": "string", "format": "date-time" }
+        "recorded_at": { "type": "string", "format": "date-time" },
+        "repository": { "type": "string", "pattern": "^[^/\\s]+/[^/\\s]+$" },
+        "issue_number": { "type": "integer", "minimum": 1 },
+        "pull_request_number": { "type": "integer", "minimum": 1 },
+        "pull_request_url": { "type": "string", "format": "uri" },
+        "commit_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "merge_commit_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "ci_run_url": { "type": "string", "format": "uri" }
       }
     },
     "context": { "type": "string", "minLength": 1 },
+    "trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_source", "event_type", "event_id", "identity", "deduplication_key", "similarity_key", "occurred_at"],
+      "properties": {
+        "event_source": { "enum": ["vccp", "github", "host"] },
+        "event_type": { "type": "string", "minLength": 1 },
+        "event_id": { "type": "string", "minLength": 1 },
+        "identity": { "type": "string", "minLength": 1 },
+        "deduplication_key": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "similarity_key": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "occurred_at": { "type": "string", "format": "date-time" }
+      }
+    },
     "observation": { "type": "string", "minLength": 1 },
     "solution": { "type": "string", "minLength": 1 },
     "scope": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },

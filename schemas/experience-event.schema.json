@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/experience-event.schema.json",
+  "title": "Successful Experience Capture Event",
+  "description": "Caller-supplied, exact-head event facts that may trigger an unverified Experience candidate.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format_version", "event_source", "trigger", "repository", "issue", "pull_request", "ci"],
+  "properties": {
+    "format_version": { "const": 1 },
+    "event_source": { "enum": ["vccp", "github", "host"] },
+    "trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_type", "event_id", "identity", "occurred_at"],
+      "properties": {
+        "event_type": { "enum": ["pull_request.closed", "workflow_run.completed", "issues.closed", "host.manual", "pull_request.opened"] },
+        "event_id": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "identity": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "occurred_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["full_name", "url"],
+      "properties": {
+        "full_name": { "type": "string", "pattern": "^[^/\\s]+/[^/\\s]+$" },
+        "url": { "type": "string", "format": "uri" }
+      }
+    },
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["number", "url", "state"],
+      "properties": {
+        "number": { "type": "integer", "minimum": 1 },
+        "url": { "type": "string", "format": "uri" },
+        "state": { "enum": ["open", "closed"] }
+      }
+    },
+    "pull_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["number", "url", "state", "merged", "head_sha", "merge_commit_sha", "merged_at"],
+      "properties": {
+        "number": { "type": "integer", "minimum": 1 },
+        "url": { "type": "string", "format": "uri" },
+        "state": { "enum": ["open", "closed"] },
+        "merged": { "type": "boolean" },
+        "head_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "merge_commit_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "merged_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ci": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "run_id", "url", "head_sha", "conclusion", "completed_at"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "run_id": { "type": ["string", "integer"], "minLength": 1 },
+        "url": { "type": "string", "format": "uri" },
+        "head_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "conclusion": { "enum": ["success", "failure", "cancelled", "timed_out", "neutral", "skipped"] },
+        "completed_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "reviews": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["review_id", "reviewer", "state", "commit_sha", "url", "submitted_at"],
+        "properties": {
+          "review_id": { "type": ["string", "integer"], "minLength": 1 },
+          "reviewer": { "type": "string", "minLength": 1 },
+          "state": { "enum": ["approved", "changes_requested", "commented", "dismissed"] },
+          "commit_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+          "url": { "type": "string", "format": "uri" },
+          "submitted_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}
