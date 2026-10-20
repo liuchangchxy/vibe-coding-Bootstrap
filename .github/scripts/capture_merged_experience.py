@@ -3,12 +3,36 @@
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 
 
 def gh_json(endpoint):
     return json.loads(subprocess.check_output(["gh", "api", endpoint], text=True))
+
+
+def linked_issues(repo, number):
+    owner, name = repo.split("/", 1)
+    query = ("query($owner:String!, $name:String!, $number:Int!) { repository(owner:$owner,name:$name) { "
+             "pullRequest(number:$number) { closingIssuesReferences(first:100) { nodes { number url title state body } } } } }")
+    response = json.loads(subprocess.check_output([
+        "gh", "api", "graphql", "-f", f"query={query}", "-F", f"owner={owner}",
+        "-F", f"name={name}", "-F", f"number={number}",
+    ], text=True))
+    return response["data"]["repository"]["pullRequest"]["closingIssuesReferences"]["nodes"]
+
+
+def section(body, *names):
+    if not body:
+        return ""
+    wanted = {name.casefold() for name in names}
+    headings = list(re.finditer(r"(?m)^#{1,4}\s+([^\n]+)\s*$", body))
+    for index, heading in enumerate(headings):
+        if heading.group(1).strip().casefold().rstrip(":") in wanted:
+            end = headings[index + 1].start() if index + 1 < len(headings) else len(body)
+            return body[heading.end():end].strip()[:1500]
+    return ""
 
 
 def main():
@@ -54,7 +78,11 @@ def main():
     if trigger == "workflow_run":
         ci_completed_at = occurred_at
 
-    issue = gh_json(f"repos/{repo}/issues/{number}")
+    issues = linked_issues(repo, number)
+    if not issues:
+        print(f"PR #{number} has no GitHub-linked closing Issue; skipping Experience capture.")
+        return 0
+    issue = issues[0]
     repository_url = f"https://github.com/{repo}"
     event = {
         "format_version": 1,
@@ -64,30 +92,37 @@ def main():
                     "identity": "github-actions:merged-experience-capture",
                     "occurred_at": occurred_at},
         "repository": {"full_name": repo, "url": repository_url},
-        "issue": {"number": number, "url": issue["html_url"], "state": issue["state"]},
+        "issue": {"number": issue["number"], "url": issue["url"], "state": issue["state"].lower()},
         "pull_request": {"number": number, "url": pr["html_url"], "state": pr["state"],
                          "merged": pr["merged"], "head_sha": head_sha,
                          "merge_commit_sha": pr["merge_commit_sha"], "merged_at": pr["merged_at"]},
         "ci": {"name": "CI", "run_id": run_id, "url": ci_url, "head_sha": head_sha,
                "conclusion": conclusion, "completed_at": ci_completed_at},
     }
+    problem = section(issue.get("body", ""), "problem", "context", "why")
+    approach = section(pr.get("body", ""), "approach", "solution", "implementation")
+    outcome = section(pr.get("body", ""), "outcome", "result", "validation")
+    lesson = section(pr.get("body", ""), "lesson", "reusable lesson", "what we learned")
+    if not (problem and approach and outcome and lesson):
+        print(f"PR #{number} lacks structured Problem, Approach, Outcome, and Lesson sections; skipping low-signal capture.")
+        return 0
     observation = {
         "title": pr["title"],
-        "approach": "A pull request was merged and the repository CI workflow succeeded.",
+        "approach": approach,
         "capability_ids": [],
-        "outcome": {"summary": f"CI succeeded for merged pull request #{number}.", "result": "success",
+        "outcome": {"summary": outcome, "result": "success",
                     "measures": []},
-        "observation": f"Pull request #{number} merged at {pr['merge_commit_sha']} after CI succeeded for its exact head.",
-        "solution": "The repository recorded the merged change and its successful CI run as source evidence.",
-        "lesson": "This event confirms a merge and CI result only; it does not establish causality or a generally reusable practice.",
-        "reasoning": {"interpretation": "Repository metadata records a successful merge and exact-head CI run.",
-                      "limits": ["No causal or cross-project claim is inferred." ]},
+        "observation": problem,
+        "solution": approach,
+        "lesson": lesson,
+        "reasoning": {"interpretation": "The candidate summarizes the linked Issue and structured PR notes; CI proves the exact PR head passed.",
+                      "limits": ["The lesson is an unverified author summary and requires human review before reuse."]},
         "scope": ["repository-event"],
         "confidence": "low",
         "evidence": [{"type": "project_result", "source": pr["html_url"],
                       "description": f"Pull request #{number} merged as {pr['merge_commit_sha']}.",
                       "strength": "moderate"}],
-        "project_context": {"project_type": "software-project", "goal": "Record a successful repository change.",
+        "project_context": {"project_type": "software-project", "goal": problem[:500],
                             "technologies": [], "constraints": ["event-derived; causality unverified"]},
     }
     worktree = Path(os.environ["RUNNER_TEMP"]) / f"vcbs-merged-{number}-{head_sha[:8]}"
