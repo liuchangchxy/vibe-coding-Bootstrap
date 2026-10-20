@@ -5,7 +5,7 @@
   "claude_cli_version": "claude 2.1.303",
   "reason": "Claude Code CLI is installed (version 2.1.303). However, headless non-interactive execution (`claude -p`) requires interactive permission approval or times out on automated tool execution in non-interactive background environments, so end-to-end autonomous invocation of the skill to execute read-only VCBS inspect commands cannot be safely verified headlessly without human interactive terminal sessions. In strict accordance with Frozen Issue #1 acceptance criteria ('If an installed host or its automation interface is unavailable, report NOT_TESTED with the exact reason; never promote unit tests/file existence to full host activation') and Requirement 5 ('merely writing a Skill file is not proof a host used it'), host runtime invocation is recorded as NOT_TESTED rather than promoting file presence to full activation.",
   "skill_destination": ".claude/skills/vcbs-manager/SKILL.md",
-  "production_skill_sha256": "26b91439aa6559efd8d2dba0e908afef569533ca6202ffe55470eb48760a3bac",
+  "production_skill_sha256": "fc878a692b4ca605bdeba79d8acfa86bab1171f4848fbd57840f99d6d78a6bb6",
   "unit_tests_passed": true,
   "filesystem_isolation_verified": true
 }
