@@ -300,7 +300,7 @@ class RepositoryIntegrityTests(unittest.TestCase):
         catalog = load_yaml(ROOT / "capabilities/catalog.yaml")
         versions = {load_yaml(ROOT / "capabilities" / path)["id"]: load_yaml(ROOT / "capabilities" / path)["version"]
                     for path in catalog["capabilities"]}
-        self.assertEqual(8, len(versions))
+        self.assertEqual(9, len(versions))
         self.assertEqual("2", versions["testing"])
         self.assertEqual({"1"}, {version for cid, version in versions.items() if cid != "testing"})
 

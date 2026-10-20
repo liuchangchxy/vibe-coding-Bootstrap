@@ -80,6 +80,25 @@
       },
       "additionalProperties": false
     },
+    "native_activations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["host", "capability", "status", "destination", "installed_sha256", "actual_sha256", "desired_sha256"],
+        "properties": {
+          "host": { "type": "string" },
+          "capability": { "type": "string" },
+          "status": { "enum": ["active", "update_available", "conflict", "missing", "not_active"] },
+          "destination": { "type": ["string", "null"] },
+          "installed_sha256": { "type": ["string", "null"] },
+          "actual_sha256": { "type": ["string", "null"] },
+          "desired_sha256": { "type": ["string", "null"] },
+          "shared_surface_with": { "type": ["string", "null"] },
+          "shared_surface_notice": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
     "host_support": {
       "type": "object",
       "required": ["host", "supported", "native_activation", "known_hosts"],

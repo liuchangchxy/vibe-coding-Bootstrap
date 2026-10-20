@@ -85,14 +85,18 @@ def _deployment_paths(plan, project):
                 raise RecoveryError("SNAPSHOT_UNSAFE: project destination escapes target") from exc
             rel = _safe_rel(rel)
             paths[rel] = {"path": rel, "scope": "project", "source": "materializer", "existed_before": None}
-    if any(item.get("result") in {"copied", "upgraded", "removed", "uninstalled"} for item in plan.get("project_changes", [])):
+    if (any(item.get("result") in {"copied", "upgraded", "removed", "uninstalled", "reference_only"} for item in plan.get("project_changes", []))
+            or ".vibe-coding-bootstrap/manifest.yaml" in plan.get("manifest_updates", [])):
         rel = ".vibe-coding-bootstrap/manifest.yaml"
         paths[rel] = {"path": rel, "scope": "project", "source": "materializer_manifest", "existed_before": None}
     for subplan in plan.get("host_activations", []):
         if subplan.get("status") in {"ready", "deactivating", "removed", "uninstalled"}:
-            for rel in (subplan["destination"], subplan["agents_destination"], ".vibe-coding-bootstrap/activation.json"):
+            dest_list = [subplan["destination"], ".vibe-coding-bootstrap/activation.json"]
+            if subplan.get("agents_destination"):
+                dest_list.append(subplan["agents_destination"])
+            for rel in dest_list:
                 rel = _safe_rel(rel)
-                paths[rel] = {"path": rel, "scope": "project", "source": "codex_activation", "existed_before": None}
+                paths[rel] = {"path": rel, "scope": "project", "source": f"{subplan.get('host', 'codex')}_activation", "existed_before": None}
     for item in plan.get("global_changes", []):
         if item.get("result") in {"copied", "upgraded", "removed", "uninstalled"}:
             if not plan.get("global_root"):
@@ -131,10 +135,14 @@ def _snapshot(project, head, deployment_id):
 
 
 def prepare_deployment(plan, project, global_root=None):
-    deployment_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + plan["plan_digest"][:12]
+    base_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + plan["plan_digest"][:12]
+    deployment_id = base_id
+    counter = 1
     metadata = _metadata_dir(project, deployment_id)
-    if metadata.exists():
-        raise RecoveryError("SNAPSHOT_FAILED: deployment metadata already exists")
+    while metadata.exists():
+        deployment_id = f"{base_id}-{counter:02d}"
+        metadata = _metadata_dir(project, deployment_id)
+        counter += 1
     head = _git(project, "rev-parse", "HEAD")
     actions = _deployment_paths(plan, project)
     try:

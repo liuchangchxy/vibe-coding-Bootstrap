@@ -115,4 +115,47 @@ python -m bootstrap uninstall --project-root <project> [--component <id>] [--com
 - Clean manifest lifecycle: Removes `manifest.yaml` if all managed items are uninstalled, or updates it if partial component uninstall is selected.
 - Rollback support: Apply takes a pre-uninstall Git snapshot. Exact pre-uninstall files and manifests can be restored via `python -m bootstrap rollback`.
 
-Supported Hosts: `codex` and `none`. Native activation is Codex-only and Compose-only when testing is selected. Adoption remains conservative and does not add Host activation. No automatic Git add, commit, or push occurs in a consumer project.
+## Supported AI Hosts & Native Activation Contracts
+
+Supported Hosts: `codex`, `claude` (and `claude_code`), `antigravity`, and `none`.
+When targeting either host or both (`--host claude,antigravity`), VCBS provides a single bounded consent and plan with per-host digests.
+
+### Host Activation Contracts & Destinations
+
+1. **Codex (`host: codex`)**:
+   - Destination: `.agents/skills/bootstrap-testing/SKILL.md`
+   - Trigger: Exact trigger appended to `AGENTS.md`: `For implementation or bug-fix tasks that change observable behavior, use the $bootstrap-testing skill.`
+   - Contract: Codex CLI requires both the repo-local Skill and the exact `AGENTS.md` trigger.
+   - Reference: [Codex Native Activation](codex-native-activation.md).
+
+2. **Claude Code (`host: claude` / `host: claude_code`)**:
+   - Destination: `.claude/skills/vcbs-manager/SKILL.md`
+   - Contract: Claude Code automatically discovers repo-local skills in `.claude/skills/<name>/SKILL.md` with standard YAML frontmatter (`name`, `description`). No instruction file modification (`CLAUDE.md`) is performed.
+   - Capability: `vcbs-manager` (workflow guidance for real read-only VCBS inspection, bounded planning, and human confirmation).
+
+3. **Google Antigravity (`host: antigravity`)**:
+   - Destination: `.agents/skills/vcbs-manager/SKILL.md`
+   - Contract: Antigravity discovers workspace customizations in `.agents/skills/<name>/SKILL.md` via progressive disclosure (skills are indexed by frontmatter and loaded into context on demand). No instruction file modification (`AGENTS.md` / `GEMINI.md`) is performed.
+   - Capability: `vcbs-manager` (workflow guidance for real read-only VCBS inspection, bounded planning, and human confirmation).
+
+4. **None (`host: none`)**:
+   - No native host activations or Skill files are installed. Standard managed assets in `manifest.yaml` are materialized as planned.
+
+### Shared `.agents` Ownership Isolation & Discovery Rules
+
+Both Codex and Google Antigravity utilize the repo-local `.agents/skills/` hierarchy:
+- Shared Discovery Root: Both Codex and Antigravity inspect `.agents/skills/`. Deploying an Antigravity skill places it on Codex's discovery surface.
+- Trigger Isolation: Codex requires an explicit trigger line in `AGENTS.md` to invoke skills. Antigravity activation does not mutate `AGENTS.md`, preventing unintended automatic Codex execution.
+- Informed Consent: Planning for Antigravity surfaces an explicit warning alerting the user to the shared discovery root with Codex.
+- Subdirectory Isolation: Codex owns `.agents/skills/bootstrap-testing/`; Antigravity owns `.agents/skills/vcbs-manager/`. Paths never collide.
+- Ownership tracking: The target manifest `.vibe-coding-bootstrap/activation.json` records individual activations per `(host, capability)` tuple, tracking artifact paths, sources, and SHA-256 digests. Multi-host activation manifests record `host: "multiple"` while preserving per-activation entries.
+- Coexistence: Installing, upgrading, or uninstalling an Antigravity skill does not affect Codex's `bootstrap-testing` skill or `AGENTS.md`, and vice versa.
+
+### Host Consumption Semantics vs. File Presence
+
+**Merely writing a Skill file to disk is NOT proof that a host has consumed or used it.**
+- File presence in `.claude/skills/` or `.agents/skills/` establishes only that the skill asset has been deployed and is available for host discovery.
+- Proving actual host consumption requires revision-bound runtime discovery and invocation evidence (such as a non-interactive CLI execution transcript where the host selects and invokes the skill).
+- If a host or its automation interface is unavailable on the target machine, the status MUST be reported as `NOT_TESTED` with the exact reason, rather than inferring or claiming host activation from file existence.
+
+No automatic Git add, commit, or push occurs in a consumer project.

@@ -75,8 +75,11 @@ def _owned_state(project):
     if activation_manifest.is_file():
         try:
             data = json.loads(activation_manifest.read_text(encoding="utf-8"))
-            if data.get("format_version") == 1 and data.get("host") == "codex":
-                for item in data.get("artifacts", []):
+            if data.get("format_version") == 1:
+                raw_items = list(data.get("artifacts", []))
+                for act in data.get("activations", []):
+                    raw_items.extend(act.get("artifacts", []))
+                for item in raw_items:
                     dest = item.get("destination", "")
                     try:
                         p = Path(dest)
@@ -116,9 +119,30 @@ def _route(project, report):
     return ("adoption" if detected else "compose"), signals, unmanaged
 
 
+def _parse_hosts(host_str):
+    if not host_str:
+        return []
+    if host_str == "none":
+        return ["none"]
+    if host_str == "all":
+        return ["codex", "claude", "antigravity"]
+    parts = [p.strip() for p in host_str.split(",") if p.strip()]
+    valid = {"codex", "none", "claude", "claude_code", "antigravity"}
+    for p in parts:
+        if p not in valid:
+            raise ProductLoopError(f"UNSUPPORTED_HOST: unsupported host '{p}'")
+    if "none" in parts and len(parts) > 1:
+        raise ProductLoopError("UNSUPPORTED_HOST: 'none' cannot be combined with other hosts")
+    normalized = []
+    for p in parts:
+        norm = "claude" if p == "claude_code" else p
+        if norm not in normalized:
+            normalized.append(norm)
+    return normalized
+
+
 def inspect_project(project_root, host="codex", root=ROOT):
-    if host not in {"codex", "none"}:
-        raise ProductLoopError("UNSUPPORTED_HOST: supported hosts are codex and none")
+    _parse_hosts(host)
     project = Path(project_root).resolve(strict=True)
     if not project.is_dir():
         raise ProductLoopError("INVALID_PROJECT_ROOT: target must be a directory")
@@ -139,10 +163,22 @@ def inspect_project(project_root, host="codex", root=ROOT):
     return value
 
 
-def _activation_plan(project, host, capabilities, root):
-    if host != "codex" or "testing" not in capabilities:
-        return []
-    return [activation.build_plan(project, "testing", "codex", root)]
+def _activation_plan(project, host, capabilities, root, route="compose"):
+    parsed = _parse_hosts(host)
+    plans = []
+    for h in parsed:
+        if h == "none":
+            continue
+        if h == "codex":
+            if "testing" in capabilities and route == "compose":
+                plans.append(activation.build_plan(project, "testing", "codex", root))
+        elif h in {"claude", "claude_code"}:
+            if "vcbs-manager" in capabilities:
+                plans.append(activation.build_plan(project, "vcbs-manager", "claude", root))
+        elif h == "antigravity":
+            if "vcbs-manager" in capabilities:
+                plans.append(activation.build_plan(project, "vcbs-manager", "antigravity", root))
+    return plans
 
 
 def _materializer_rows(assembly_plan, project, global_root, root):
@@ -190,7 +226,7 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
         package = current["semantic_package"]
         semantic_result = json.loads(Path(semantic_result_path).read_text(encoding="utf-8"))
         validate_semantic_result(semantic_result, package, root)
-        adoption_plan = build_adoption_plan(package, semantic_result, project, str(semantic_result_path), root)
+        adoption_plan = build_adoption_plan(package, semantic_result, project, str(semantic_result_path), root, host=host)
         capabilities = sorted(item["capability_id"] for item in adoption_plan["items"]
                               if item["semantic_status"] == "missing" and item["materialization_eligible"])
         if capabilities:
@@ -200,20 +236,47 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
                        (load_yaml(Path(root) / "capabilities" / relative) for relative in catalog["capabilities"])}
             selected_items = [item for item in adoption_plan["items"] if item["materialization_eligible"]]
             components = []
+            parsed_hosts = _parse_hosts(host)
             for item in selected_items:
                 eligible = item["bootstrap_component"]
                 source_record = records[eligible["source_capability"]]
-                component = next(value for value in source_record["components"] if value["id"] == eligible["component_id"])
-                metadata = component["assembly"]
-                components.append({
-                    "component_id": metadata["id"], "component_type": metadata["type"],
-                    "source_capability": eligible["source_capability"], "reason": item["reason"],
-                    "scope": metadata["scope"], "source": metadata["source"],
-                    "delivery": metadata["delivery"], "action": "include",
-                    "capability_version": source_record.get("version", "unspecified"),
-                    "configuration_preview": metadata.get("configuration", {}),
-                    "dependencies": [], "conflicts": [], "destination": metadata["destination"],
-                })
+                if eligible["delivery"] == "reference" and len(parsed_hosts) > 1:
+                    for h in parsed_hosts:
+                        th = "claude" if h in {"claude", "claude_code"} else h
+                        matched = next((c for c in source_record["components"]
+                                        if c.get("assembly", {}).get("delivery") == "reference"
+                                        and (c.get("assembly", {}).get("provenance", {}).get("activation_adapter") == th
+                                             or th in c.get("id", ""))), None)
+                        if matched:
+                            metadata = matched["assembly"]
+                            entry = {
+                                "component_id": metadata["id"], "component_type": metadata["type"],
+                                "source_capability": eligible["source_capability"], "reason": item["reason"],
+                                "scope": metadata["scope"], "source": metadata["source"],
+                                "delivery": metadata["delivery"], "action": "include",
+                                "capability_version": source_record.get("version", "unspecified"),
+                                "configuration_preview": metadata.get("configuration", {}),
+                                "dependencies": [], "conflicts": [],
+                            }
+                            if metadata.get("destination"):
+                                entry["destination"] = metadata["destination"]
+                            if not any(c["component_id"] == entry["component_id"] for c in components):
+                                components.append(entry)
+                else:
+                    component = next(value for value in source_record["components"] if value["id"] == eligible["component_id"])
+                    metadata = component["assembly"]
+                    entry = {
+                        "component_id": metadata["id"], "component_type": metadata["type"],
+                        "source_capability": eligible["source_capability"], "reason": item["reason"],
+                        "scope": metadata["scope"], "source": metadata["source"],
+                        "delivery": metadata["delivery"], "action": "include",
+                        "capability_version": source_record.get("version", "unspecified"),
+                        "configuration_preview": metadata.get("configuration", {}),
+                        "dependencies": [], "conflicts": [],
+                    }
+                    if metadata.get("destination"):
+                        entry["destination"] = metadata["destination"]
+                    components.append(entry)
             assembly_plan = {
                 "project_context": {"name": package["project"]["name"], "description": package["project"]["description"],
                                     "project_type": package["project"]["project_type"], "lifecycle": "production",
@@ -232,9 +295,14 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
                         if adoption_plan["items"][i]["disposition"] in {"review_gap", "review_conflict"})
         if adoption_plan["overall_decision"] in {"review_required", "blocked"}:
             unresolved.append({"kind": "adoption_review", "reason": adoption_plan["overall_decision"]})
-    activation_plans = _activation_plan(project, host, capabilities, root) if route == "compose" else []
-    if any(plan["status"] == "review_required" for plan in activation_plans):
-        unresolved.append({"kind": "host_activation", "reason": "Existing Codex activation files require review and will not be overwritten."})
+    activation_plans = _activation_plan(project, host, capabilities, root, route=route)
+    for plan in activation_plans:
+        if plan["status"] == "review_required":
+            unresolved.append({"kind": "host_activation", "reason": "Existing host activation files require review and will not be overwritten."})
+        elif plan["status"] == "conflict":
+            unresolved.append({"kind": "host_activation", "reason": f"{plan['host'].capitalize()} host activation destination conflict detected."})
+        elif plan["status"] == "unsupported":
+            unresolved.append({"kind": "host_activation", "reason": f"{plan['host'].capitalize()} host activation is unsupported."})
     if any(item["result"] in {"conflict", "unsupported"} for item in rows):
         unresolved.extend({"kind": "materialization", "component_id": item["component_id"], "reason": item.get("reason", item["result"])}
                           for item in rows if item["result"] in {"conflict", "unsupported"})
@@ -244,12 +312,19 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
     unchanged = [item["component_id"] for item in rows if item["result"] == "unchanged"]
     for plan in activation_plans:
         if plan["status"] == "already_active":
-            unchanged.append("codex-testing-activation")
+            unchanged.append("codex-testing-activation" if plan["host"] == "codex" and plan["capability_id"] == "testing" else f"{plan['host']}-{plan['capability_id']}-activation")
     actual_writes = sum(item["result"] in {"copied", "upgraded"} for item in rows)
     actual_writes += sum(plan["status"] == "ready" for plan in activation_plans)
     blocked = bool(unresolved)
     profile_sha = _profile_digest(root)
     catalog_revision = recommendation["catalog_revision"] if recommendation else _current_catalog_revision(root)
+    if any(p.get("host") == "antigravity" for p in activation_plans) or "antigravity" in _parse_hosts(host):
+        shared_notice = (
+            "Antigravity skill destination '.agents/skills/vcbs-manager/SKILL.md' shares the '.agents/skills' "
+            "root with Codex. Codex discovers this directory, but will not invoke the skill without an AGENTS.md trigger."
+        )
+        if shared_notice not in warnings:
+            warnings.append(shared_notice)
     value = {
         "format_version": 1, "target": current["target"], "host": host, "route": route,
         "project_context": context or (adoption_plan and current["semantic_package"]["project"]),
@@ -302,8 +377,15 @@ def render_summary(plan):
             new_h = (item.get("sha256") or "")[:8]
             lines.append(f"  - {item['component_id']} ({old_v} [{old_h}] -> {new_v} [{new_h}])")
     if plan["host_activations"]:
-        lines.append("Codex activation: " + ", ".join(item["status"] for item in plan["host_activations"]))
+        if all(item["host"] == "codex" for item in plan["host_activations"]):
+            lines.append("Codex activation: " + ", ".join(item["status"] for item in plan["host_activations"]))
+        else:
+            lines.append("Host activation: " + ", ".join(f"{item['host']}:{item['status']}" for item in plan["host_activations"]))
     lines.extend((f"References: {len(plan['references'])}", f"Unchanged: {len(plan['unchanged'])}"))
+    if plan.get("warnings"):
+        lines.append("Warnings:")
+        for w in plan["warnings"]:
+            lines.append(f"  ! {w}")
     lines.append("Blocked: " + ("; ".join(item.get("reason", item.get("kind", "conflict")) for item in plan["unresolved"]) if plan["unresolved"] else "none"))
     lines.append("Confirmation: " + ("1 approval required" if plan["requires_confirmation"] else "none"))
     return "\n".join(lines)
@@ -346,15 +428,18 @@ def _verify(plan, project, root):
             raise ProductLoopError("POST_APPLY_VERIFICATION_FAILED: materializer manifest missing")
     for subplan in plan["host_activations"]:
         if subplan["status"] == "ready":
-            skill = Path(project) / activation.SKILL_DESTINATION
-            agents = Path(project) / activation.AGENTS_DESTINATION
+            skill = Path(project) / subplan["destination"]
             manifest = Path(project) / activation.MANIFEST_PATH
             expected_skill = _sha((Path(root) / subplan["source"]).read_bytes())
-            expected_agents = _sha(activation.AGENTS_TRIGGER.encode("utf-8"))
-            if (not skill.is_file() or _sha(skill.read_bytes()) != expected_skill
-                    or not agents.is_file() or _sha(agents.read_bytes()) != expected_agents
-                    or not manifest.is_file()):
-                raise ProductLoopError("POST_APPLY_VERIFICATION_FAILED: Codex activation artifacts")
+            if not skill.is_file() or _sha(skill.read_bytes()) != expected_skill:
+                raise ProductLoopError(f"POST_APPLY_VERIFICATION_FAILED: {subplan['destination']}")
+            if subplan.get("agents_destination"):
+                agents = Path(project) / subplan["agents_destination"]
+                expected_agents = _sha(activation.AGENTS_TRIGGER.encode("utf-8"))
+                if not agents.is_file() or _sha(agents.read_bytes()) != expected_agents:
+                    raise ProductLoopError(f"POST_APPLY_VERIFICATION_FAILED: {subplan['agents_destination']}")
+            if not manifest.is_file():
+                raise ProductLoopError("POST_APPLY_VERIFICATION_FAILED: activation manifest missing")
     return True
 
 
@@ -527,9 +612,9 @@ def apply_plan(plan, decision, project_root, global_root=None, root=ROOT):
         if any(item["result"] in {"conflict", "unsupported"} for item in dry["items"]):
             raise ProductLoopError("STALE_BOOTSTRAP_PLAN: materialization conditions changed after planning")
     for subplan in plan["host_activations"]:
-        fresh = activation.build_plan(project, "testing", "codex", root)
+        fresh = activation.build_plan(project, subplan["capability_id"], subplan["host"], root)
         if fresh["plan_digest"] != subplan["plan_digest"] or fresh["status"] != subplan["status"]:
-            raise ProductLoopError("STALE_BOOTSTRAP_PLAN: Codex activation subplan changed")
+            raise ProductLoopError(f"STALE_BOOTSTRAP_PLAN: {subplan['host']} activation subplan changed")
     try:
         deployment = prepare_deployment(plan, project, global_root)
     except ValueError as exc:
@@ -544,7 +629,7 @@ def apply_plan(plan, decision, project_root, global_root=None, root=ROOT):
                          "confirmed_at": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")}
             activation_results.append(activation.apply(subplan, projected, project, root))
             if subplan["status"] == "ready":
-                completed.append("codex-activation")
+                completed.append("codex-activation" if subplan["host"] == "codex" else f"{subplan['host']}-activation")
         if material_plan:
             applied = materialize(material_plan, project, global_root, apply=True, root=root)
             if any(item["result"] in {"conflict", "unsupported"} for item in applied["items"]):
@@ -590,8 +675,12 @@ def load_json(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
-from .lifecycle import (
-    get_status, render_status_summary, deploy, upgrade,
-    build_uninstall_plan, render_uninstall_summary, decide_uninstall,
-    apply_uninstall, uninstall
-)
+def __getattr__(name):
+    if name in {
+        "get_status", "render_status_summary", "deploy", "upgrade",
+        "build_uninstall_plan", "render_uninstall_summary", "decide_uninstall",
+        "apply_uninstall", "uninstall"
+    }:
+        from . import lifecycle
+        return getattr(lifecycle, name)
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

@@ -166,7 +166,7 @@ def build_semantic_input(project_root, root=ROOT):
             "Call a Profile conflict only when the preference is explicit, the project requirement is current and authoritative, both constrain the same behavior, and they cannot reasonably be satisfied together. Historical plans and a Skill's mere presence cannot establish conflict.",
             "MCP or AI coding-tool use alone does not establish agent-development. Distinguish the product's actual behavior from development tooling.",
             "Every evidence item must cite a discovered project-relative path and explain the supporting meaning. Use no absolute local paths.",
-            "Do not recommend installation, modification, activation, or automatic resolution. A component may be considered only for a confirmed missing capability and an applicable project-scoped copy component listed in the Catalog.",
+            "Do not recommend installation, modification, activation, or automatic resolution. A component may be considered only for a confirmed missing capability and an applicable project-scoped copy or reference component listed in the Catalog.",
             "Treat Profile preferences as defaults, not prohibitions; retain reasonable project-specific exceptions and safety approvals.",
             "Assess each explicit preference separately. Use only aligned, compatible, tension, conflict, or unknown; cite current discovered evidence and keep preference findings separate from Capability coverage.",
             "For worktree_strategy, determine whether current authoritative project rules require worktrees. The existence of using-git-worktrees/SKILL.md alone is not a mandate.",
@@ -237,7 +237,7 @@ def validate_semantic_result(result, package, root=ROOT):
         if action == "consider_bootstrap_component":
             available = records[capability_id]["bootstrap_components"]
             if item["status"] != "missing" or not any(
-                    component["delivery"] == "copy" and component["scope"] == "project"
+                    component["delivery"] in {"copy", "reference"} and component["scope"] == "project"
                     for component in available):
                 raise ValueError(f"No applicable project-scoped Bootstrap component for {capability_id}")
     return result

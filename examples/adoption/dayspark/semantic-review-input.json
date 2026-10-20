@@ -1018,7 +1018,7 @@
     "Call conflict only when current authoritative requirements and an explicit Profile preference cannot both be satisfied on the same behavior dimension. Differences and historical references alone are not conflicts.",
     "MCP or AI coding-tool use alone does not establish agent-development. Distinguish the product's actual behavior from development tooling.",
     "Every evidence item must cite a discovered project-relative path and explain the supporting meaning. Use no absolute local paths.",
-    "Do not recommend installation, modification, activation, or automatic resolution. A component may be considered only for a confirmed missing capability and an applicable project-scoped copy component listed in the Catalog.",
+    "Do not recommend installation, modification, activation, or automatic resolution. A component may be considered only for a confirmed missing capability and an applicable project-scoped copy or reference component listed in the Catalog.",
     "If worktree requirements appear, use authority_hint and surrounding excerpt to distinguish current rules from historical plans; the supplied Profile expresses no preference when its preference fields are empty."
   ]
 }

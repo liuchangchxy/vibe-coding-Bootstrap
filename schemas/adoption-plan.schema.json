@@ -36,7 +36,7 @@
         "disposition": {"enum": ["keep_existing", "no_action", "review_gap", "review_conflict", "consider_component", "blocked"]},
         "reason": {"type": "string", "minLength": 1},
         "evidence": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["path", "claim"], "properties": {"path": {"type": "string", "minLength": 1}, "claim": {"type": "string", "minLength": 1}}}},
-        "bootstrap_component": {"type": ["object", "null"], "additionalProperties": false, "required": ["component_id", "source_capability", "delivery", "scope", "source", "destination"], "properties": {"component_id": {"type": "string"}, "source_capability": {"type": "string"}, "delivery": {"const": "copy"}, "scope": {"const": "project"}, "source": {"type": ["string", "null"]}, "destination": {"type": ["string", "null"]}}},
+        "bootstrap_component": {"type": ["object", "null"], "additionalProperties": false, "required": ["component_id", "source_capability", "delivery", "scope", "source", "destination"], "properties": {"component_id": {"type": "string"}, "source_capability": {"type": "string"}, "delivery": {"enum": ["copy", "reference"]}, "scope": {"const": "project"}, "source": {"type": ["string", "null"]}, "destination": {"type": ["string", "null"]}}},
         "materialization_eligible": {"type": "boolean"},
         "requires_confirmation": {"type": "boolean"}
       }

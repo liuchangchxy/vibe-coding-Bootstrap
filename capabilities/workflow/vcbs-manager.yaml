@@ -1,0 +1,90 @@
+id: vcbs-manager
+version: "1"
+name: VCBS Manager
+kind: workflow
+description: Inspect, plan, adopt, deploy, upgrade, and roll back VCBS components safely via bounded CLI operations.
+status: draft
+source: ../../docs/catalog-rules.md
+category: workflow
+purpose: Guide AI coding hosts to operate VCBS through verified CLI operations with human approval.
+applicability:
+  use_when:
+  - A project is adopting, deploying, or managing VCBS capabilities.
+  - An AI coding host needs bounded guidance to inspect, plan, decide, apply, or roll back VCBS changes.
+  not_for:
+  - Autonomous GitHub issue dispatch or unapproved deployment execution.
+maturity: experimental
+maintainer: vibe-coding-bootstrap repository maintainers
+last_reviewed: '2026-10-19'
+requires: []
+related_capabilities:
+- planning
+- engineering-baseline
+conflicts_with: []
+components:
+- id: reference
+  kind: documentation
+  role: Guide AI coding hosts to operate VCBS safely through bounded CLI commands.
+  source_id: primary
+- id: claude-native-vcbs-manager-skill
+  kind: skill
+  role: Repo-local Claude Code representation of the vcbs-manager Capability.
+  source_id: claude-native-vcbs-manager
+  assembly:
+    id: claude-native-vcbs-manager-skill
+    name: Claude Code native vcbs-manager Skill
+    type: skill
+    source: host_adapters/claude/skills/vcbs-manager/SKILL.md
+    destination: .claude/skills/vcbs-manager/SKILL.md
+    provider: vibe-coding-bootstrap
+    version: '1'
+    scope: project
+    delivery: reference
+    optional: true
+    provenance:
+      repository_path: host_adapters/claude/skills/vcbs-manager/SKILL.md
+      activation_adapter: claude
+- id: antigravity-native-vcbs-manager-skill
+  kind: skill
+  role: Repo-local Antigravity representation of the vcbs-manager Capability.
+  source_id: antigravity-native-vcbs-manager
+  assembly:
+    id: antigravity-native-vcbs-manager-skill
+    name: Antigravity native vcbs-manager Skill
+    type: skill
+    source: host_adapters/antigravity/skills/vcbs-manager/SKILL.md
+    destination: .agents/skills/vcbs-manager/SKILL.md
+    provider: vibe-coding-bootstrap
+    version: '1'
+    scope: project
+    delivery: reference
+    optional: true
+    provenance:
+      repository_path: host_adapters/antigravity/skills/vcbs-manager/SKILL.md
+      activation_adapter: antigravity
+component_sources:
+- id: primary
+  title: Vibe Coding Bootstrap Unified Loop Documentation
+  uri: docs/unified-product-loop.md
+  relationship: reference
+  accessed_on: '2026-10-19'
+- id: claude-native-vcbs-manager
+  title: Bootstrap Claude Code native vcbs-manager Skill
+  uri: host_adapters/claude/skills/vcbs-manager/SKILL.md
+  relationship: reference
+- id: antigravity-native-vcbs-manager
+  title: Bootstrap Antigravity native vcbs-manager Skill
+  uri: host_adapters/antigravity/skills/vcbs-manager/SKILL.md
+  relationship: reference
+selection_hints:
+  signals:
+  - The project uses or plans to adopt VCBS for capability management.
+  - Claude Code or Google Antigravity is used as an AI pair programming host.
+  constraints:
+  - Real CLI operations require an installed python environment with VCBS dependencies.
+  - Deployment mutations require explicit human approval and target Git revision binding.
+evidence:
+  state: supported
+  summary: Native skill definitions verified for Claude Code and Antigravity directory structures.
+  references:
+  - ../../docs/unified-product-loop.md

@@ -16,7 +16,7 @@ from adoption.semantic import build_semantic_input, validate_semantic_result
 from assembly.core import assemble
 from bootstrap.core import (
     ProductLoopError, ROOT, _activation_plan, _canonical, _current_catalog_revision, _inside,
-    _materializer_rows, _owned_state, _profile_digest, _route, _sha,
+    _materializer_rows, _owned_state, _parse_hosts, _profile_digest, _route, _sha,
     _unified_changes, apply_plan, build_plan, decide, inspect_project,
     load_json, render_summary, validate, validate_output_path, write_json
 )
@@ -136,7 +136,21 @@ def get_status(project_root, host="codex", global_root=None, root=ROOT):
                                 desired_sha = _sha(src_file.read_bytes())
 
                     if item.get("state") == "reference_only" or scope == "external":
-                        c_status = "reference_only"
+                        if dest_str and dest_path:
+                            if not dest_path.exists():
+                                c_status = "missing"
+                                conflicts.append(f"Managed asset {dest_str} is missing")
+                            elif dest_path.is_file():
+                                if inst_sha and actual_sha != inst_sha:
+                                    c_status = "conflict"
+                                    conflicts.append(f"Managed asset {dest_str} was modified by user")
+                                else:
+                                    c_status = "reference_only"
+                            else:
+                                c_status = "conflict"
+                                conflicts.append(f"Managed asset {dest_str} is not a regular file")
+                        else:
+                            c_status = "reference_only"
                     elif dest_path is None or not dest_path.exists():
                         c_status = "missing"
                     elif dest_path.is_file():
@@ -176,45 +190,92 @@ def get_status(project_root, host="codex", global_root=None, root=ROOT):
         "actual_sha256": None,
         "desired_sha256": None,
     }
+    native_activations = []
 
     if activation_manifest_path.is_file():
         try:
             adata = json.loads(activation_manifest_path.read_text(encoding="utf-8"))
-            if adata.get("format_version") == 1 and adata.get("host") == "codex" and adata.get("capability") == "testing":
-                has_activation = True
-                skill_path = _contained(project, activation.SKILL_DESTINATION)
-                agents_path = _contained(project, activation.AGENTS_DESTINATION)
-                inst_skill = next((a for a in adata.get("artifacts", []) if a.get("destination") == activation.SKILL_DESTINATION), {})
-                inst_skill_sha = inst_skill.get("sha256")
-                act_actual_sha = _sha(skill_path.read_bytes()) if skill_path.is_file() else None
-
-                desired_skill_file = Path(root) / activation.SKILL_SOURCE
-                desired_act_sha = _sha(desired_skill_file.read_bytes()) if desired_skill_file.is_file() else inst_skill_sha
-
-                expected_agents_sha = _sha(activation.AGENTS_TRIGGER.encode("utf-8"))
-                actual_agents_sha = _sha(agents_path.read_bytes()) if agents_path.is_file() else None
-
-                if not skill_path.exists() or not agents_path.exists():
-                    act_status = "missing"
-                elif act_actual_sha != inst_skill_sha or actual_agents_sha != expected_agents_sha:
-                    act_status = "conflict"
-                    conflicts.append("Codex activation artifacts were modified by user")
-                elif desired_act_sha != inst_skill_sha:
-                    act_status = "update_available"
-                else:
-                    act_status = "active"
-
-                codex_activation = {
-                    "status": act_status,
-                    "destination": activation.SKILL_DESTINATION,
-                    "installed_sha256": inst_skill_sha,
-                    "actual_sha256": act_actual_sha,
-                    "desired_sha256": desired_act_sha,
-                }
+            valid_manifest = False
+            raw_activations = []
+            if isinstance(adata, dict) and adata.get("format_version") == 1:
+                if "activations" in adata and isinstance(adata["activations"], list):
+                    if all(isinstance(a, dict) and "host" in a and "capability" in a and isinstance(a.get("artifacts"), list) for a in adata["activations"]):
+                        valid_manifest = True
+                        raw_activations = adata["activations"]
+                elif adata.get("host") and adata.get("capability") and isinstance(adata.get("artifacts"), list):
+                    valid_manifest = True
+                    raw_activations = [{
+                        "host": adata["host"],
+                        "capability": adata["capability"],
+                        "artifacts": adata.get("artifacts", [])
+                    }]
+            if not valid_manifest:
+                conflicts.append("Activation manifest activation.json is invalid or corrupted")
+                manifest_corrupt = True
             else:
-                conflicts.append("Codex activation.json is invalid or corrupted")
+                has_activation = bool(raw_activations)
+                for act in raw_activations:
+                    act_host = act["host"]
+                    act_cap = act["capability"]
+                    target_conf = activation._get_target_config(act_host, act_cap)
+                    if not target_conf:
+                        conflicts.append(f"Unknown activation target: {act_host}/{act_cap}")
+                        continue
+                    skill_dest = target_conf["skill_destination"]
+                    agents_dest = target_conf["agents_destination"]
+                    skill_path = _contained(project, skill_dest)
+                    agents_path = _contained(project, agents_dest) if agents_dest else None
+
+                    inst_skill = next((a for a in act.get("artifacts", []) if a.get("destination") == skill_dest), {})
+                    inst_skill_sha = inst_skill.get("sha256")
+                    act_actual_sha = _sha(skill_path.read_bytes()) if (skill_path and skill_path.is_file()) else None
+
+                    desired_skill_file = Path(root) / target_conf["skill_source"]
+                    desired_act_sha = _sha(desired_skill_file.read_bytes()) if desired_skill_file.is_file() else inst_skill_sha
+
+                    expected_agents_sha = _sha(target_conf["agents_trigger"].encode("utf-8")) if target_conf["agents_trigger"] else None
+                    actual_agents_sha = _sha(agents_path.read_bytes()) if (agents_path and agents_path.is_file()) else None
+
+                    if not skill_path or not skill_path.exists() or (agents_path and not agents_path.exists()):
+                        act_status = "missing"
+                        conflicts.append(f"{act_host.capitalize()} activation artifacts are missing")
+                    elif act_actual_sha != inst_skill_sha or (agents_path and actual_agents_sha != expected_agents_sha):
+                        act_status = "conflict"
+                        conflicts.append(f"{act_host.capitalize()} activation artifacts were modified by user")
+                    elif desired_act_sha != inst_skill_sha:
+                        act_status = "update_available"
+                    else:
+                        act_status = "active"
+
+                    act_record = {
+                        "host": act_host,
+                        "capability": act_cap,
+                        "status": act_status,
+                        "destination": skill_dest,
+                        "installed_sha256": inst_skill_sha,
+                        "actual_sha256": act_actual_sha,
+                        "desired_sha256": desired_act_sha,
+                    }
+                    if act_host == "antigravity":
+                        act_record["shared_surface_with"] = "codex"
+                        act_record["shared_surface_notice"] = (
+                            "Shares .agents/skills discovery root with Codex; unmanaged in Codex without AGENTS.md trigger."
+                        )
+                    else:
+                        act_record["shared_surface_with"] = None
+                        act_record["shared_surface_notice"] = None
+                    native_activations.append(act_record)
+
+                    if act_host == "codex" and act_cap == "testing":
+                        codex_activation = {
+                            "status": act_status,
+                            "destination": skill_dest,
+                            "installed_sha256": inst_skill_sha,
+                            "actual_sha256": act_actual_sha,
+                            "desired_sha256": desired_act_sha,
+                        }
         except Exception:
-            conflicts.append("Failed to read Codex activation.json")
+            conflicts.append("Failed to read activation manifest activation.json")
 
     # Scope breakdown
     proj_comps = [c["component_id"] for c in components if c["scope"] == "project"]
@@ -224,9 +285,9 @@ def get_status(project_root, host="codex", global_root=None, root=ROOT):
     if deployed:
         if conflicts or manifest_corrupt:
             overall_status = "conflict"
-        elif any(c["status"] == "missing" for c in components) or codex_activation["status"] == "missing":
+        elif any(c["status"] == "missing" for c in components) or any(a["status"] == "missing" for a in native_activations):
             overall_status = "partial"
-        elif any(c["status"] == "update_available" for c in components) or codex_activation["status"] == "update_available":
+        elif any(c["status"] == "update_available" for c in components) or any(a["status"] == "update_available" for a in native_activations):
             overall_status = "update_available"
         else:
             overall_status = "installed"
@@ -239,15 +300,23 @@ def get_status(project_root, host="codex", global_root=None, root=ROOT):
     managed_only, signals, unmanaged = _owned_state(project)
     route_prediction = "adoption" if unmanaged else "compose"
 
+    try:
+        parsed_hosts = _parse_hosts(host)
+        is_supported = bool(parsed_hosts)
+    except Exception:
+        parsed_hosts = []
+        is_supported = False
+
     host_support = {
         "host": host,
-        "supported": host in {"codex", "none"},
-        "native_activation": "supported" if host == "codex" else "none",
+        "supported": is_supported,
+        "native_activation": "supported" if any(h in {"codex", "claude", "antigravity"} for h in parsed_hosts) else "none",
         "known_hosts": {
             "codex": "supported",
             "none": "supported",
-            "claude_code": "external_or_future",
-            "antigravity": "external_or_future",
+            "claude": "supported",
+            "claude_code": "supported",
+            "antigravity": "supported",
         },
     }
 
@@ -261,6 +330,7 @@ def get_status(project_root, host="codex", global_root=None, root=ROOT):
         "deployed": deployed,
         "components": components,
         "codex_activation": codex_activation,
+        "native_activations": native_activations,
         "host_support": host_support,
         "scope_breakdown": {
             "project_components": proj_comps,
@@ -304,12 +374,18 @@ def render_status_summary(status_dict):
     else:
         lines.append("\nManaged Components: none")
 
-    act = status_dict["codex_activation"]
-    if act["status"] != "not_active":
-        lines.append(f"\nCodex Native Activation: {act['status']}")
-        lines.append(f"  Destination: {act['destination']}")
+    native_acts = status_dict.get("native_activations", [])
+    if native_acts:
+        for na in native_acts:
+            lines.append(f"\n{na['host'].capitalize()} Native Activation: {na['status']}")
+            lines.append(f"  Destination: {na['destination']}")
     else:
-        lines.append("\nCodex Native Activation: not active")
+        act = status_dict["codex_activation"]
+        if act["status"] != "not_active":
+            lines.append(f"\nCodex Native Activation: {act['status']}")
+            lines.append(f"  Destination: {act['destination']}")
+        else:
+            lines.append("\nCodex Native Activation: not active")
 
     scopes = status_dict["scope_breakdown"]
     lines.append(f"\nScope Breakdown: {len(scopes['project_components'])} project, {len(scopes['global_components'])} global")
@@ -408,17 +484,44 @@ def _build_upgrade_plan_from_manifest(project_root, host="codex", global_root=No
 
     activation_manifest_path = project / activation.MANIFEST_PATH
     activation_plans = []
-    if activation_manifest_path.is_file() and host == "codex":
-        activation_plans = _activation_plan(project, host, ["testing"], root)
+    if activation_manifest_path.is_file():
+        try:
+            adata = json.loads(activation_manifest_path.read_text(encoding="utf-8"))
+            parsed_hosts = _parse_hosts(host)
+            raw_activations = []
+            if adata.get("format_version") == 1:
+                if "activations" in adata and isinstance(adata["activations"], list):
+                    raw_activations = adata["activations"]
+                elif adata.get("host") and adata.get("capability"):
+                    raw_activations = [{
+                        "host": adata["host"],
+                        "capability": adata["capability"],
+                        "artifacts": adata.get("artifacts", [])
+                    }]
+            for act in raw_activations:
+                act_host = act.get("host")
+                act_cap = act.get("capability")
+                if act_host in parsed_hosts or (act_host == "claude" and "claude_code" in parsed_hosts):
+                    subplan = activation.build_plan(project, capability=act_cap, host=act_host, root=root)
+                    activation_plans.append(subplan)
+        except Exception:
+            pass
 
     unresolved = []
     warnings = []
+    if any(p.get("host") == "antigravity" for p in activation_plans) or "antigravity" in parsed_hosts:
+        shared_notice = (
+            "Antigravity skill destination '.agents/skills/vcbs-manager/SKILL.md' shares the '.agents/skills' "
+            "root with Codex. Codex discovers this directory, but will not invoke the skill without an AGENTS.md trigger."
+        )
+        if shared_notice not in warnings:
+            warnings.append(shared_notice)
     if any(item["result"] in {"conflict", "unsupported"} for item in rows):
         unresolved.extend({"kind": "materialization", "component_id": item["component_id"], "reason": item.get("reason", item["result"])}
                           for item in rows if item["result"] in {"conflict", "unsupported"})
     for subplan in activation_plans:
         if subplan.get("status") in {"conflict", "review_required"}:
-            unresolved.append({"kind": "host_activation", "reason": f"Codex activation status: {subplan['status']}"})
+            unresolved.append({"kind": "host_activation", "reason": f"{subplan['host'].capitalize()} activation status: {subplan['status']}"})
 
     project_changes = _unified_changes(rows, "project")
     global_changes = _unified_changes(rows, "global")
@@ -426,7 +529,7 @@ def _build_upgrade_plan_from_manifest(project_root, host="codex", global_root=No
     unchanged = [item["component_id"] for item in rows if item["result"] == "unchanged"]
     for plan in activation_plans:
         if plan["status"] == "already_active":
-            unchanged.append("codex-testing-activation")
+            unchanged.append("codex-testing-activation" if plan["host"] == "codex" and plan["capability_id"] == "testing" else f"{plan['host']}-{plan['capability_id']}-activation")
 
     actual_writes = sum(item["result"] in {"copied", "upgraded"} for item in rows)
     actual_writes += sum(plan["status"] == "ready" for plan in activation_plans)
@@ -530,6 +633,22 @@ def upgrade(project_root, host="codex", context_path=None, global_root=None,
     return apply_plan(active_plan, dec, project_root, global_root=global_root, root=root)
 
 
+def _matches_component_selection(comp_id, source_cap, selected_components):
+    if selected_components is None:
+        return True
+    aliases = {comp_id}
+    if source_cap:
+        aliases.add(source_cap)
+    for (h, c) in activation.ACTIVATION_TARGETS:
+        skill_cid = f"{h}-native-{c}-skill"
+        act_cid = "codex-testing-activation" if h == "codex" and c == "testing" else f"{h}-{c}-activation"
+        if comp_id in {skill_cid, act_cid}:
+            aliases.update({skill_cid, act_cid, c, h})
+            if h == "claude":
+                aliases.add("claude_code")
+    return any(c in aliases for c in selected_components)
+
+
 def build_uninstall_plan(project_root, component_id=None, global_root=None, root=ROOT):
     """Generate a revision-bound, conflict-checked Uninstall Plan."""
     project = Path(project_root).resolve(strict=True)
@@ -567,7 +686,7 @@ def build_uninstall_plan(project_root, component_id=None, global_root=None, root
             else:
                 for entry in mdata.get("items", []):
                     entry_comp_id = entry.get("component_id")
-                    if selected_components and entry_comp_id not in selected_components:
+                    if not _matches_component_selection(entry_comp_id, entry.get("source_capability"), selected_components):
                         remaining_manifest_items.append(entry)
                         continue
 
@@ -622,7 +741,7 @@ def build_uninstall_plan(project_root, component_id=None, global_root=None, root
                         item_record["reason"] = reason
                     items.append(item_record)
 
-                if items:
+                if len(remaining_manifest_items) != len(mdata.get("items", [])):
                     manifest_updates.append(".vibe-coding-bootstrap/manifest.yaml")
         except Exception as exc:
             unresolved.append({"kind": "manifest_error", "reason": str(exc)})
@@ -631,10 +750,27 @@ def build_uninstall_plan(project_root, component_id=None, global_root=None, root
         try:
             abyles = activation_manifest_path.read_bytes()
             activation_manifest_sha256 = _sha(abyles)
-            if selected_components is None or any(c in {"codex-testing-activation", "testing"} for c in selected_components):
-                adata = json.loads(abyles.decode("utf-8"))
-                if adata.get("format_version") == 1 and adata.get("host") == "codex":
-                    for art in adata.get("artifacts", []):
+            adata = json.loads(abyles.decode("utf-8"))
+            if adata.get("format_version") == 1:
+                raw_activations = []
+                if "activations" in adata and isinstance(adata["activations"], list):
+                    raw_activations = adata["activations"]
+                elif adata.get("host") and adata.get("capability"):
+                    raw_activations = [{
+                        "host": adata["host"],
+                        "capability": adata["capability"],
+                        "artifacts": adata.get("artifacts", [])
+                    }]
+                for act in raw_activations:
+                    h = act.get("host")
+                    cap = act.get("capability")
+                    cid = "codex-testing-activation" if h == "codex" and cap == "testing" else f"{h}-{cap}-activation"
+                    skill_cid = f"{h}-native-{cap}-skill"
+                    is_selected = _matches_component_selection(cid, cap, selected_components)
+                    if not is_selected:
+                        continue
+
+                    for art in act.get("artifacts", []):
                         dest_str = art.get("destination", "")
                         expected_sha = art.get("sha256", "")
                         dest_path = _contained(project, dest_str)
@@ -645,20 +781,20 @@ def build_uninstall_plan(project_root, component_id=None, global_root=None, root
                         elif dest_path.is_symlink() or not dest_path.is_file():
                             status = "conflict"
                             reason = "Target is not a regular file; cannot safely uninstall."
-                            conflicts.append({"component_id": "codex-testing-activation", "reason": reason})
+                            conflicts.append({"component_id": cid, "reason": reason})
                         else:
                             actual_sha = _sha(dest_path.read_bytes())
                             if actual_sha != expected_sha:
                                 status = "conflict"
                                 reason = f"Activation file modified by user ({actual_sha[:8]} != {expected_sha[:8]}); cannot uninstall."
-                                conflicts.append({"component_id": "codex-testing-activation", "reason": reason})
+                                conflicts.append({"component_id": cid, "reason": reason})
                             else:
                                 status = "removable"
                                 reason = None
 
                         art_record = {
-                            "component_id": "codex-testing-activation",
-                            "source_capability": "testing",
+                            "component_id": cid,
+                            "source_capability": cap,
                             "scope": "project",
                             "destination": str(dest_path),
                             "relative_destination": dest_str,
@@ -669,8 +805,8 @@ def build_uninstall_plan(project_root, component_id=None, global_root=None, root
                             art_record["reason"] = reason
                         activation_items.append(art_record)
 
-                    if activation_items:
-                        manifest_updates.append(activation.MANIFEST_PATH)
+                if activation_items:
+                    manifest_updates.append(activation.MANIFEST_PATH)
         except Exception as exc:
             unresolved.append({"kind": "activation_manifest_error", "reason": str(exc)})
 
@@ -891,13 +1027,33 @@ def apply_uninstall(plan, decision, project_root, global_root=None, root=ROOT):
         ],
         "global_root": str(Path(global_root).resolve()) if global_root else planned_global,
         "host_activations": [],
+        "manifest_updates": plan.get("manifest_updates", []),
     }
-    if any(item["status"] == "removable" for item in plan["activation_items"]):
-        recovery_plan["host_activations"].append({
-            "destination": activation.SKILL_DESTINATION,
-            "agents_destination": activation.AGENTS_DESTINATION,
-            "status": "removed",
-        })
+    removable_acts = [item for item in plan["activation_items"] if item["status"] == "removable"]
+    seen_host_caps = set()
+    for item in removable_acts:
+        cid = item.get("component_id", "")
+        if cid.startswith("codex-"):
+            h = "codex"
+        elif cid.startswith("claude-") or cid.startswith("claude_code-"):
+            h = "claude"
+        elif cid.startswith("antigravity-"):
+            h = "antigravity"
+        else:
+            h = "codex"
+        cap = item["source_capability"]
+        if (h, cap) not in seen_host_caps:
+            seen_host_caps.add((h, cap))
+            conf = activation._get_target_config(h, cap)
+            skill_dst = conf["skill_destination"] if conf else item.get("relative_destination")
+            agents_dst = conf["agents_destination"] if conf else None
+            recovery_plan["host_activations"].append({
+                "host": h,
+                "capability_id": cap,
+                "destination": skill_dst,
+                "agents_destination": agents_dst,
+                "status": "removed",
+            })
 
     try:
         deployment = prepare_deployment(recovery_plan, project, global_root)
@@ -948,7 +1104,7 @@ def apply_uninstall(plan, decision, project_root, global_root=None, root=ROOT):
 
         # Update or remove manifests
         manifest_path = project / ".vibe-coding-bootstrap/manifest.yaml"
-        if manifest_path.is_file():
+        if manifest_path.is_file() and ".vibe-coding-bootstrap/manifest.yaml" in plan.get("manifest_updates", []):
             remaining = plan.get("remaining_manifest_items", [])
             if remaining:
                 mdata = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
@@ -959,7 +1115,51 @@ def apply_uninstall(plan, decision, project_root, global_root=None, root=ROOT):
 
         act_manifest_path = project / activation.MANIFEST_PATH
         if act_manifest_path.is_file() and any(item["status"] == "removable" for item in plan["activation_items"]):
-            act_manifest_path.unlink()
+            removed_pairs = set()
+            for item in plan["activation_items"]:
+                if item["status"] == "removable":
+                    cid = item.get("component_id", "")
+                    if cid.startswith("codex-"):
+                        h = "codex"
+                    elif cid.startswith("claude-") or cid.startswith("claude_code-"):
+                        h = "claude"
+                    elif cid.startswith("antigravity-"):
+                        h = "antigravity"
+                    else:
+                        h = "codex"
+                    removed_pairs.add((h, item["source_capability"]))
+            try:
+                mdata = json.loads(act_manifest_path.read_text(encoding="utf-8"))
+                current_acts = mdata.get("activations")
+                if not current_acts and mdata.get("host") and mdata.get("capability"):
+                    current_acts = [{
+                        "host": mdata["host"],
+                        "capability": mdata["capability"],
+                        "artifacts": mdata.get("artifacts", [])
+                    }]
+                if not isinstance(current_acts, list):
+                    current_acts = []
+                remaining_acts = [a for a in current_acts if (a.get("host"), a.get("capability")) not in removed_pairs]
+                if not remaining_acts:
+                    act_manifest_path.unlink()
+                else:
+                    all_artifacts = []
+                    seen_dest = set()
+                    for act in remaining_acts:
+                        for art in act.get("artifacts", []):
+                            if art["destination"] not in seen_dest:
+                                seen_dest.add(art["destination"])
+                                all_artifacts.append(art)
+                    updated_manifest = {
+                        "format_version": 1,
+                        "host": remaining_acts[0]["host"] if len(remaining_acts) == 1 else "multiple",
+                        "capability": remaining_acts[0]["capability"] if len(remaining_acts) == 1 else "multiple",
+                        "artifacts": all_artifacts,
+                        "activations": remaining_acts,
+                    }
+                    act_manifest_path.write_text(json.dumps(updated_manifest, indent=2) + "\n", encoding="utf-8")
+            except Exception:
+                act_manifest_path.unlink()
 
         # Remove .vibe-coding-bootstrap directory if empty
         vcb_dir = project / ".vibe-coding-bootstrap"

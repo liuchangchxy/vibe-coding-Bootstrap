@@ -8,3 +8,4 @@ capabilities:
 - engineering/debugging.yaml
 - research/research-workflow.yaml
 - agent/agent-development.yaml
+- workflow/vcbs-manager.yaml

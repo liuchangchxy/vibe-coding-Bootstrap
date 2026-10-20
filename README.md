@@ -7,9 +7,9 @@ A personalizable foundation for assembling an AI development environment around 
 VCBS provides four standardized lifecycle operations for end users:
 
 ```bash
-vcbs status --project-root <project> [--json]
-vcbs deploy --project-root <project> [--host codex] [--context <context.yaml>] [--decision <decision.json>] [--apply]
-vcbs upgrade --project-root <project> [--decision <decision.json>] [--apply]
+vcbs status --project-root <project> [--host <codex|claude|claude_code|antigravity|none>] [--json]
+vcbs deploy --project-root <project> [--host <codex|claude|claude_code|antigravity|none>] [--context <context.yaml>] [--decision <decision.json>] [--apply]
+vcbs upgrade --project-root <project> [--host <codex|claude|claude_code|antigravity|none>] [--decision <decision.json>] [--apply]
 vcbs uninstall --project-root <project> [--component <id>] [--decision <decision.json>] [--apply]
 ```
 *(also available via `python -m bootstrap <deploy|upgrade|uninstall|status>` or `./vcbs`)*

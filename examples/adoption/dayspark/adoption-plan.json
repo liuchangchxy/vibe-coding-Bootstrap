@@ -163,7 +163,7 @@
       "semantic_status": "unknown",
       "confidence": "medium",
       "disposition": "no_action",
-      "reason": "The catalog's applicability condition—investigations or experiments that must report provenance, outcomes and limitations—is not established for this product. Absence of a research keyword is not treated as a gap.",
+      "reason": "The catalog's applicability condition\u2014investigations or experiments that must report provenance, outcomes and limitations\u2014is not established for this product. Absence of a research keyword is not treated as a gap.",
       "evidence": [
         {
           "path": "SPEC.md",
@@ -201,11 +201,22 @@
       "bootstrap_component": null,
       "materialization_eligible": false,
       "requires_confirmation": false
+    },
+    {
+      "capability_id": "vcbs-manager",
+      "semantic_status": "missing",
+      "confidence": "high",
+      "disposition": "review_gap",
+      "reason": "The project uses AI coding assistance, but has not yet adopted VCBS management workflow skills.",
+      "evidence": [],
+      "bootstrap_component": null,
+      "materialization_eligible": false,
+      "requires_confirmation": false
     }
   ],
   "overall_decision": "review_required",
   "materializable_changes": 0,
   "requires_confirmation": true,
   "generated_at": "2026-10-16T09:47:02Z",
-  "plan_digest": "86969a4346a110ef94759eedca15d8ccb6f8963ff5e832fed0629a963e00039b"
+  "plan_digest": "d6061e85790dc7aed2657d0f7c6798d48e93ab5ba785b14ad066435dbcece235"
 }

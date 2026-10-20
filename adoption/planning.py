@@ -13,7 +13,7 @@ from .semantic import _catalog_records, validate_semantic_result
 DISPOSITIONS = {"keep_existing", "no_action", "review_gap", "review_conflict", "consider_component", "blocked"}
 
 
-def _component_for(root, capability_id):
+def _component_for(root, capability_id, host=None):
     catalog = load_yaml(root / "capabilities/catalog.yaml")
     for relative in catalog["capabilities"]:
         record = load_yaml(root / "capabilities" / relative)
@@ -27,7 +27,46 @@ def _component_for(root, capability_id):
                     "delivery": assembly["delivery"], "scope": assembly["scope"],
                     "source": component.get("source"), "destination": assembly.get("destination"),
                 }
-    return None
+        ref_components = [
+            c for c in record.get("components", [])
+            if c.get("assembly", {}).get("delivery") == "reference" and c.get("assembly", {}).get("scope") == "project"
+        ]
+        if host and ref_components:
+            target_host = "claude" if host in {"claude", "claude_code"} else host
+            for component in ref_components:
+                assembly = component.get("assembly", {})
+                prov = assembly.get("provenance", {})
+                adapter = prov.get("activation_adapter")
+                if adapter == target_host or (target_host in component.get("id", "")):
+                    return {
+                        "component_id": component["id"], "source_capability": capability_id,
+                        "delivery": assembly["delivery"], "scope": assembly["scope"],
+                        "source": component.get("source"), "destination": assembly.get("destination"),
+                    }
+        if ref_components:
+            component = ref_components[0]
+            assembly = component.get("assembly", {})
+            return {
+                "component_id": component["id"], "source_capability": capability_id,
+                "delivery": assembly["delivery"], "scope": assembly["scope"],
+                "source": component.get("source"), "destination": assembly.get("destination"),
+            }
+def _valid_components_for(root, capability_id):
+    catalog = load_yaml(root / "capabilities/catalog.yaml")
+    results = []
+    for relative in catalog["capabilities"]:
+        record = load_yaml(root / "capabilities" / relative)
+        if record["id"] != capability_id:
+            continue
+        for component in record.get("components", []):
+            assembly = component.get("assembly", {})
+            if (assembly.get("delivery") in {"copy", "reference"}) and assembly.get("scope") == "project":
+                results.append({
+                    "component_id": component["id"], "source_capability": capability_id,
+                    "delivery": assembly["delivery"], "scope": assembly["scope"],
+                    "source": component.get("source"), "destination": assembly.get("destination"),
+                })
+    return results
 
 
 def _digest_payload(plan):
@@ -39,7 +78,7 @@ def plan_digest(plan):
     return hashlib.sha256(encoded).hexdigest()
 
 
-def build_adoption_plan(package, result, project_root, semantic_review_source="semantic-review-result.json", root=ROOT):
+def build_adoption_plan(package, result, project_root, semantic_review_source="semantic-review-result.json", root=ROOT, host=None):
     """Build a plan only when the review still binds to the current target state."""
     validate_semantic_result(result, package, root)
     if package["capability_catalog"] != _catalog_records(root):
@@ -63,7 +102,7 @@ def build_adoption_plan(package, result, project_root, semantic_review_source="s
             ("conflict", "review_conflict"): "review_conflict",
         }
         if (status, action) == ("missing", "consider_bootstrap_component"):
-            component = _component_for(root, review["capability_id"])
+            component = _component_for(root, review["capability_id"], host=host)
             if component is None:
                 raise ValueError(f"No applicable project-scoped copy component for {review['capability_id']}")
             disposition = "consider_component"
@@ -126,8 +165,8 @@ def validate_adoption_plan(plan, root=ROOT):
         if item["materialization_eligible"] != eligible or (not eligible and item["bootstrap_component"] is not None):
             raise ValueError(f"Invalid materialization eligibility or component for {item['capability_id']}")
         if eligible:
-            actual = _component_for(root, item["capability_id"])
-            if item["semantic_status"] != "missing" or item["bootstrap_component"] != actual:
+            valid_components = _valid_components_for(root, item["capability_id"])
+            if item["semantic_status"] != "missing" or item["bootstrap_component"] not in valid_components:
                 raise ValueError(f"Invalid Bootstrap component for {item['capability_id']}")
     if plan["materializable_changes"] != sum(item["materialization_eligible"] for item in plan["items"]):
         raise ValueError("materializable_changes does not match eligible items")

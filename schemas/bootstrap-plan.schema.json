@@ -8,7 +8,7 @@
   "properties": {
     "format_version": {"const": 1},
     "target": {"type": "object", "required": ["commit_sha", "dirty", "path"], "properties": {"repository": {"type": ["string", "null"]}, "branch": {"type": ["string", "null"]}, "commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"}, "remote": {"type": ["string", "null"]}, "remote_commit_sha": {"type": ["string", "null"]}, "dirty": {"type": "boolean"}, "path": {"type": "string"}, "additionalProperties": false}, "additionalProperties": false},
-    "host": {"enum": ["codex", "none"]}, "route": {"enum": ["compose", "adoption"]},
+    "host": {"type": "string"}, "route": {"enum": ["compose", "adoption"]},
     "project_context": {"type": ["object", "null"]}, "catalog_revision": {"type": "string"}, "profile_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "capabilities": {"type": "array", "items": {"type": "string"}},
     "project_changes": {"$ref": "#/$defs/changeList"}, "global_changes": {"$ref": "#/$defs/changeList"},
