@@ -180,6 +180,8 @@ def harvest_successful_event(project_root, event, observation, host="codex", roo
     observation_data = dict(observation_data)
     observation_data["evidence"] = list(observation_data["evidence"])
     observation_data["evidence"].extend([
+        {"type": "project_result", "source": issue["url"],
+         "description": f"Linked Issue #{issue['number']} was closed.", "strength": "moderate"},
         {"type": "project_result", "source": pr["url"],
          "description": f"Pull request #{pr['number']} was merged at commit {pr['merge_commit_sha']}.",
          "strength": "moderate"},
@@ -205,6 +207,7 @@ def harvest_successful_event(project_root, event, observation, host="codex", roo
         "occurred_at": event_data["trigger"]["occurred_at"],
         "repository": repository,
         "issue_number": issue["number"],
+        "issue_url": issue["url"],
         "pull_request_number": pr["number"],
         "pull_request_url": pr["url"],
         "commit_sha": pr["head_sha"],
@@ -301,7 +304,7 @@ def harvest_experience(project_root, observation, host="codex", output_path=None
         "scope": obs.get("scope", [project_name]),
         "reasoning": obs["reasoning"],
         "status": "candidate",
-        "capture_method": "host_semantic_inference_after_successful_event" if event_metadata else "host_semantic_harvest",
+        "capture_method": "github_structured_extraction_after_successful_event" if event_metadata and event_metadata.get("event_source") == "github" else "host_semantic_inference_after_successful_event" if event_metadata else "host_semantic_harvest",
         "review": {
             "review_status": "pending",
         },
@@ -309,7 +312,7 @@ def harvest_experience(project_root, observation, host="codex", output_path=None
     if event_metadata:
         candidate["source"].update({
             key: event_metadata[key] for key in (
-                "repository", "issue_number", "pull_request_number", "pull_request_url",
+                "repository", "issue_number", "issue_url", "pull_request_number", "pull_request_url",
                 "commit_sha", "merge_commit_sha", "ci_run_url",
             )
         })
