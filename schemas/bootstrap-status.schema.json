@@ -63,7 +63,7 @@
           "installed_sha256": { "type": "string" },
           "actual_sha256": { "type": ["string", "null"] },
           "desired_sha256": { "type": "string" },
-          "status": { "enum": ["unchanged", "update_available", "conflict", "missing", "reference_only"] }
+          "status": { "enum": ["unchanged", "update_available", "conflict", "missing", "location_unknown", "reference_only"] }
         },
         "additionalProperties": false
       }

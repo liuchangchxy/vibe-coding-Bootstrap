@@ -76,7 +76,7 @@ def _parser():
 
     upgrade_cmd = commands.add_parser("upgrade", help="Standardized VCBS safe upgrade")
     upgrade_cmd.add_argument("--project-root", default=".", help="Target project root directory")
-    upgrade_cmd.add_argument("--host", default="codex", help="Target AI host adapter (codex, claude, claude_code, antigravity, none)")
+    upgrade_cmd.add_argument("--host", default="all", help="Hosts to upgrade (default: all installed hosts; codex, claude, antigravity, none)")
     upgrade_cmd.add_argument("--context", help="Optional updated Project Context file path")
     upgrade_cmd.add_argument("--global-root", help="Global root directory")
     upgrade_cmd.add_argument("--output", help="Save generated plan to output path")

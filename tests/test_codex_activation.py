@@ -1,3 +1,4 @@
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -59,6 +60,19 @@ class CodexActivationTests(unittest.TestCase):
         self.assertFalse((self.project / SKILL_DESTINATION).exists())
         self.assertFalse((self.project / MANIFEST_PATH).exists())
         self.assertFalse((self.project / AGENTS_DESTINATION).exists())
+
+    def test_first_activation_binds_source_hash_to_approved_plan(self):
+        import shutil
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "vcbs"
+            shutil.copytree(ROOT / "host_adapters", root / "host_adapters")
+            plan = build_plan(self.project, root=root)
+            self.assertEqual(hashlib.sha256((root / plan["source"]).read_bytes()).hexdigest(), plan["source_sha256"])
+            source = root / plan["source"]
+            source.write_text(source.read_text(encoding="utf-8") + "changed\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "STALE_ACTIVATION_PLAN: Skill source content changed"):
+                apply(plan, make_decision(plan, "approve"), self.project, root=root)
+            self.assertFalse((self.project / SKILL_DESTINATION).exists())
 
     def test_conflicts_never_overwrite_existing_skill_or_manifest(self):
         target = self.project / SKILL_DESTINATION

@@ -98,6 +98,34 @@ class MaterializerTests(unittest.TestCase):
             self.assertEqual("user content", target.read_text(encoding="utf-8"))
             self.assertIsNone(result["manifest_path"])
 
+    def test_identical_unowned_file_is_not_adopted_or_recorded(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory) / "project"
+            project.mkdir()
+            plan = self.plan()
+            target = project / plan["components"][0]["destination"]
+            target.parent.mkdir(parents=True)
+            target.write_bytes((ROOT / plan["components"][0]["source"]).read_bytes())
+            result = materialize(plan, project, apply=True)
+            self.assertEqual("conflict", result["items"][0]["result"])
+            self.assertIsNone(result["manifest_path"])
+            self.assertFalse((project / ".vibe-coding-bootstrap/manifest.yaml").exists())
+
+    def test_version_only_change_refreshes_manifest_without_rewriting_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory) / "project"
+            project.mkdir()
+            plan = self.plan()
+            materialize(plan, project, apply=True)
+            target = project / plan["components"][0]["destination"]
+            original = target.read_bytes()
+            plan["components"][0]["capability_version"] = "2"
+            result = materialize(plan, project, apply=True)
+            self.assertEqual("upgraded", result["items"][0]["result"])
+            self.assertEqual(original, target.read_bytes())
+            manifest = yaml.safe_load((project / ".vibe-coding-bootstrap/manifest.yaml").read_text(encoding="utf-8"))
+            self.assertEqual("2", manifest["items"][0]["capability_version"])
+
     def test_existing_manifest_is_not_overwritten(self):
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory) / "project"

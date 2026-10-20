@@ -95,6 +95,7 @@ def get_status(project_root, host="codex", global_root=None, root=ROOT):
             mdata = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
             if not isinstance(mdata, dict) or mdata.get("format_version") != 1 or not isinstance(mdata.get("items"), list):
                 manifest_corrupt = True
+                has_manifest = True
                 conflicts.append("Bootstrap manifest.yaml is invalid or corrupted")
             else:
                 has_manifest = True
@@ -112,11 +113,12 @@ def get_status(project_root, host="codex", global_root=None, root=ROOT):
                             dest_path = _contained(project, dest_str)
                         except ProductLoopError as exc:
                             conflicts.append(str(exc))
-                    elif scope == "global" and global_root:
-                        try:
-                            dest_path = _contained(Path(global_root).resolve(), dest_str)
-                        except ProductLoopError as exc:
-                            conflicts.append(str(exc))
+                    elif scope == "global":
+                        if global_root:
+                            try:
+                                dest_path = _contained(Path(global_root).resolve(), dest_str)
+                            except ProductLoopError as exc:
+                                conflicts.append(str(exc))
                     elif scope == "external" or item.get("state") == "reference_only":
                         dest_path = None
 
@@ -151,6 +153,8 @@ def get_status(project_root, host="codex", global_root=None, root=ROOT):
                                 conflicts.append(f"Managed asset {dest_str} is not a regular file")
                         else:
                             c_status = "reference_only"
+                    elif scope == "global" and global_root is None:
+                        c_status = "location_unknown"
                     elif dest_path is None or not dest_path.exists():
                         c_status = "missing"
                     elif dest_path.is_file():
@@ -179,6 +183,7 @@ def get_status(project_root, host="codex", global_root=None, root=ROOT):
                     })
         except Exception:
             manifest_corrupt = True
+            has_manifest = True
             conflicts.append("Failed to read Bootstrap manifest.yaml")
 
     activation_manifest_path = project / activation.MANIFEST_PATH
@@ -212,6 +217,7 @@ def get_status(project_root, host="codex", global_root=None, root=ROOT):
             if not valid_manifest:
                 conflicts.append("Activation manifest activation.json is invalid or corrupted")
                 manifest_corrupt = True
+                has_activation = True
             else:
                 has_activation = bool(raw_activations)
                 for act in raw_activations:
@@ -276,6 +282,8 @@ def get_status(project_root, host="codex", global_root=None, root=ROOT):
                         }
         except Exception:
             conflicts.append("Failed to read activation manifest activation.json")
+            manifest_corrupt = True
+            has_activation = True
 
     # Scope breakdown
     proj_comps = [c["component_id"] for c in components if c["scope"] == "project"]
@@ -411,7 +419,7 @@ def render_status_summary(status_dict):
     return "\n".join(lines)
 
 
-def _build_upgrade_plan_from_manifest(project_root, host="codex", global_root=None, root=ROOT):
+def _build_upgrade_plan_from_manifest(project_root, host="all", global_root=None, root=ROOT):
     """Synthesize an upgrade plan directly from installed manifest items against the Catalog."""
     project = Path(project_root).resolve(strict=True)
     manifest_path = project / ".vibe-coding-bootstrap/manifest.yaml"
@@ -578,9 +586,6 @@ def deploy(project_root, host="codex", context_path=None, semantic_result_path=N
     """Standardized VCBS initial deployment or reconciliation."""
     st = get_status(project_root, host=host, global_root=global_root, root=root)
     # Check if already installed and up to date without changes
-    if st["deployed"] and st["status"] == "installed" and not context_path and not semantic_result_path and not plan:
-        return {"status": "no_changes", "message": "Environment is already up to date.", "target": st["target"]}
-
     active_plan = load_json(plan) if isinstance(plan, (str, Path)) else plan
     if active_plan is None:
         active_plan = build_plan(project_root, host=host, context_path=context_path,
@@ -599,7 +604,7 @@ def deploy(project_root, host="codex", context_path=None, semantic_result_path=N
     return apply_plan(active_plan, dec, project_root, global_root=global_root, root=root)
 
 
-def upgrade(project_root, host="codex", context_path=None, global_root=None,
+def upgrade(project_root, host="all", context_path=None, global_root=None,
             apply=False, decision=None, plan=None, root=ROOT):
     """Standardized VCBS safe upgrade."""
     st = get_status(project_root, host=host, global_root=global_root, root=root)
@@ -1114,10 +1119,10 @@ def apply_uninstall(plan, decision, project_root, global_root=None, root=ROOT):
                 manifest_path.unlink()
 
         act_manifest_path = project / activation.MANIFEST_PATH
-        if act_manifest_path.is_file() and any(item["status"] == "removable" for item in plan["activation_items"]):
+        if act_manifest_path.is_file() and any(item["status"] in {"removable", "already_absent"} for item in plan["activation_items"]):
             removed_pairs = set()
             for item in plan["activation_items"]:
-                if item["status"] == "removable":
+                if item["status"] in {"removable", "already_absent"}:
                     cid = item.get("component_id", "")
                     if cid.startswith("codex-"):
                         h = "codex"

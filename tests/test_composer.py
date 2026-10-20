@@ -46,6 +46,15 @@ class ComposerTests(unittest.TestCase):
             self.assertEqual({"research-workflow"},
                              {row["capability_id"] for row in compose(context, root)["recommendations"]})
 
+    def test_corrupt_unlinked_experience_does_not_block_composition(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in ["schemas", "capabilities", "composer", "profiles", "experiences"]:
+                shutil.copytree(ROOT / name, root / name)
+            (root / "experiences/candidate/unrelated.yaml").write_text("not: [valid", encoding="utf-8")
+            context = load_yaml(ROOT / "examples/one-off-experiment/project-context.yaml")
+            self.assertIsInstance(compose(context, root)["recommendations"], list)
+
     def test_examples(self):
         expected = {
             "long-lived-web": {"engineering-baseline", "testing", "documentation"},

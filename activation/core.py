@@ -206,6 +206,7 @@ def build_plan(project_root, capability="testing", host="codex", root=ROOT):
         "format_version": 1, "host": host, "target": str(project),
         "target_commit_sha": state["commit_sha"], "target_dirty": state["dirty"],
         "capability_id": capability, "source": target_conf["skill_source"].as_posix(),
+        "source_sha256": skill_digest,
         "destination": target_conf["skill_destination"], "agents_destination": agents_dest,
         "status": status,
         "requires_confirmation": True,
@@ -313,6 +314,8 @@ def apply(plan, decision, project_root, root=ROOT):
     manifest_path = _contained(project, MANIFEST_PATH)
     content = (Path(root).resolve() / plan["source"]).read_bytes()
     skill_digest = _sha256(content)
+    if plan.get("source_sha256") != skill_digest:
+        raise ValueError("STALE_ACTIVATION_PLAN: Skill source content changed after planning")
     agents_content = target_conf["agents_trigger"].encode("utf-8") if target_conf["agents_trigger"] else None
     agents_digest = _sha256(agents_content) if agents_content else None
     owned = _owned_artifacts(skill_digest, agents_digest=agents_digest,

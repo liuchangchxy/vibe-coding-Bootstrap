@@ -18,7 +18,7 @@ from bootstrap.core import (
     ProductLoopError, apply_plan, build_plan, decide, inspect_project, render_summary,
 )
 from bootstrap.lifecycle import (
-    apply_uninstall, build_uninstall_plan, decide_uninstall, deploy,
+    _build_upgrade_plan_from_manifest, apply_uninstall, build_uninstall_plan, decide_uninstall, deploy,
     get_status, rollback, uninstall, upgrade,
 )
 from composer.core import ROOT
@@ -43,6 +43,26 @@ class NativeSkillsAdoptionTests(unittest.TestCase):
 
     def tearDown(self):
         self.temp.cleanup()
+
+    def test_uninstall_clears_activation_record_when_skill_was_already_removed(self):
+        plan = activation_build_plan(self.project, capability="vcbs-manager", host="claude")
+        activation_apply(plan, activation_make_decision(plan, "approve"), self.project)
+        (self.project / ".claude/skills/vcbs-manager/SKILL.md").unlink()
+        uninstall_plan = build_uninstall_plan(self.project, root=ROOT)
+        self.assertEqual("already_absent", uninstall_plan["activation_items"][0]["status"])
+        applied = apply_uninstall(uninstall_plan, decide_uninstall(uninstall_plan, "approve"), self.project, root=ROOT)
+        self.assertEqual("applied", applied["status"])
+        self.assertFalse((self.project / MANIFEST_PATH).exists())
+
+    def test_default_upgrade_plan_includes_every_installed_host(self):
+        bootstrap_manifest = self.project / ".vibe-coding-bootstrap/manifest.yaml"
+        bootstrap_manifest.parent.mkdir(parents=True)
+        bootstrap_manifest.write_text("format_version: 1\nitems: []\n", encoding="utf-8")
+        for host in ("claude", "antigravity"):
+            plan = activation_build_plan(self.project, capability="vcbs-manager", host=host)
+            activation_apply(plan, activation_make_decision(plan, "approve"), self.project)
+        plan = _build_upgrade_plan_from_manifest(self.project, root=ROOT)
+        self.assertEqual({"claude", "antigravity"}, {item["host"] for item in plan["host_activations"]})
 
     def test_claude_skill_direct_activation_lifecycle(self):
         """Test Claude Code native skill activation, idempotent reapply, and clean deactivation."""
@@ -75,6 +95,7 @@ class NativeSkillsAdoptionTests(unittest.TestCase):
         self.assertEqual("vcbs-manager", manifest["capability"])
         self.assertEqual(1, len(manifest["artifacts"]))
         self.assertEqual(".claude/skills/vcbs-manager/SKILL.md", manifest["artifacts"][0]["destination"])
+        self.assertEqual(hashlib.sha256(skill_file.read_bytes()).hexdigest(), manifest["artifacts"][0]["sha256"])
 
         # Idempotent reapply
         plan2 = activation_build_plan(self.project, capability="vcbs-manager", host="claude")
