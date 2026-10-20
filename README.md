@@ -4,6 +4,23 @@ A personalizable foundation for assembling an AI development environment around 
 
 ## Unified Product Loop & Lifecycle
 
+### Guided setup
+
+`vcbs setup` gives Codex, Claude Code, and Antigravity users a guided path without editing Project Context YAML. Inspection is read-only and returns detected assets, available Host command-line tools, explainable recommendations, conflicts, and each Catalog item's delivery status.
+
+```bash
+vcbs setup inspect --project-root <project> --host <codex|claude|antigravity|none> --json
+vcbs setup plan --project-root <project> --host <host> --goal "..." --capability testing --scope project --output <plan.json>
+vcbs setup approve --plan <plan.json>
+vcbs setup apply --project-root <project> --plan <plan.json> --decision <plan.json.decision.json>
+```
+
+For an existing project, pass the Host-generated semantic result with `--semantic-result`; VCBS supplies the bounded review package and does not call a model. `--capability` makes the selected capabilities explicit, `--exclude-capability` declines a recommended capability, and `--exclude-component` declines one registered optional component. Dependencies remain visible. `--scope` defaults to `project`; `global` and `both` require an explicit `--global-root` when the plan includes global copies. Inspect labels items `installable`, `external_reference`, `reference_only`, `unsupported`, or `conflict`. Host command detection does not prove that the Host discovered or used an installed Skill.
+
+The `approve` command records explicit consent for the exact plan digest and target revision. `apply` refuses a missing or mismatched decision and rechecks ownership, revision, scope, and conflicts before writing.
+
+### Lifecycle operations
+
 VCBS provides four standardized lifecycle operations for end users:
 
 ```bash

@@ -190,6 +190,12 @@ class UnifiedLoopTests(unittest.TestCase):
         semantic_path.write_text(json.dumps(result), encoding="utf-8")
         eligible = build_plan(self.repo, semantic_result_path=semantic_path)
         self.assertEqual(eligible["capabilities"], ["testing"])
+        self.assertEqual([], eligible["host_activations"])
+        self.assertTrue(any("Codex native testing activation was omitted" in warning
+                            for warning in eligible["warnings"]))
+        self.assertEqual([], eligible["host_activations"])
+        self.assertTrue(any("Codex native testing activation was omitted" in warning
+                            for warning in eligible["warnings"]))
         self.assertEqual([item["component_id"] for item in eligible["project_changes"] if item["result"] == "copied"], ["project-test-guidance"])
         approval = decide(eligible, "approve")
         applied = apply_plan(eligible, approval, self.repo)

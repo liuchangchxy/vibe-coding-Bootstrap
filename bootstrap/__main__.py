@@ -7,6 +7,7 @@ import sys
 
 from . import __version__
 from .core import apply_plan, build_plan, decide, inspect_project, load_json, render_summary, validate_output_path, write_json
+from .guided import build_context, inspect_setup
 from .experience import harvest_experience, review_experience, verify_evidence
 from .lifecycle import (
     apply_uninstall, build_uninstall_plan, decide_uninstall, deploy,
@@ -20,6 +21,39 @@ def _parser():
     parser = argparse.ArgumentParser(prog="python -m bootstrap", description="Inspect, plan, confirm once, and apply a project Bootstrap plan.")
     parser.add_argument("--version", action="version", version=__version__)
     commands = parser.add_subparsers(dest="command", required=True)
+
+    setup = commands.add_parser("setup", help="Guided project setup without authoring VCBS YAML")
+    setup_steps = setup.add_subparsers(dest="setup_action", required=True)
+    setup_inspect = setup_steps.add_parser("inspect", help="Detect project assets, Hosts, and selectable Catalog components")
+    setup_inspect.add_argument("--project-root", default=".")
+    setup_inspect.add_argument("--host", default="codex", help="Host choice: codex, claude, antigravity, none, or comma-separated")
+    setup_inspect.add_argument("--json", action="store_true")
+    setup_plan = setup_steps.add_parser("plan", help="Create a reviewable setup plan from guided options")
+    setup_plan.add_argument("--project-root", default=".")
+    setup_plan.add_argument("--host", default="codex")
+    setup_plan.add_argument("--goal")
+    setup_plan.add_argument("--project-type", default="software project")
+    setup_plan.add_argument("--lifecycle", choices=("prototype", "short_term", "long_lived", "production"))
+    setup_plan.add_argument("--technology", action="append", default=[])
+    setup_plan.add_argument("--platform", default="local")
+    setup_plan.add_argument("--collaboration", choices=("solo", "team", "open_source"))
+    setup_plan.add_argument("--constraint", action="append", default=[])
+    setup_plan.add_argument("--capability", action="append", default=[], help="Explicitly select Catalog capability IDs; repeat or comma-separate")
+    setup_plan.add_argument("--exclude-capability", action="append", default=[], help="Decline optional Catalog capability IDs")
+    setup_plan.add_argument("--exclude-component", action="append", default=[], help="Decline individual registered component IDs")
+    setup_plan.add_argument("--scope", choices=("project", "global", "both"), default="project")
+    setup_plan.add_argument("--global-root")
+    setup_plan.add_argument("--semantic-result", help="Host-generated review result for existing project assets")
+    setup_plan.add_argument("--output", required=True, help="Write exact plan outside the consumer project")
+    setup_plan.add_argument("--json", action="store_true")
+    setup_approve = setup_steps.add_parser("approve", help="Record explicit approval of the exact displayed plan")
+    setup_approve.add_argument("--plan", required=True)
+    setup_approve.add_argument("--output", help="Decision path; defaults to <plan>.decision.json")
+    setup_apply = setup_steps.add_parser("apply", help="Apply only a plan with its matching approval artifact")
+    setup_apply.add_argument("--project-root", default=".")
+    setup_apply.add_argument("--global-root")
+    setup_apply.add_argument("--plan", required=True)
+    setup_apply.add_argument("--decision", required=True)
 
     # Standard Lifecycle Commands (Phase 12)
     status_cmd = commands.add_parser("status", help="Query read-only VCBS status and managed components inventory")
@@ -112,7 +146,61 @@ def main(argv=None):
     try:
         if getattr(args, "project_root", None) is not None:
             args.project_root = str(Path(args.project_root).resolve())
-        if args.command == "status":
+        if args.command == "setup" and args.setup_action == "inspect":
+            value = inspect_setup(args.project_root, args.host)
+            if args.json:
+                print(json.dumps(value, indent=2, ensure_ascii=False))
+            else:
+                print(f"Project: {value['project']['name']} ({', '.join(value['project']['technologies']) or 'technology not detected'})")
+                print(f"Route: {value['route']} | Hosts selected: {', '.join(value['host_selection'])}")
+                print("Detected host commands: " + ", ".join(f"{h}={'available' if x['available'] else 'not detected'}" for h, x in value['available_hosts'].items()))
+                print("Existing project assets: " + (", ".join(a['path'] for a in value['existing_assets']) or "none"))
+                if value["recommendations"] is not None:
+                    print("Explainable shortlist:")
+                    for item in value["recommendations"]:
+                        print(f"  {item['capability_id']} ({item['confidence']}): {item['reason']}")
+                print("Selectable Catalog capabilities:")
+                for option in value["capability_options"]:
+                    statuses = ", ".join(f"{item['id']}={item['status']}" for item in option["components"])
+                    print(f"  {option['capability_id']}: {option['purpose']} [{statuses or 'no registered component'}]")
+                if value["semantic_review_required"]:
+                    print("Next: let the selected Host review semantic_package and save its result; then run setup plan --semantic-result <file>.")
+                else:
+                    print("Next: run setup plan with your goal, capability choices, and output path.")
+                print(value["consumption_note"])
+        elif args.command == "setup" and args.setup_action == "plan":
+            inspection = inspect_project(args.project_root, args.host)
+            selected = [cid.strip() for entry in args.capability for cid in entry.split(",") if cid.strip()]
+            declined = [cid.strip() for entry in args.exclude_capability for cid in entry.split(",") if cid.strip()]
+            declined_components = [cid.strip() for entry in args.exclude_component for cid in entry.split(",") if cid.strip()]
+            if inspection["route"] == "adoption":
+                if not args.semantic_result:
+                    raise ValueError("HOST_SEMANTIC_REVIEW_REQUIRED: setup inspect provides the bounded review package; pass the Host-generated --semantic-result")
+                context_value = None
+            else:
+                context_value = build_context(args.project_root, goal=args.goal, project_type=args.project_type,
+                    lifecycle=args.lifecycle, technologies=args.technology or None, platform=args.platform,
+                    collaboration=args.collaboration, constraints=args.constraint)
+            plan = build_plan(args.project_root, host=args.host, semantic_result_path=args.semantic_result,
+                global_root=args.global_root, context_value=context_value,
+                selected_capability_ids=selected or None, excluded_capability_ids=declined,
+                excluded_component_ids=declined_components, scope=args.scope)
+            validate_output_path(args.output, args.project_root)
+            write_json(args.output, plan, args.project_root)
+            print(json.dumps({"plan": plan, "plan_path": str(Path(args.output).resolve())}, indent=2, ensure_ascii=False)
+                  if args.json else render_summary(plan) + f"\nPlan: {Path(args.output).resolve()}\nNext: review the plan, then run setup approve --plan <plan>.")
+        elif args.command == "setup" and args.setup_action == "approve":
+            plan = load_json(args.plan)
+            value = decide(plan, "approve")
+            output = args.output or f"{Path(args.plan).resolve()}.decision.json"
+            validate_output_path(output, plan["target"]["path"])
+            write_json(output, value, plan["target"]["path"])
+            print(f"Approved exact plan {value['plan_digest'][:12]} for {plan['target']['commit_sha'][:7]}\nDecision: {Path(output).resolve()}")
+        elif args.command == "setup" and args.setup_action == "apply":
+            plan = load_json(args.plan)
+            value = apply_plan(plan, load_json(args.decision), args.project_root, args.global_root)
+            print(json.dumps(value, indent=2, ensure_ascii=False))
+        elif args.command == "status":
             value = get_status(args.project_root, host=args.host, global_root=args.global_root)
             if getattr(args, "json", False):
                 print(json.dumps(value, indent=2, ensure_ascii=False))
