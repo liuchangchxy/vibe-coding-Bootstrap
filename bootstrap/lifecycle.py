@@ -366,7 +366,7 @@ def render_status_summary(status_dict):
         f"Project: {repo_name} @ {target.get('commit_sha', '')[:7]} ({dirty_str})",
         f"Location: {status_dict['project_root']}",
         f"VCBS Status: {status_dict['status'].upper()}",
-        f"Catalog Revision: {status_dict['catalog_revision'][:8]}",
+        f"Catalog Revision: {status_dict['catalog_revision'][:19]}",
         f"Host: {status_dict['host_support']['host']} (native activation: {status_dict['host_support']['native_activation']})",
     ]
 
