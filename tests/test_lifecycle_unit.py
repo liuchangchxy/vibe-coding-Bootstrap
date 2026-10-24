@@ -426,3 +426,26 @@ class LifecycleUnitTests(unittest.TestCase):
         self.assertEqual(2, res_plan.returncode)
         self.assertIn("--project-root", res_plan.stderr)
 
+    def test_render_status_summary_catalog_revision_truncation(self):
+        """Catalog revision in render_status_summary shows sha256: followed by at least 12 hex chars."""
+        digest = "sha256:b90dbab7d97fc78606dc069d65999eef395d34be7080c756f5df85e3799a03a3"
+        status_dict = get_status(self.project, host="codex", root=self.vcbs_root)
+        status_dict["catalog_revision"] = digest
+        summary = render_status_summary(status_dict)
+        matching_lines = [l for l in summary.splitlines() if l.startswith("Catalog Revision:")]
+        self.assertEqual(1, len(matching_lines))
+        self.assertEqual("Catalog Revision: sha256:b90dbab7d97f", matching_lines[0])
+
+        # Two Catalogs sharing the same first hex digit render different lines
+        status_dict_2 = dict(
+            status_dict,
+            catalog_revision="sha256:b11111111111c78606dc069d65999eef395d34be7080c756f5df85e3799a03a3",
+        )
+        summary_2 = render_status_summary(status_dict_2)
+        matching_lines_2 = [l for l in summary_2.splitlines() if l.startswith("Catalog Revision:")]
+        self.assertEqual(1, len(matching_lines_2))
+        self.assertEqual("Catalog Revision: sha256:b11111111111", matching_lines_2[0])
+        self.assertNotEqual(matching_lines[0], matching_lines_2[0])
+
+
+
