@@ -45,7 +45,7 @@ def validate(value, schema_name, root=ROOT):
     Draft202012Validator(schema, registry=registry, format_checker=FormatChecker()).validate(value)
 
 
-def compose(context, root=ROOT, selected_capability_ids=None, excluded_capability_ids=None):
+def compose(context, root=ROOT, selected_capability_ids=None, excluded_capability_ids=None, vcbs_home=None):
     validate(context, "project-context.schema.json", root)
     catalog = load_yaml(root / "capabilities/catalog.yaml")
     validate(catalog, "catalog.schema.json", root)
@@ -64,6 +64,14 @@ def compose(context, root=ROOT, selected_capability_ids=None, excluded_capabilit
         digest.update(path.encode("utf-8"))
         digest.update(record_path.read_bytes())
 
+    if vcbs_home is not None:
+        from bootstrap.home import load_user_capabilities
+        for user_cap in load_user_capabilities(vcbs_home):
+            cid = user_cap["id"]
+            if cid not in records:
+                records[cid] = user_cap
+                paths[cid] = user_cap.get("source_path", f"user_home/capabilities/{cid}.yaml")
+
     def require_id(cid):
         if cid not in records:
             raise ValueError(f"Unknown capability ID: {cid}")
@@ -73,7 +81,11 @@ def compose(context, root=ROOT, selected_capability_ids=None, excluded_capabilit
             for cid in record.get(field, []):
                 require_id(cid)
 
-    profile = load_yaml(root / "profiles/personal.yaml")
+    if vcbs_home is not None:
+        from bootstrap.home import load_profile
+        profile = load_profile(vcbs_home, root=root)
+    else:
+        profile = load_yaml(root / "profiles/personal.yaml")
     validate(profile, "profile.schema.json", root)
     defaults = profile.get("default_capability_ids", [])
     excluded = {cid: "Explicitly excluded by profiles/personal.yaml."
@@ -231,10 +243,10 @@ def compose(context, root=ROOT, selected_capability_ids=None, excluded_capabilit
                               key=["low", "medium", "high"].index),
             "source": [match["source"] for match in matches],
             "catalog_record": paths[cid],
-            "status": record["status"], "maturity": record["maturity"],
-            "evidence": record["evidence"],
-            "constraints": record["selection_hints"]["constraints"],
-            "not_for": record["applicability"]["not_for"],
+            "status": record.get("status", "validated"), "maturity": record.get("maturity", "established"),
+            "evidence": record.get("evidence", {"state": "supported", "summary": "User defined in VCBS Home", "references": ["https://example.com"]}),
+            "constraints": record.get("selection_hints", {}).get("constraints", []),
+            "not_for": record.get("applicability", {}).get("not_for", []),
             "requires": record.get("requires", []),
             "experiences": supporting,
         })

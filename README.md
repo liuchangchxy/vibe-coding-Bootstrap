@@ -1,25 +1,32 @@
 # vibe-coding-bootstrap
 
-A personalizable foundation for assembling an AI development environment around a software project. It models project context, user preferences, reusable capabilities, and validated experience so future phases can help users make informed choices.
+A personal AI development-environment manager for assembling, tailoring, and maintaining developer environments around software projects. It models project context, user-owned personal environments (`~/.vcbs`), reusable capabilities, and verified experience, empowering supported AI Hosts (Claude Code, Antigravity, Codex) to make semantic environment recommendations with one-step user approval.
 
-## Unified Product Loop & Lifecycle
+## Personal AI Development-Environment Manager
 
-### Guided setup
+VCBS cleanly separates four responsibilities:
+1. **VCBS Program & Built-in Catalog**: Fact gathering, safety invariants, Catalog definitions, schema validation, manifests, and rollback machinery.
+2. **User-Owned VCBS Home (`~/.vcbs/`)**: Persistent personal preferences (`profile.yaml`), reusable user capability definitions (`capabilities/`), and verified reusable Experience records (`experiences/verified/`).
+3. **Target-Project State**: Project files, project-owned instructions, and local VCBS manifest (`.vibe-coding-bootstrap/manifest.yaml`).
+4. **Current Host AI Semantic Judgment**: Semantic reasoning over the fact package, recommending what is useful, unnecessary, or redundant, or recommending "install nothing".
 
-`vcbs setup` gives Codex, Claude Code, and Antigravity users a guided path without editing Project Context YAML. Inspection is read-only and returns detected assets, available Host command-line tools, explainable recommendations, conflicts, and each Catalog item's delivery status.
+See [Personal AI Development-Environment Manager](docs/personal-environment.md) for full architecture and design details.
+
+### Normal Host-driven Setup Flow
 
 ```bash
-vcbs setup inspect --project-root <project> --host <codex|claude|antigravity|none> --json
-vcbs setup plan --project-root <project> --host <host> --goal "..." --capability testing --scope project --output <plan.json>
-vcbs setup approve --plan <plan.json>
-vcbs setup apply --project-root <project> --plan <plan.json> --decision <plan.json.decision.json>
+# 1. Inspect facts and personal context (outputs machine-readable fact package)
+vcbs setup inspect --project-root <project> --host <claude|antigravity|codex> --recommendation-input /tmp/facts.json --json
+
+# 2. Host AI reviews facts and outputs structured recommendation (/tmp/rec.json)
+# 3. Build plan preview with concise "what / why / scope" summary
+vcbs setup plan --project-root <project> --host <host> --recommendation /tmp/rec.json --output /tmp/plan.json
+
+# 4. User confirms once; apply through safety engine
+vcbs setup apply --project-root <project> --plan /tmp/plan.json --confirm
 ```
 
-For an existing project, pass the Host-generated semantic result with `--semantic-result`; VCBS supplies the bounded review package and does not call a model. `--capability` makes the selected capabilities explicit, `--exclude-capability` declines a recommended capability, and `--exclude-component` declines one registered optional component. Dependencies remain visible. `--scope` defaults to `project`; `global` and `both` require an explicit `--global-root` when the plan includes global copies. Inspect labels items `installable`, `external_reference`, `reference_only`, `unsupported`, or `conflict`. Host command detection does not prove that the Host discovered or used an installed Skill.
-
-The `approve` command records explicit consent for the exact plan digest and target revision. `apply` refuses a missing or mismatched decision and rechecks ownership, revision, scope, and conflicts before writing.
-
-`vcbs harvest-event` can capture a caller-supplied successful merge event as an unverified Experience candidate. The pinned VCCP integration currently has no post-merge delivery hook; see [Experience Event Capture](docs/experience-events.md).
+If the Host AI determines no installation is necessary, it emits an `install_nothing: true` recommendation. VCBS plans a valid no-op, requiring no changes and modifying 0 files. Static rules remain available as an explicit fallback when semantic Host recommendation is omitted.
 
 ### Lifecycle operations
 

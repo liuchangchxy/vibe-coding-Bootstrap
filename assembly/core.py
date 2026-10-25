@@ -6,7 +6,7 @@ from pathlib import PurePosixPath
 from composer.core import ROOT, load_yaml, validate
 
 
-def _catalog(root):
+def _catalog(root, vcbs_home=None):
     catalog = load_yaml(root / "capabilities/catalog.yaml")
     records = {}
     for relative in catalog["capabilities"]:
@@ -14,13 +14,19 @@ def _catalog(root):
         if record["id"] in records:
             raise ValueError(f"Duplicate capability ID: {record['id']}")
         records[record["id"]] = record
+    if vcbs_home is not None:
+        from bootstrap.home import load_user_capabilities
+        for user_cap in load_user_capabilities(vcbs_home):
+            cid = user_cap["id"]
+            if cid not in records:
+                records[cid] = user_cap
     return records
 
 
-def assemble(recommendation, root=ROOT, generated_at=None, recommendation_source=None):
+def assemble(recommendation, root=ROOT, generated_at=None, recommendation_source=None, vcbs_home=None):
     """Build a plan without writing inputs or accessing network/runtime services."""
     validate(recommendation, "recommendation.schema.json", root)
-    records = _catalog(root)
+    records = _catalog(root, vcbs_home=vcbs_home)
     selected_rows = recommendation["recommendations"]
     selected = {row["capability_id"] for row in selected_rows}
     excluded = {row["capability_id"] for row in recommendation["excluded"]}

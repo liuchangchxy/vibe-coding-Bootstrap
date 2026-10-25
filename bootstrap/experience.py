@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -155,7 +156,38 @@ def _validate_success_event(project, event, root):
         raise ExperienceError("EVENT_CHECKOUT_DIRTY: event harvesting requires a clean checkout")
 
 
-def harvest_successful_event(project_root, event, observation, host="codex", root=ROOT):
+def _candidate_dir(root, vcbs_home=None):
+    if vcbs_home or os.environ.get("VCBS_HOME"):
+        from bootstrap.home import get_experience_dir
+        return get_experience_dir("candidate", vcbs_home)
+    return Path(root) / "experiences/candidate"
+
+
+def _verified_dir(root, vcbs_home=None):
+    if vcbs_home or os.environ.get("VCBS_HOME"):
+        from bootstrap.home import get_experience_dir
+        return get_experience_dir("verified", vcbs_home)
+    return Path(root) / "experiences/verified"
+
+
+def _rejected_dir(root, vcbs_home=None):
+    if vcbs_home or os.environ.get("VCBS_HOME"):
+        from bootstrap.home import get_experience_dir
+        return get_experience_dir("rejected", vcbs_home)
+    return Path(root) / "experiences/rejected"
+
+
+def _profile_path_for_experience(root, vcbs_home=None):
+    if vcbs_home or os.environ.get("VCBS_HOME"):
+        from bootstrap.home import get_vcbs_home
+        home = get_vcbs_home(vcbs_home)
+        home_profile = home / "profile.yaml"
+        if home_profile.is_file():
+            return home_profile
+    return Path(root) / "profiles/personal.yaml"
+
+
+def harvest_successful_event(project_root, event, observation, host="codex", root=ROOT, vcbs_home=None):
     """Create one unverified candidate from exact-head merged PR and successful CI facts."""
     root = Path(root).resolve()
     project = Path(project_root).resolve(strict=True)
@@ -229,7 +261,7 @@ def harvest_successful_event(project_root, event, observation, host="codex", roo
 
 
 def harvest_experience(project_root, observation, host="codex", output_path=None, root=ROOT,
-                       event_metadata=None, event_candidate_id=None):
+                       event_metadata=None, event_candidate_id=None, vcbs_home=None):
     """Harvest bounded project observation into a candidate Experience."""
     root = Path(root).resolve()
     project = Path(project_root).resolve(strict=True)
@@ -324,7 +356,7 @@ def harvest_experience(project_root, observation, host="codex", output_path=None
 
     validate(candidate, "experience.schema.json", root)
 
-    dest = Path(output_path).resolve() if output_path else root / "experiences/candidate" / f"{exp_id}.yaml"
+    dest = Path(output_path).resolve() if output_path else _candidate_dir(root, vcbs_home) / f"{exp_id}.yaml"
     dest.parent.mkdir(parents=True, exist_ok=True)
     serialized = yaml.safe_dump(candidate, sort_keys=False, allow_unicode=True)
     if event_metadata:
@@ -335,11 +367,18 @@ def harvest_experience(project_root, observation, host="codex", output_path=None
     return candidate
 
 
-def _find_experience(ref, root=ROOT):
+def _find_experience(ref, root=ROOT, vcbs_home=None):
     root = Path(root).resolve()
     target_path = Path(ref)
     if target_path.is_file():
         return target_path, load_yaml(target_path)
+    if vcbs_home or os.environ.get("VCBS_HOME"):
+        from bootstrap.home import get_vcbs_home
+        home = get_vcbs_home(vcbs_home)
+        for state in ("candidate", "verified", "rejected", "raw", "archived"):
+            p = home / "experiences" / state / f"{ref}.yaml"
+            if p.is_file():
+                return p, load_yaml(p)
     for state in ("candidate", "verified", "rejected", "raw", "archived"):
         candidate_path = root / "experiences" / state / f"{ref}.yaml"
         if candidate_path.is_file():
@@ -387,13 +426,13 @@ def verify_evidence(experience_ref, evidence_index=0, verifier=None, method=None
     return record
 
 
-def review_experience(experience_ref, decision, reviewer=None, notes=None, root=ROOT):
+def review_experience(experience_ref, decision, reviewer=None, notes=None, root=ROOT, vcbs_home=None):
     """Review and approve or reject an Experience candidate for personal reuse."""
     root = Path(root).resolve()
     if decision not in {"approve", "reject"}:
         raise ExperienceError("INVALID_DECISION: review decision must be approve or reject")
 
-    path, record = _find_experience(experience_ref, root)
+    path, record = _find_experience(experience_ref, root, vcbs_home=vcbs_home)
 
     if decision == "approve":
         if not reviewer or not str(reviewer).strip():
@@ -444,14 +483,14 @@ def review_experience(experience_ref, decision, reviewer=None, notes=None, root=
 
         validate(record, "experience.schema.json", root)
 
-        target_path = root / "experiences/verified" / f"{record['id']}.yaml"
+        target_path = _verified_dir(root, vcbs_home) / f"{record['id']}.yaml"
         target_path.parent.mkdir(parents=True, exist_ok=True)
         target_path.write_text(yaml.safe_dump(record, sort_keys=False, allow_unicode=True), encoding="utf-8")
         if path != target_path and path.is_file():
             path.unlink()
 
         # Update Personal Profile with reusable_experience_ids
-        profile_path = root / "profiles/personal.yaml"
+        profile_path = _profile_path_for_experience(root, vcbs_home)
         profile = load_yaml(profile_path)
         reusable = profile.setdefault("reusable_experience_ids", [])
         if record["id"] not in reusable:
@@ -473,14 +512,14 @@ def review_experience(experience_ref, decision, reviewer=None, notes=None, root=
         }
         validate(record, "experience.schema.json", root)
 
-        target_path = root / "experiences/rejected" / f"{record['id']}.yaml"
+        target_path = _rejected_dir(root, vcbs_home) / f"{record['id']}.yaml"
         target_path.parent.mkdir(parents=True, exist_ok=True)
         target_path.write_text(yaml.safe_dump(record, sort_keys=False, allow_unicode=True), encoding="utf-8")
         if path != target_path and path.is_file():
             path.unlink()
 
         # Remove from personal profile if present
-        profile_path = root / "profiles/personal.yaml"
+        profile_path = _profile_path_for_experience(root, vcbs_home)
         profile = load_yaml(profile_path)
         reusable = profile.get("reusable_experience_ids", [])
         if record["id"] in reusable:

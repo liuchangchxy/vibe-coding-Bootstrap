@@ -58,8 +58,11 @@ def build_context(project_root, goal=None, project_type=None, lifecycle=None,
     }
 
 
-def inspect_setup(project_root, host="codex", root=None):
+def inspect_setup(project_root, host="codex", root=None, vcbs_home=None):
+    from bootstrap.recommendation import build_recommendation_package
     project = Path(project_root).resolve(strict=True)
+    effective_root = Path(root) if root else Path(__file__).resolve().parents[1]
+    rec_pkg = build_recommendation_package(project, host=host, root=effective_root, vcbs_home=vcbs_home)
     report = discover(project, root) if root else discover(project)
     inspection = inspect_project(project, host, root) if root else inspect_project(project, host)
     target = bind_target_revision(project)
@@ -73,6 +76,9 @@ def inspect_setup(project_root, host="codex", root=None):
     catalog = load_yaml((Path(root) if root else Path(__file__).resolve().parents[1]) / "capabilities/catalog.yaml")
     records = [load_yaml((Path(root) if root else Path(__file__).resolve().parents[1]) / "capabilities" / entry)
                for entry in catalog["capabilities"]]
+    if vcbs_home is not None:
+        from bootstrap.home import load_user_capabilities
+        records.extend(load_user_capabilities(vcbs_home))
     options = []
     for record in records:
         components = []
@@ -118,7 +124,7 @@ def inspect_setup(project_root, host="codex", root=None):
     shortlist = None
     if inspection["route"] == "compose":
         context = build_context(project)
-        recommendation = compose(context, root) if root else compose(context)
+        recommendation = compose(context, root, vcbs_home=vcbs_home) if root else compose(context, vcbs_home=vcbs_home)
         ranked = sorted(recommendation["recommendations"],
                         key=lambda item: (-["low", "medium", "high"].index(item["confidence"]), item["capability_id"]))
         shortlist = [{"rank": index, "capability_id": item["capability_id"],
@@ -136,6 +142,12 @@ def inspect_setup(project_root, host="codex", root=None):
                            for a in report["discovered_assets"] if a["asset_type"] != "documentation"],
         "capability_options": options,
         "recommendations": shortlist,
+        "recommendation_input": rec_pkg,
+        "managed_components": rec_pkg["managed_components"],
+        "personal_preferences": rec_pkg["personal_preferences"],
+        "matching_experiences": rec_pkg["matching_experiences"],
+        "conflict_signals": rec_pkg["conflict_signals"],
+        "fallback_static_recommendations": rec_pkg["fallback_static_recommendations"],
         "semantic_review_required": inspection["route"] == "adoption",
         **({"semantic_package": inspection["semantic_package"]} if inspection["route"] == "adoption" else {}),
         "consumption_note": "Host command availability and installed files do not prove a host discovered or used a Skill.",

@@ -35,8 +35,21 @@ def _plan_digest(plan):
     return _sha(_canonical({key: value for key, value in plan.items() if key not in {"generated_at", "plan_digest"}}))
 
 
-def _profile_digest(root=ROOT):
-    return _sha((Path(root) / "profiles/personal.yaml").read_bytes())
+def _profile_digest(root=ROOT, vcbs_home=None):
+    from bootstrap.home import get_vcbs_home
+    home = get_vcbs_home(vcbs_home)
+    candidate_paths = [
+        home / "profile.yaml",
+        home / "profile.json",
+        home / "profiles" / "personal.yaml",
+    ]
+    for path in candidate_paths:
+        if path.is_file():
+            return _sha(path.read_bytes())
+    seed_path = Path(root) / "profiles/personal.yaml"
+    if seed_path.is_file():
+        return _sha(seed_path.read_bytes())
+    return _sha(b"")
 
 
 def _inside(path, root):
@@ -189,15 +202,20 @@ def _materializer_rows(assembly_plan, project, global_root, root):
     return result, [dict(item) for item in result["items"]]
 
 
-def _exclude_assembly_components(assembly_plan, excluded_ids, root):
+def _exclude_assembly_components(assembly_plan, excluded_ids, root, vcbs_home=None):
     excluded_ids = set(excluded_ids or [])
     if not excluded_ids:
         return
     catalog = load_yaml(Path(root) / "capabilities/catalog.yaml")
     known = set()
     resolved_ids = set()
+    records = []
     for relative in catalog["capabilities"]:
-        record = load_yaml(Path(root) / "capabilities" / relative)
+        records.append(load_yaml(Path(root) / "capabilities" / relative))
+    if vcbs_home is not None:
+        from bootstrap.home import load_user_capabilities
+        records.extend(load_user_capabilities(vcbs_home))
+    for record in records:
         for item in record.get("components", []):
             metadata = item.get("assembly", {})
             assembly_id = metadata.get("id", item["id"])
@@ -231,24 +249,116 @@ def _unified_changes(items, scope):
 def build_plan(project_root, host="codex", context_path=None, semantic_result_path=None,
                global_root=None, root=ROOT, context_value=None,
                selected_capability_ids=None, excluded_capability_ids=None,
-               excluded_component_ids=None, scope="both"):
+               excluded_component_ids=None, scope="both",
+               recommendation=None, vcbs_home=None):
     if scope not in {"project", "global", "both"}:
         raise ProductLoopError(f"INVALID_SCOPE: unsupported installation scope '{scope}'")
     current = inspect_project(project_root, host, root)
     project = Path(project_root).resolve(strict=True)
     route = current["route"]
+    rec_data = None
+    if recommendation is not None:
+        from bootstrap.recommendation import validate_host_recommendation, _all_capabilities
+        if isinstance(recommendation, (str, Path)):
+            rec_p = Path(recommendation)
+            if rec_p.is_file():
+                raw_text = rec_p.read_text(encoding="utf-8")
+                try:
+                    rec_data = json.loads(raw_text)
+                except Exception:
+                    rec_data = yaml.safe_load(raw_text)
+            else:
+                rec_data = json.loads(str(recommendation))
+        else:
+            rec_data = dict(recommendation)
+
+        validate_host_recommendation(rec_data, project_root, root=root, vcbs_home=vcbs_home)
+
+        # Handle install_nothing (no-op)
+        if rec_data.get("install_nothing") or not rec_data.get("recommendations"):
+            profile_sha = _profile_digest(root, vcbs_home=vcbs_home)
+            catalog_revision = _current_catalog_revision(root)
+            value = {
+                "format_version": 1,
+                "target": current["target"],
+                "host": host,
+                "route": route,
+                "project_context": context_value or {
+                    "name": project.name,
+                    "description": "Host AI recommendation: install nothing",
+                    "project_type": "software project",
+                    "lifecycle": "production",
+                    "technology_tags": [],
+                    "runtime": "Not detected",
+                    "platform": "local",
+                    "goal": rec_data.get("reason", "Install nothing"),
+                    "constraints": [],
+                    "collaboration": "solo",
+                },
+                "catalog_revision": catalog_revision,
+                "profile_sha256": profile_sha,
+                "capabilities": [],
+                "project_changes": [],
+                "global_changes": [],
+                "references": [],
+                "host_activations": [],
+                "unchanged": [],
+                "unresolved": [],
+                "warnings": [],
+                "underlying_plans": {
+                    "recommendation": None,
+                    "assembly_plan": None,
+                    "adoption_plan": None,
+                    "activation_plans": [],
+                    "host_recommendation": rec_data,
+                    "install_nothing": True,
+                },
+                "requires_confirmation": False,
+                "actual_changes": 0,
+                "executable": True,
+                "global_root": str(Path(global_root).resolve()) if global_root else None,
+                "conflicts": [],
+                "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
+            }
+            value["plan_digest"] = _plan_digest(value)
+            validate(value, "bootstrap-plan.schema.json", root)
+            return value
+
+        # Host recommended specific capabilities
+        rec_cids = [item["capability_id"] for item in rec_data["recommendations"]]
+        selected_capability_ids = rec_cids
+        excluded_capability_ids = [item["capability_id"] for item in rec_data.get("not_recommended", [])]
+
+        specific_components = []
+        for item in rec_data["recommendations"]:
+            specific_components.extend(item.get("component_ids", []))
+        if specific_components:
+            all_caps = _all_capabilities(root=root, vcbs_home=vcbs_home)
+            rec_cap_set = set(rec_cids)
+            declined_comps = set(excluded_component_ids or [])
+            for cap in all_caps:
+                if cap["id"] in rec_cap_set:
+                    for comp in cap.get("components", []):
+                        comp_id = comp.get("assembly", {}).get("id", comp["id"])
+                        if comp_id not in specific_components and comp["id"] not in specific_components:
+                            declined_comps.add(comp_id)
+            excluded_component_ids = list(declined_comps)
+
+        if context_value is None and not context_path:
+            from bootstrap.guided import build_context
+            context_value = build_context(project_root, goal=rec_data.get("reason", "Host AI recommendation"))
     context = None
-    recommendation = assembly_plan = adoption_plan = None
+    recommendation_plan = assembly_plan = adoption_plan = None
     warnings, unresolved, capabilities = [], [], []
     materialized = {"items": []}
-    if route == "compose":
+    if rec_data is not None or route == "compose":
         if context_value is None and not context_path:
             raise ProductLoopError("PROJECT_CONTEXT_REQUIRED: provide an explicit Project Context file")
         context = context_value if context_value is not None else load_yaml(context_path)
-        recommendation = compose(context, root, selected_capability_ids=selected_capability_ids,
-                                 excluded_capability_ids=excluded_capability_ids)
-        assembly_plan = assemble(recommendation, root)
-        _exclude_assembly_components(assembly_plan, excluded_component_ids, root)
+        recommendation_plan = compose(context, root, selected_capability_ids=selected_capability_ids,
+                                      excluded_capability_ids=excluded_capability_ids, vcbs_home=vcbs_home)
+        assembly_plan = assemble(recommendation_plan, root, vcbs_home=vcbs_home)
+        _exclude_assembly_components(assembly_plan, excluded_component_ids, root, vcbs_home=vcbs_home)
         if scope != "both":
             excluded = [item for item in assembly_plan["components"]
                         if item["scope"] in {"project", "global"} and item["scope"] != scope]
@@ -396,8 +506,8 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
     actual_writes = sum(item["result"] in {"copied", "upgraded"} for item in rows)
     actual_writes += sum(plan["status"] == "ready" for plan in activation_plans)
     blocked = bool(unresolved)
-    profile_sha = _profile_digest(root)
-    catalog_revision = recommendation["catalog_revision"] if recommendation else _current_catalog_revision(root)
+    profile_sha = _profile_digest(root, vcbs_home=vcbs_home)
+    catalog_revision = recommendation_plan["catalog_revision"] if recommendation_plan else _current_catalog_revision(root)
     if scope != "global" and (any(p.get("host") == "antigravity" for p in activation_plans) or "antigravity" in _parse_hosts(host)):
         shared_notice = (
             "Antigravity skill destination '.agents/skills/vcbs-manager/SKILL.md' shares the '.agents/skills' "
@@ -405,6 +515,14 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
         )
         if shared_notice not in warnings:
             warnings.append(shared_notice)
+    underlying = {
+        "recommendation": recommendation_plan,
+        "assembly_plan": assembly_plan,
+        "adoption_plan": adoption_plan,
+        "activation_plans": activation_plans,
+    }
+    if rec_data is not None:
+        underlying["host_recommendation"] = rec_data
     value = {
         "format_version": 1, "target": current["target"], "host": host, "route": route,
         "project_context": context or (adoption_plan and current["semantic_package"]["project"]),
@@ -412,8 +530,7 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
         "capabilities": capabilities, "project_changes": project_changes, "global_changes": global_changes,
         "references": references, "host_activations": activation_plans,
         "unchanged": sorted(set(unchanged)), "unresolved": unresolved, "warnings": warnings,
-        "underlying_plans": {"recommendation": recommendation, "assembly_plan": assembly_plan,
-                              "adoption_plan": adoption_plan, "activation_plans": activation_plans},
+        "underlying_plans": underlying,
         "requires_confirmation": bool(actual_writes and not blocked), "actual_changes": actual_writes,
         "executable": not blocked, "global_root": str(Path(global_root).resolve()) if global_root else None,
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
@@ -426,6 +543,37 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
 
 
 def render_summary(plan):
+    host_rec = (plan.get("underlying_plans") or {}).get("host_recommendation")
+    if host_rec:
+        lines = [
+            f"Route: {plan['route']}",
+            f"Target: {plan['target']['repository'] or Path(plan['target']['path']).name} @ {plan['target']['commit_sha'][:7]}",
+            f"Host: {plan['host']}",
+            "Recommendation Source: Host AI semantic judgment",
+        ]
+        if host_rec.get("install_nothing"):
+            lines.append("Recommendation: install nothing (No changes required)")
+            if host_rec.get("reason"):
+                lines.append(f"Reason: {host_rec['reason']}")
+            return "\n".join(lines)
+
+        lines.append("What:")
+        for item in host_rec.get("recommendations", []):
+            comps = ", ".join(item.get("component_ids", [])) or "all registered components"
+            scope_str = f" ({item.get('scope')})" if item.get("scope") else ""
+            lines.append(f"  - {item['capability_id']}{scope_str}: {comps}")
+            lines.append(f"    Why: {item['reason']}")
+
+        if host_rec.get("not_recommended"):
+            lines.append("Not recommended:")
+            for item in host_rec["not_recommended"]:
+                lines.append(f"  - {item['capability_id']}: {item['reason']}")
+
+        project_writes = sum(x['result'] in {'copied', 'upgraded'} for x in plan['project_changes'])
+        global_writes = sum(x['result'] in {'copied', 'upgraded'} for x in plan['global_changes'])
+        lines.append(f"Scope: {plan.get('global_root') and 'both' or 'project'}")
+        lines.append(f"Changes: {project_writes} project writes, {global_writes} global writes, {len(plan['conflicts'])} conflicts")
+        return "\n".join(lines)
     lines = [f"Route: {plan['route']}", f"Target: {plan['target']['repository'] or Path(plan['target']['path']).name} @ {plan['target']['commit_sha'][:7]}",
              f"Host: {plan['host']}"]
     if plan["route"] == "adoption":
@@ -475,7 +623,8 @@ def decide(plan, choice):
     validate(plan, "bootstrap-plan.schema.json")
     if plan["plan_digest"] != _plan_digest(plan):
         raise ProductLoopError("DECISION_MISMATCH: plan digest is invalid")
-    if choice == "approve" and (not plan["executable"] or not plan["requires_confirmation"]):
+    is_noop = bool((plan.get("underlying_plans") or {}).get("install_nothing"))
+    if choice == "approve" and (not plan["executable"] or (not plan["requires_confirmation"] and not is_noop)):
         raise ProductLoopError("PLAN_BLOCKED: only an executable plan with changes can be approved")
     if choice not in {"approve", "reject"}:
         raise ProductLoopError("INVALID_DECISION: use approve or reject")
