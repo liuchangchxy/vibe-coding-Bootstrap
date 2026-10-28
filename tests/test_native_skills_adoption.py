@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 import yaml
@@ -344,14 +345,14 @@ class NativeSkillsAdoptionTests(unittest.TestCase):
     def test_cli_execution_with_native_hosts(self):
         """CLI operations accept --host claude and --host antigravity without syntax errors."""
         res_inspect = subprocess.run([
-            "python3", "-m", "bootstrap", "inspect",
+            sys.executable, "-m", "bootstrap", "inspect",
             "--project-root", str(self.project),
             "--host", "claude"
         ], capture_output=True, text=True, check=True)
         self.assertIn('"host": "claude"', res_inspect.stdout)
 
         res_status = subprocess.run([
-            "python3", "-m", "bootstrap", "status",
+            sys.executable, "-m", "bootstrap", "status",
             "--project-root", str(self.project),
             "--host", "antigravity",
             "--json"
@@ -799,9 +800,14 @@ class NativeSkillsAdoptionTests(unittest.TestCase):
     def test_rapid_consecutive_deployments_disambiguate_deployment_id(self):
         """Rapid consecutive deployments in the same second disambiguate deployment_id without SNAPSHOT_FAILED."""
         from bootstrap.recovery import prepare_deployment
+        from unittest.mock import patch
+        from datetime import datetime, timezone
         plan = {"plan_digest": "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890", "project_changes": [], "host_activations": []}
-        dep1 = prepare_deployment(plan, self.project)
-        dep2 = prepare_deployment(plan, self.project)
+        fixed_now = datetime(2026, 10, 26, 12, 0, 0, tzinfo=timezone.utc)
+        with patch("bootstrap.recovery.datetime") as mock_dt:
+            mock_dt.now.return_value = fixed_now
+            dep1 = prepare_deployment(plan, self.project)
+            dep2 = prepare_deployment(plan, self.project)
         self.assertNotEqual(dep1["deployment_id"], dep2["deployment_id"])
         self.assertTrue(dep2["deployment_id"].startswith(dep1["deployment_id"] + "-"))
 

@@ -8,6 +8,7 @@ import sys
 from . import __version__
 from .core import apply_plan, build_plan, decide, inspect_project, load_json, render_summary, validate_output_path, write_json
 from .guided import build_context, inspect_setup
+from .home import get_vcbs_home
 from .experience import harvest_experience, harvest_successful_event, review_experience, verify_evidence
 from .lifecycle import (
     apply_uninstall, build_uninstall_plan, decide_uninstall, deploy,
@@ -28,6 +29,8 @@ def _parser():
     setup_inspect.add_argument("--project-root", default=".")
     setup_inspect.add_argument("--host", default="codex", help="Host choice: codex, claude, antigravity, none, or comma-separated")
     setup_inspect.add_argument("--json", action="store_true")
+    setup_inspect.add_argument("--vcbs-home", help="User-owned VCBS Home directory (default: ~/.vcbs)")
+    setup_inspect.add_argument("--recommendation-input", help="Write bounded recommendation input fact package to file")
     setup_plan = setup_steps.add_parser("plan", help="Create a reviewable setup plan from guided options")
     setup_plan.add_argument("--project-root", default=".")
     setup_plan.add_argument("--host", default="codex")
@@ -44,6 +47,8 @@ def _parser():
     setup_plan.add_argument("--scope", choices=("project", "global", "both"), default="project")
     setup_plan.add_argument("--global-root")
     setup_plan.add_argument("--semantic-result", help="Host-generated review result for existing project assets")
+    setup_plan.add_argument("--recommendation", help="Host-generated structured recommendation file path or JSON string")
+    setup_plan.add_argument("--vcbs-home", help="User-owned VCBS Home directory (default: ~/.vcbs)")
     setup_plan.add_argument("--output", required=True, help="Write exact plan outside the consumer project")
     setup_plan.add_argument("--json", action="store_true")
     setup_approve = setup_steps.add_parser("approve", help="Record explicit approval of the exact displayed plan")
@@ -53,7 +58,9 @@ def _parser():
     setup_apply.add_argument("--project-root", default=".")
     setup_apply.add_argument("--global-root")
     setup_apply.add_argument("--plan", required=True)
-    setup_apply.add_argument("--decision", required=True)
+    setup_apply.add_argument("--decision", required=False, default=None, help="Decision path (optional if using --confirm)")
+    setup_apply.add_argument("--confirm", "--yes", action="store_true", dest="confirm", help="Confirm and apply the plan in a single step")
+    setup_apply.add_argument("--vcbs-home", help="User-owned VCBS Home directory (default: ~/.vcbs)")
 
     # Standard Lifecycle Commands (Phase 12)
     status_cmd = commands.add_parser("status", help="Query read-only VCBS status and managed components inventory")
@@ -126,6 +133,7 @@ def _parser():
     harvest_cmd.add_argument("--observation", required=True)
     harvest_cmd.add_argument("--host", default="codex", help="Target AI host adapter (codex, claude, claude_code, antigravity, none)")
     harvest_cmd.add_argument("--output")
+    harvest_cmd.add_argument("--vcbs-home", help="User-owned VCBS Home directory (default: ~/.vcbs)")
     event_harvest_cmd = commands.add_parser(
         "harvest-event", help="Create an unverified candidate from a successful exact-head merge event"
     )
@@ -133,6 +141,7 @@ def _parser():
     event_harvest_cmd.add_argument("--event", required=True, help="Normalized VCCP/GitHub event evidence (JSON or YAML)")
     event_harvest_cmd.add_argument("--observation", required=True, help="Host-produced bounded Experience observation")
     event_harvest_cmd.add_argument("--host", default="codex")
+    event_harvest_cmd.add_argument("--vcbs-home", help="User-owned VCBS Home directory (default: ~/.vcbs)")
     verify_cmd = commands.add_parser("verify-evidence", help="Verify candidate Experience evidence prior to approval")
     verify_cmd.add_argument("experience", help="Candidate experience path or ID")
     verify_cmd.add_argument("--verifier", required=True, help="Named verifier")
@@ -145,6 +154,7 @@ def _parser():
     review_cmd.add_argument("--decision", choices=("approve", "reject"), required=True)
     review_cmd.add_argument("--reviewer", help="Named reviewer (required for approve)")
     review_cmd.add_argument("--notes")
+    review_cmd.add_argument("--vcbs-home", help="User-owned VCBS Home directory (default: ~/.vcbs)")
     return parser
 
 
@@ -154,7 +164,11 @@ def main(argv=None):
         if getattr(args, "project_root", None) is not None:
             args.project_root = str(Path(args.project_root).resolve())
         if args.command == "setup" and args.setup_action == "inspect":
-            value = inspect_setup(args.project_root, args.host)
+            vcbs_home = get_vcbs_home(getattr(args, "vcbs_home", None))
+            value = inspect_setup(args.project_root, args.host, vcbs_home=vcbs_home)
+            if getattr(args, "recommendation_input", None):
+                validate_output_path(args.recommendation_input, args.project_root)
+                write_json(args.recommendation_input, value["recommendation_input"], args.project_root)
             if args.json:
                 print(json.dumps(value, indent=2, ensure_ascii=False))
             else:
@@ -170,6 +184,8 @@ def main(argv=None):
                 for option in value["capability_options"]:
                     statuses = ", ".join(f"{item['id']}={item['status']}" for item in option["components"])
                     print(f"  {option['capability_id']}: {option['purpose']} [{statuses or 'no registered component'}]")
+                if getattr(args, "recommendation_input", None):
+                    print(f"Saved recommendation input fact package to: {Path(args.recommendation_input).resolve()}")
                 if value["semantic_review_required"]:
                     print("Next: let the selected Host review semantic_package and save its result; then run setup plan --semantic-result <file>.")
                 else:
@@ -180,22 +196,38 @@ def main(argv=None):
             selected = [cid.strip() for entry in args.capability for cid in entry.split(",") if cid.strip()]
             declined = [cid.strip() for entry in args.exclude_capability for cid in entry.split(",") if cid.strip()]
             declined_components = [cid.strip() for entry in args.exclude_component for cid in entry.split(",") if cid.strip()]
-            if inspection["route"] == "adoption":
+            rec_arg = getattr(args, "recommendation", None)
+            vcbs_home = get_vcbs_home(getattr(args, "vcbs_home", None))
+            if rec_arg:
+                plan = build_plan(args.project_root, host=args.host, global_root=args.global_root,
+                                  scope=args.scope, recommendation=rec_arg, vcbs_home=vcbs_home)
+            elif inspection["route"] == "adoption":
                 if not args.semantic_result:
                     raise ValueError("HOST_SEMANTIC_REVIEW_REQUIRED: setup inspect provides the bounded review package; pass the Host-generated --semantic-result")
-                context_value = None
+                plan = build_plan(args.project_root, host=args.host, semantic_result_path=args.semantic_result,
+                    global_root=args.global_root, context_value=None,
+                    selected_capability_ids=selected or None, excluded_capability_ids=declined,
+                    excluded_component_ids=declined_components, scope=args.scope, vcbs_home=vcbs_home)
             else:
                 context_value = build_context(args.project_root, goal=args.goal, project_type=args.project_type,
                     lifecycle=args.lifecycle, technologies=args.technology or None, platform=args.platform,
                     collaboration=args.collaboration, constraints=args.constraint)
-            plan = build_plan(args.project_root, host=args.host, semantic_result_path=args.semantic_result,
-                global_root=args.global_root, context_value=context_value,
-                selected_capability_ids=selected or None, excluded_capability_ids=declined,
-                excluded_component_ids=declined_components, scope=args.scope)
+                plan = build_plan(args.project_root, host=args.host, semantic_result_path=args.semantic_result,
+                    global_root=args.global_root, context_value=context_value,
+                    selected_capability_ids=selected or None, excluded_capability_ids=declined,
+                    excluded_component_ids=declined_components, scope=args.scope, vcbs_home=vcbs_home)
             validate_output_path(args.output, args.project_root)
             write_json(args.output, plan, args.project_root)
-            print(json.dumps({"plan": plan, "plan_path": str(Path(args.output).resolve())}, indent=2, ensure_ascii=False)
-                  if args.json else render_summary(plan) + f"\nPlan: {Path(args.output).resolve()}\nNext: review the plan, then run setup approve --plan <plan>.")
+            if args.json:
+                print(json.dumps({"plan": plan, "plan_path": str(Path(args.output).resolve())}, indent=2, ensure_ascii=False))
+            else:
+                summary = render_summary(plan)
+                print(summary)
+                print(f"Plan: {Path(args.output).resolve()}")
+                if plan.get("underlying_plans", {}).get("install_nothing"):
+                    print("Recommendation: Install nothing. Plan contains no mutations.")
+                else:
+                    print("Next: review the plan, then run setup apply --plan <plan> --confirm.")
         elif args.command == "setup" and args.setup_action == "approve":
             plan = load_json(args.plan)
             value = decide(plan, "approve")
@@ -205,7 +237,15 @@ def main(argv=None):
             print(f"Approved exact plan {value['plan_digest'][:12]} for {plan['target']['commit_sha'][:7]}\nDecision: {Path(output).resolve()}")
         elif args.command == "setup" and args.setup_action == "apply":
             plan = load_json(args.plan)
-            value = apply_plan(plan, load_json(args.decision), args.project_root, args.global_root)
+            if getattr(args, "confirm", False):
+                decision = decide(plan, "approve")
+            elif getattr(args, "decision", None):
+                decision = load_json(args.decision)
+            else:
+                raise ValueError("DECISION_REQUIRED: pass --confirm / --yes to approve and apply, or provide an approved --decision artifact")
+            vcbs_home = get_vcbs_home(getattr(args, "vcbs_home", None))
+            value = apply_plan(plan, decision, args.project_root, args.global_root,
+                               vcbs_home=vcbs_home)
             print(json.dumps(value, indent=2, ensure_ascii=False))
         elif args.command == "status":
             value = get_status(args.project_root, host=args.host, global_root=args.global_root)
@@ -293,10 +333,10 @@ def main(argv=None):
             write_json(args.output, value, target_path)
             print(f"Decision: {value['decision']} ({value['plan_digest'][:12]})")
         elif args.command == "harvest":
-            value = harvest_experience(args.project_root, args.observation, args.host, args.output)
+            value = harvest_experience(args.project_root, args.observation, args.host, args.output, vcbs_home=getattr(args, "vcbs_home", None))
             print(f"Candidate: {value['id']} ({value['title']})")
         elif args.command == "harvest-event":
-            value = harvest_successful_event(args.project_root, args.event, args.observation, args.host)
+            value = harvest_successful_event(args.project_root, args.event, args.observation, args.host, vcbs_home=getattr(args, "vcbs_home", None))
             candidate = value["candidate"]
             print(json.dumps({"status": "created" if value["created"] else "duplicate",
                               "reason": value["reason"], "experience_id": candidate["id"],
@@ -309,13 +349,15 @@ def main(argv=None):
             value = verify_evidence(args.experience, idx, args.verifier, args.method, args.status)
             print(f"Verified evidence for {value['id']}: index {idx} -> {args.status}")
         elif args.command == "review-experience":
-            value = review_experience(args.experience, args.decision, args.reviewer, args.notes)
+            value = review_experience(args.experience, args.decision, args.reviewer, args.notes, vcbs_home=getattr(args, "vcbs_home", None))
             print(f"Experience {value['id']}: {value['status']} (review: {value['review']['review_status']})")
         else:
             plan = load_json(args.plan)
             decision = load_json(args.decision) if args.decision else None
             validate_output_path(args.output, args.project_root)
-            value = apply_plan(plan, decision, args.project_root, args.global_root)
+            vcbs_home = get_vcbs_home(getattr(args, "vcbs_home", None))
+            value = apply_plan(plan, decision, args.project_root, args.global_root,
+                               vcbs_home=vcbs_home)
             if args.output:
                 write_json(args.output, value, args.project_root)
             print(json.dumps(value, indent=2, ensure_ascii=False))

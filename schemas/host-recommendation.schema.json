@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vibe-coding-bootstrap.local/schemas/host-recommendation.schema.json",
+  "title": "HostRecommendation",
+  "description": "Structured semantic recommendation produced by current AI Host for a specific project.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format_version",
+    "target",
+    "host"
+  ],
+  "properties": {
+    "format_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commit_sha"],
+      "properties": {
+        "commit_sha": {
+          "type": "string",
+          "minLength": 7
+        },
+        "repository": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "dirty": {
+          "type": "boolean"
+        }
+      }
+    },
+    "host": {
+      "type": "string",
+      "minLength": 1
+    },
+    "install_nothing": {
+      "type": "boolean"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "capability_id",
+          "reason"
+        ],
+        "properties": {
+          "capability_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "component_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "scope": {
+            "enum": ["project", "global", "both"]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "not_recommended": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "capability_id",
+          "reason"
+        ],
+        "properties": {
+          "capability_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "component_id": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

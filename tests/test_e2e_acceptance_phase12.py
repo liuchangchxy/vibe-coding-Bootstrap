@@ -101,8 +101,11 @@ class Phase12E2EAcceptanceTests(unittest.TestCase):
 
     def _run_vcbs_wrapper(self, *args, check=True):
         env = dict(os.environ, PYTHONPATH=str(self.vcbs_root))
+        cmd = [str(self.vcbs_root / "vcbs"), *map(str, args)]
+        if sys.platform == "win32":
+            cmd = [sys.executable, *cmd]
         result = subprocess.run(
-            [str(self.vcbs_root / "vcbs"), *map(str, args)],
+            cmd,
             cwd=self.vcbs_root, env=env, capture_output=True, text=True
         )
         if check and result.returncode != 0:
