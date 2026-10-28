@@ -64,13 +64,13 @@ def compose(context, root=ROOT, selected_capability_ids=None, excluded_capabilit
         digest.update(path.encode("utf-8"))
         digest.update(record_path.read_bytes())
 
-    if vcbs_home is not None:
-        from bootstrap.home import load_user_capabilities
-        for user_cap in load_user_capabilities(vcbs_home):
-            cid = user_cap["id"]
-            if cid not in records:
-                records[cid] = user_cap
-                paths[cid] = user_cap.get("source_path", f"user_home/capabilities/{cid}.yaml")
+    from bootstrap.home import get_vcbs_home, load_profile, load_user_capabilities
+    home = get_vcbs_home(vcbs_home)
+    for user_cap in load_user_capabilities(home):
+        cid = user_cap["id"]
+        if cid not in records:
+            records[cid] = user_cap
+            paths[cid] = user_cap.get("source_path", f"user_home/capabilities/{cid}.yaml")
 
     def require_id(cid):
         if cid not in records:
@@ -81,11 +81,7 @@ def compose(context, root=ROOT, selected_capability_ids=None, excluded_capabilit
             for cid in record.get(field, []):
                 require_id(cid)
 
-    if vcbs_home is not None:
-        from bootstrap.home import load_profile
-        profile = load_profile(vcbs_home, root=root)
-    else:
-        profile = load_yaml(root / "profiles/personal.yaml")
+    profile = load_profile(home, root=root)
     validate(profile, "profile.schema.json", root)
     defaults = profile.get("default_capability_ids", [])
     excluded = {cid: "Explicitly excluded by profiles/personal.yaml."
@@ -110,8 +106,20 @@ def compose(context, root=ROOT, selected_capability_ids=None, excluded_capabilit
     referenced_ids = {experience_id for record in records.values()
                       for experience_id in record.get("experience_ids", [])}
     referenced_ids.update(profile.get("reusable_experience_ids", []))
+    def _rel_path(path, root_dir):
+        try:
+            return Path(path).resolve().relative_to(Path(root_dir).resolve()).as_posix()
+        except ValueError:
+            return f"user_home/experiences/verified/{Path(path).name}"
+
     for experience_id in sorted(referenced_ids):
-        matches = sorted((root / "experiences" / "verified").glob("*.yaml"))
+        matches = []
+        home_verified = home / "experiences" / "verified"
+        if home_verified.is_dir():
+            matches.extend(sorted(home_verified.glob("*.yaml")))
+        repo_verified = Path(root) / "experiences" / "verified"
+        if repo_verified.is_dir():
+            matches.extend(sorted(repo_verified.glob("*.yaml")))
         entry = None
         for path in matches:
             if path.stem not in {experience_id, experience_id.removeprefix("exp-")}:
@@ -145,7 +153,7 @@ def compose(context, root=ROOT, selected_capability_ids=None, excluded_capabilit
                     or experience["review"].get("review_status") != "accepted"
                     or record["id"] not in experience.get("capability_ids", [])):
                 raise ValueError(f"Capability experience_ids must link an accepted verified Experience for {record['id']}: {experience_id}")
-            experiences.append((entry[0].relative_to(root).as_posix(), experience))
+            experiences.append((_rel_path(entry[0], root), experience))
 
     for experience_id in profile.get("reusable_experience_ids", []):
         entry = lifecycle.get(experience_id)
@@ -168,7 +176,7 @@ def compose(context, root=ROOT, selected_capability_ids=None, excluded_capabilit
             raise ValueError(f"Personal reusable experience lacks qualifying verified evidence: {experience_id}")
         for cid in experience.get("capability_ids", []):
             require_id(cid)
-        experiences.append((entry[0].relative_to(root).as_posix(), experience))
+        experiences.append((_rel_path(entry[0], root), experience))
 
     candidates = {}
 

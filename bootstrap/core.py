@@ -206,15 +206,15 @@ def _exclude_assembly_components(assembly_plan, excluded_ids, root, vcbs_home=No
     excluded_ids = set(excluded_ids or [])
     if not excluded_ids:
         return
+    from bootstrap.home import get_vcbs_home, load_user_capabilities
+    home = get_vcbs_home(vcbs_home)
     catalog = load_yaml(Path(root) / "capabilities/catalog.yaml")
     known = set()
     resolved_ids = set()
     records = []
     for relative in catalog["capabilities"]:
         records.append(load_yaml(Path(root) / "capabilities" / relative))
-    if vcbs_home is not None:
-        from bootstrap.home import load_user_capabilities
-        records.extend(load_user_capabilities(vcbs_home))
+    records.extend(load_user_capabilities(home))
     for record in records:
         for item in record.get("components", []):
             metadata = item.get("assembly", {})
@@ -251,6 +251,8 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
                selected_capability_ids=None, excluded_capability_ids=None,
                excluded_component_ids=None, scope="both",
                recommendation=None, vcbs_home=None):
+    from bootstrap.home import get_vcbs_home
+    resolved_home = get_vcbs_home(vcbs_home)
     if scope not in {"project", "global", "both"}:
         raise ProductLoopError(f"INVALID_SCOPE: unsupported installation scope '{scope}'")
     current = inspect_project(project_root, host, root)
@@ -272,11 +274,11 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
         else:
             rec_data = dict(recommendation)
 
-        validate_host_recommendation(rec_data, project_root, root=root, vcbs_home=vcbs_home)
+        validate_host_recommendation(rec_data, project_root, root=root, vcbs_home=resolved_home)
 
         # Handle install_nothing (no-op)
         if rec_data.get("install_nothing") or not rec_data.get("recommendations"):
-            profile_sha = _profile_digest(root, vcbs_home=vcbs_home)
+            profile_sha = _profile_digest(root, vcbs_home=resolved_home)
             catalog_revision = _current_catalog_revision(root)
             value = {
                 "format_version": 1,
@@ -332,7 +334,7 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
         specific_components = []
         for item in rec_data["recommendations"]:
             specific_components.extend(item.get("component_ids", []))
-        all_caps = _all_capabilities(root=root, vcbs_home=vcbs_home)
+        all_caps = _all_capabilities(root=root, vcbs_home=resolved_home)
         rec_cap_set = set(rec_cids)
         declined_comps = set(excluded_component_ids or [])
         if specific_components:
@@ -403,9 +405,9 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
             raise ProductLoopError("PROJECT_CONTEXT_REQUIRED: provide an explicit Project Context file")
         context = context_value if context_value is not None else load_yaml(context_path)
         recommendation_plan = compose(context, root, selected_capability_ids=selected_capability_ids,
-                                      excluded_capability_ids=excluded_capability_ids, vcbs_home=vcbs_home)
-        assembly_plan = assemble(recommendation_plan, root, vcbs_home=vcbs_home)
-        _exclude_assembly_components(assembly_plan, excluded_component_ids, root, vcbs_home=vcbs_home)
+                                      excluded_capability_ids=excluded_capability_ids, vcbs_home=resolved_home)
+        assembly_plan = assemble(recommendation_plan, root, vcbs_home=resolved_home)
+        _exclude_assembly_components(assembly_plan, excluded_component_ids, root, vcbs_home=resolved_home)
         if scope != "both":
             excluded = [item for item in assembly_plan["components"]
                         if item["scope"] in {"project", "global"} and item["scope"] != scope]
@@ -553,7 +555,7 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
     actual_writes = sum(item["result"] in {"copied", "upgraded"} for item in rows)
     actual_writes += sum(plan["status"] == "ready" for plan in activation_plans)
     blocked = bool(unresolved)
-    profile_sha = _profile_digest(root, vcbs_home=vcbs_home)
+    profile_sha = _profile_digest(root, vcbs_home=resolved_home)
     catalog_revision = recommendation_plan["catalog_revision"] if recommendation_plan else _current_catalog_revision(root)
     if scope != "global" and (any(p.get("host") == "antigravity" for p in activation_plans) or "antigravity" in _parse_hosts(host)):
         shared_notice = (
@@ -849,6 +851,8 @@ def _validate_materialization_preflight(plan, dry, project_root=None, global_roo
 
 
 def apply_plan(plan, decision, project_root, global_root=None, root=ROOT, vcbs_home=None):
+    from bootstrap.home import get_vcbs_home
+    resolved_home = get_vcbs_home(vcbs_home)
     validate(plan, "bootstrap-plan.schema.json", root)
     project = Path(project_root).resolve(strict=True)
     if not plan["requires_confirmation"] and plan["actual_changes"] == 0:
@@ -877,7 +881,7 @@ def apply_plan(plan, decision, project_root, global_root=None, root=ROOT, vcbs_h
         raise ProductLoopError("STALE_BOOTSTRAP_PLAN: target revision or dirty state changed")
     if _current_catalog_revision(root) != plan["catalog_revision"]:
         raise ProductLoopError("STALE_BOOTSTRAP_CATALOG: Catalog changed after planning")
-    if _profile_digest(root, vcbs_home=vcbs_home) != plan["profile_sha256"]:
+    if _profile_digest(root, vcbs_home=resolved_home) != plan["profile_sha256"]:
         raise ProductLoopError("STALE_BOOTSTRAP_PROFILE: Personal Profile changed after planning")
     intended_global = plan.get("global_root")
     if plan["global_changes"] and (not global_root or str(Path(global_root).resolve()) != intended_global):

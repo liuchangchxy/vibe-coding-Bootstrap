@@ -8,6 +8,7 @@ import sys
 from . import __version__
 from .core import apply_plan, build_plan, decide, inspect_project, load_json, render_summary, validate_output_path, write_json
 from .guided import build_context, inspect_setup
+from .home import get_vcbs_home
 from .experience import harvest_experience, harvest_successful_event, review_experience, verify_evidence
 from .lifecycle import (
     apply_uninstall, build_uninstall_plan, decide_uninstall, deploy,
@@ -163,7 +164,8 @@ def main(argv=None):
         if getattr(args, "project_root", None) is not None:
             args.project_root = str(Path(args.project_root).resolve())
         if args.command == "setup" and args.setup_action == "inspect":
-            value = inspect_setup(args.project_root, args.host, vcbs_home=getattr(args, "vcbs_home", None))
+            vcbs_home = get_vcbs_home(getattr(args, "vcbs_home", None))
+            value = inspect_setup(args.project_root, args.host, vcbs_home=vcbs_home)
             if getattr(args, "recommendation_input", None):
                 validate_output_path(args.recommendation_input, args.project_root)
                 write_json(args.recommendation_input, value["recommendation_input"], args.project_root)
@@ -195,7 +197,7 @@ def main(argv=None):
             declined = [cid.strip() for entry in args.exclude_capability for cid in entry.split(",") if cid.strip()]
             declined_components = [cid.strip() for entry in args.exclude_component for cid in entry.split(",") if cid.strip()]
             rec_arg = getattr(args, "recommendation", None)
-            vcbs_home = getattr(args, "vcbs_home", None)
+            vcbs_home = get_vcbs_home(getattr(args, "vcbs_home", None))
             if rec_arg:
                 plan = build_plan(args.project_root, host=args.host, global_root=args.global_root,
                                   scope=args.scope, recommendation=rec_arg, vcbs_home=vcbs_home)
@@ -241,8 +243,9 @@ def main(argv=None):
                 decision = load_json(args.decision)
             else:
                 raise ValueError("DECISION_REQUIRED: pass --confirm / --yes to approve and apply, or provide an approved --decision artifact")
+            vcbs_home = get_vcbs_home(getattr(args, "vcbs_home", None))
             value = apply_plan(plan, decision, args.project_root, args.global_root,
-                               vcbs_home=getattr(args, "vcbs_home", None))
+                               vcbs_home=vcbs_home)
             print(json.dumps(value, indent=2, ensure_ascii=False))
         elif args.command == "status":
             value = get_status(args.project_root, host=args.host, global_root=args.global_root)
@@ -352,8 +355,9 @@ def main(argv=None):
             plan = load_json(args.plan)
             decision = load_json(args.decision) if args.decision else None
             validate_output_path(args.output, args.project_root)
+            vcbs_home = get_vcbs_home(getattr(args, "vcbs_home", None))
             value = apply_plan(plan, decision, args.project_root, args.global_root,
-                               vcbs_home=getattr(args, "vcbs_home", None))
+                               vcbs_home=vcbs_home)
             if args.output:
                 write_json(args.output, value, args.project_root)
             print(json.dumps(value, indent=2, ensure_ascii=False))

@@ -570,6 +570,191 @@ components:
         global_summary = render_summary(global_plan)
         self.assertIn("Scope: global", global_summary)
 
+    def test_default_vcbs_home_via_env_honored_when_cli_flag_omitted(self):
+        """Test that VCBS_HOME env is honored without passing --vcbs-home flag to CLI commands."""
+        import hashlib
+        home_env = self.base / "home_via_env"
+        init_vcbs_home(home_env)
+        custom_profile = {
+            "id": "env-user-profile",
+            "name": "Env User Profile",
+            "description": "Customized personal profile loaded via VCBS_HOME.",
+            "preferences": {
+                "testing_approach": "comprehensive",
+                "additional": {
+                    "custom_flag": "enabled_by_env_profile",
+                },
+            },
+            "default_capability_ids": [],
+            "excluded_capability_ids": [],
+            "reusable_experience_ids": [],
+            "created_at": "2026-10-26T00:00:00Z",
+            "updated_at": "2026-10-26T00:00:00Z",
+        }
+        save_profile(custom_profile, home_env)
+        expected_profile_sha = hashlib.sha256((home_env / "profile.yaml").read_bytes()).hexdigest()
+
+        user_cap_file = home_env / "capabilities" / "user-env-tool.yaml"
+        user_cap_file.parent.mkdir(parents=True, exist_ok=True)
+        user_cap_file.write_text(
+            """id: user-env-tool
+version: "1"
+name: User Env Tool
+kind: documentation
+purpose: Custom tool provided via default VCBS Home.
+selection_hints:
+  signals: []
+  constraints: []
+components: []
+""",
+            encoding="utf-8",
+        )
+
+        old_vcbs_home = os.environ.get("VCBS_HOME")
+        os.environ["VCBS_HOME"] = str(home_env)
+        try:
+            # 1. setup inspect without --vcbs-home
+            inspect_file = self.base / "env-inspect-facts.json"
+            inspect_res = self.cli(
+                "setup", "inspect",
+                "--project-root", self.project,
+                "--host", "none",
+                "--recommendation-input", inspect_file,
+                "--json",
+            )
+            self.assertEqual(0, inspect_res.returncode, inspect_res.stderr)
+            facts = json.loads(inspect_file.read_text(encoding="utf-8"))
+            available_ids = [c["capability_id"] for c in facts["available_capabilities"]]
+            self.assertIn("user-env-tool", available_ids)
+            self.assertEqual("comprehensive", facts["personal_preferences"].get("testing_approach"))
+            self.assertEqual("enabled_by_env_profile", facts["personal_preferences"].get("additional", {}).get("custom_flag"))
+
+            # 2. Host recommends user-env-tool
+            rec_file = self.base / "env-rec.json"
+            rec_data = {
+                "format_version": 1,
+                "target": {
+                    "commit_sha": self.head_sha,
+                    "dirty": False,
+                    "path": str(self.project),
+                },
+                "host": "none",
+                "recommendations": [
+                    {
+                        "capability_id": "user-env-tool",
+                        "reason": "Host recommended user tool loaded from default VCBS Home.",
+                        "scope": "project",
+                    }
+                ],
+                "not_recommended": [],
+                "conflicts": [],
+                "install_nothing": False,
+            }
+            rec_file.write_text(json.dumps(rec_data, indent=2), encoding="utf-8")
+
+            # 3. setup plan without --vcbs-home
+            plan_file = self.base / "env-plan.json"
+            plan_res = self.cli(
+                "setup", "plan",
+                "--project-root", self.project,
+                "--host", "none",
+                "--recommendation", rec_file,
+                "--output", plan_file,
+            )
+            self.assertEqual(0, plan_res.returncode, plan_res.stderr)
+            self.assertTrue(plan_file.is_file())
+            plan = json.loads(plan_file.read_text(encoding="utf-8"))
+            self.assertIn("user-env-tool", plan["capabilities"])
+            self.assertEqual(expected_profile_sha, plan["profile_sha256"])
+        finally:
+            if old_vcbs_home is None:
+                os.environ.pop("VCBS_HOME", None)
+            else:
+                os.environ["VCBS_HOME"] = old_vcbs_home
+
+    def test_customized_home_profile_never_silently_replaced_by_repository_seed(self):
+        """Negative test: a customized profile in VCBS Home is authoritative and never silently replaced by repository seed."""
+        home_custom = self.base / "home_profile_authoritative"
+        init_vcbs_home(home_custom)
+        custom_profile = {
+            "id": "authoritative-profile",
+            "name": "Authoritative Profile",
+            "description": "Explicitly excludes testing capability.",
+            "preferences": {
+                "testing_approach": "minimal",
+                "additional": {
+                    "strict_home_profile": "true",
+                },
+            },
+            "default_capability_ids": [],
+            "excluded_capability_ids": ["testing"],
+            "reusable_experience_ids": [],
+            "created_at": "2026-10-26T00:00:00Z",
+            "updated_at": "2026-10-26T00:00:00Z",
+        }
+        save_profile(custom_profile, home_custom)
+
+        # In repository seed (profiles/personal.yaml), 'testing' is NOT excluded
+        repo_profile = load_profile(home_path=None, root=ROOT)
+        loaded_custom = load_profile(home_path=home_custom, root=ROOT)
+        self.assertIn("testing", loaded_custom["excluded_capability_ids"])
+
+        old_vcbs_home = os.environ.get("VCBS_HOME")
+        os.environ["VCBS_HOME"] = str(home_custom)
+        try:
+            # 1. In inspect fact package, personal_preferences comes from custom profile, not repository seed
+            inspect_facts = self.base / "authoritative-facts.json"
+            res = self.cli(
+                "setup", "inspect",
+                "--project-root", self.project,
+                "--host", "none",
+                "--recommendation-input", inspect_facts,
+            )
+            self.assertEqual(0, res.returncode, res.stderr)
+            facts = json.loads(inspect_facts.read_text(encoding="utf-8"))
+            self.assertEqual("minimal", facts["personal_preferences"].get("testing_approach"))
+            self.assertEqual("true", facts["personal_preferences"].get("additional", {}).get("strict_home_profile"))
+
+            # 2. Recommending 'testing' must be rejected because it is excluded by the authoritative home profile
+            rec_file = self.base / "exclude-rec.json"
+            rec_data = {
+                "format_version": 1,
+                "target": {
+                    "commit_sha": self.head_sha,
+                    "dirty": False,
+                    "path": str(self.project),
+                },
+                "host": "none",
+                "recommendations": [
+                    {
+                        "capability_id": "testing",
+                        "reason": "Host wants testing, but user profile excluded it.",
+                        "scope": "project",
+                    }
+                ],
+                "not_recommended": [],
+                "conflicts": [],
+                "install_nothing": False,
+            }
+            rec_file.write_text(json.dumps(rec_data, indent=2), encoding="utf-8")
+
+            plan_file = self.base / "authoritative-plan.json"
+            plan_res = self.cli(
+                "setup", "plan",
+                "--project-root", self.project,
+                "--host", "none",
+                "--recommendation", rec_file,
+                "--output", plan_file,
+            )
+            # Must fail with CAPABILITY_EXCLUDED because home profile excluded 'testing'
+            self.assertNotEqual(0, plan_res.returncode)
+            self.assertIn("CAPABILITY_EXCLUDED", plan_res.stderr)
+        finally:
+            if old_vcbs_home is None:
+                os.environ.pop("VCBS_HOME", None)
+            else:
+                os.environ["VCBS_HOME"] = old_vcbs_home
+
 
 if __name__ == "__main__":
     unittest.main()

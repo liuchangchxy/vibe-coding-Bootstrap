@@ -91,6 +91,7 @@ def _all_capabilities(root=ROOT, vcbs_home=None) -> list[dict]:
     """Combine built-in Catalog capabilities with user-owned VCBS Home capabilities."""
     capabilities = []
     seen_ids = set()
+    home = get_vcbs_home(vcbs_home)
 
     # 1. Built-in Catalog capabilities
     catalog = load_yaml(Path(root) / "capabilities/catalog.yaml")
@@ -101,7 +102,7 @@ def _all_capabilities(root=ROOT, vcbs_home=None) -> list[dict]:
         seen_ids.add(rec["id"])
 
     # 2. User capabilities from VCBS Home
-    user_caps = load_user_capabilities(vcbs_home)
+    user_caps = load_user_capabilities(home)
     for u_rec in user_caps:
         if u_rec["id"] not in seen_ids:
             u_rec["origin"] = "user_home"
@@ -116,6 +117,7 @@ def build_recommendation_package(project_root, host="codex", root=ROOT, vcbs_hom
 
     Facts remain strictly distinguishable from recommendations.
     """
+    home = get_vcbs_home(vcbs_home)
     project = Path(project_root).resolve(strict=True)
     if not project.is_dir():
         raise ProductLoopError("INVALID_PROJECT_ROOT: target must be a directory")
@@ -136,11 +138,11 @@ def build_recommendation_package(project_root, host="codex", root=ROOT, vcbs_hom
     selected_hosts = _parse_hosts(host)
 
     # Personal preferences from VCBS Home
-    profile = load_profile(vcbs_home, root=root)
+    profile = load_profile(home, root=root)
     personal_preferences = profile.get("preferences", {})
 
     # Reusable verified Experience matching project technologies or type
-    all_exp = load_verified_experiences(vcbs_home, root=root)
+    all_exp = load_verified_experiences(home, root=root)
     matching_exp = []
     for exp in all_exp:
         exp_ctx = exp.get("project_context", {})
@@ -155,7 +157,7 @@ def build_recommendation_package(project_root, host="codex", root=ROOT, vcbs_hom
             })
 
     # Available Capabilities & Component Options
-    raw_caps = _all_capabilities(root=root, vcbs_home=vcbs_home)
+    raw_caps = _all_capabilities(root=root, vcbs_home=home)
     available_capabilities = []
     conflict_signals = []
 
@@ -323,6 +325,7 @@ def _detect_project_name(project: Path) -> str | None:
 
 def validate_host_recommendation(rec: dict, project_root, root=ROOT, vcbs_home=None) -> dict:
     """Validate structured Host recommendation against schema, target revision, IDs, and conflicts."""
+    home = get_vcbs_home(vcbs_home)
     project = Path(project_root).resolve(strict=True)
     if not project.is_dir():
         raise ProductLoopError("INVALID_PROJECT_ROOT: target must be a directory")
@@ -387,7 +390,7 @@ def validate_host_recommendation(rec: dict, project_root, root=ROOT, vcbs_home=N
             )
 
     # 3. Known Catalog and user capabilities / components
-    raw_caps = _all_capabilities(root=root, vcbs_home=vcbs_home)
+    raw_caps = _all_capabilities(root=root, vcbs_home=home)
     cap_map = {cap["id"]: cap for cap in raw_caps}
     comp_map = {}
     cap_comp_map = {}
