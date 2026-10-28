@@ -241,7 +241,8 @@ def main(argv=None):
                 decision = load_json(args.decision)
             else:
                 raise ValueError("DECISION_REQUIRED: pass --confirm / --yes to approve and apply, or provide an approved --decision artifact")
-            value = apply_plan(plan, decision, args.project_root, args.global_root)
+            value = apply_plan(plan, decision, args.project_root, args.global_root,
+                               vcbs_home=getattr(args, "vcbs_home", None))
             print(json.dumps(value, indent=2, ensure_ascii=False))
         elif args.command == "status":
             value = get_status(args.project_root, host=args.host, global_root=args.global_root)
@@ -351,7 +352,8 @@ def main(argv=None):
             plan = load_json(args.plan)
             decision = load_json(args.decision) if args.decision else None
             validate_output_path(args.output, args.project_root)
-            value = apply_plan(plan, decision, args.project_root, args.global_root)
+            value = apply_plan(plan, decision, args.project_root, args.global_root,
+                               vcbs_home=getattr(args, "vcbs_home", None))
             if args.output:
                 write_json(args.output, value, args.project_root)
             print(json.dumps(value, indent=2, ensure_ascii=False))

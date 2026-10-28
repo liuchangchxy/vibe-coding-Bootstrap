@@ -205,6 +205,84 @@ class HostRecommendationTests(unittest.TestCase):
         with self.assertRaisesRegex(ProductLoopError, "RECOMMENDATION_CONFLICT"):
             validate_host_recommendation(rec, self.project, root=ROOT, vcbs_home=self.vcbs_home)
 
+    def test_reject_recommendation_bound_to_different_repository(self):
+        commit_sha = self.git("rev-parse", "HEAD")
+        rec = {
+            "format_version": 1,
+            "target": {
+                "commit_sha": commit_sha,
+                "repository": "different-owner/unrelated-repo",
+            },
+            "host": "codex",
+            "recommendations": [{"capability_id": "testing", "reason": "Reason"}],
+        }
+        with self.assertRaisesRegex(ProductLoopError, "STALE_RECOMMENDATION: recommendation target repository"):
+            validate_host_recommendation(rec, self.project, root=ROOT, vcbs_home=self.vcbs_home)
+
+    def test_accept_recommendation_with_matching_repository_and_path(self):
+        commit_sha = self.git("rev-parse", "HEAD")
+        rec = {
+            "format_version": 1,
+            "target": {
+                "commit_sha": commit_sha,
+                "repository": "test-proj",
+                "path": str(self.project),
+            },
+            "host": "codex",
+            "recommendations": [{"capability_id": "testing", "reason": "Reason"}],
+        }
+        validated = validate_host_recommendation(rec, self.project, root=ROOT, vcbs_home=self.vcbs_home)
+        self.assertEqual("codex", validated["host"])
+
+    def test_reject_recommendation_bound_to_different_path(self):
+        commit_sha = self.git("rev-parse", "HEAD")
+        rec = {
+            "format_version": 1,
+            "target": {
+                "commit_sha": commit_sha,
+                "path": str(self.base / "unrelated-path"),
+            },
+            "host": "codex",
+            "recommendations": [{"capability_id": "testing", "reason": "Reason"}],
+        }
+        with self.assertRaisesRegex(ProductLoopError, "STALE_RECOMMENDATION: recommendation target path"):
+            validate_host_recommendation(rec, self.project, root=ROOT, vcbs_home=self.vcbs_home)
+
+    def test_reject_invalid_scope_for_project_only_component(self):
+        commit_sha = self.git("rev-parse", "HEAD")
+        rec = {
+            "format_version": 1,
+            "target": {"commit_sha": commit_sha},
+            "host": "codex",
+            "recommendations": [
+                {
+                    "capability_id": "testing",
+                    "component_ids": ["project-test-guidance"],
+                    "scope": "global",
+                    "reason": "Invalid global request for project-only component.",
+                }
+            ],
+        }
+        with self.assertRaisesRegex(ProductLoopError, "INVALID_RECOMMENDATION: component 'project-test-guidance' registered scope is project; cannot be recommended for 'global' scope"):
+            validate_host_recommendation(rec, self.project, root=ROOT, vcbs_home=self.vcbs_home)
+
+    def test_reject_invalid_scope_for_project_only_capability(self):
+        commit_sha = self.git("rev-parse", "HEAD")
+        rec = {
+            "format_version": 1,
+            "target": {"commit_sha": commit_sha},
+            "host": "codex",
+            "recommendations": [
+                {
+                    "capability_id": "testing",
+                    "scope": "global",
+                    "reason": "Invalid global request for project-only capability.",
+                }
+            ],
+        }
+        with self.assertRaisesRegex(ProductLoopError, "INVALID_RECOMMENDATION: capability 'testing' has only project-scope components; cannot be recommended for 'global' scope"):
+            validate_host_recommendation(rec, self.project, root=ROOT, vcbs_home=self.vcbs_home)
+
 
 if __name__ == "__main__":
     unittest.main()

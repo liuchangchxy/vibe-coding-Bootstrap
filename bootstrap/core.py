@@ -332,17 +332,64 @@ def build_plan(project_root, host="codex", context_path=None, semantic_result_pa
         specific_components = []
         for item in rec_data["recommendations"]:
             specific_components.extend(item.get("component_ids", []))
+        all_caps = _all_capabilities(root=root, vcbs_home=vcbs_home)
+        rec_cap_set = set(rec_cids)
+        declined_comps = set(excluded_component_ids or [])
         if specific_components:
-            all_caps = _all_capabilities(root=root, vcbs_home=vcbs_home)
-            rec_cap_set = set(rec_cids)
-            declined_comps = set(excluded_component_ids or [])
             for cap in all_caps:
                 if cap["id"] in rec_cap_set:
                     for comp in cap.get("components", []):
                         comp_id = comp.get("assembly", {}).get("id", comp["id"])
                         if comp_id not in specific_components and comp["id"] not in specific_components:
                             declined_comps.add(comp_id)
-            excluded_component_ids = list(declined_comps)
+
+        # Exclude components whose registered scope does not match the recommendation item's scope
+        for item in rec_data["recommendations"]:
+            item_scope = item.get("scope")
+            if item_scope in {"project", "global"} and not item.get("component_ids"):
+                cid = item["capability_id"]
+                for cap in all_caps:
+                    if cap["id"] == cid:
+                        for comp in cap.get("components", []):
+                            asm = comp.get("assembly", {})
+                            c_scope = asm.get("scope")
+                            if c_scope and c_scope != item_scope:
+                                comp_id = asm.get("id", comp["id"])
+                                declined_comps.add(comp_id)
+
+        excluded_component_ids = list(declined_comps)
+
+        needed_scopes = set()
+        for cap in all_caps:
+            if cap["id"] in rec_cap_set:
+                for comp in cap.get("components", []):
+                    comp_id = comp.get("assembly", {}).get("id", comp["id"])
+                    if comp_id not in declined_comps and comp["id"] not in declined_comps:
+                        asm_scope = comp.get("assembly", {}).get("scope")
+                        if asm_scope in {"project", "global"}:
+                            needed_scopes.add(asm_scope)
+
+        if "global" in needed_scopes and not global_root:
+            raise ProductLoopError(
+                "GLOBAL_ROOT_REQUIRED: recommendation includes global-scope items but no global root was provided"
+            )
+
+        if scope == "project" and needed_scopes == {"global"}:
+            raise ProductLoopError(
+                "SCOPE_MISMATCH: recommendation requires global scope but planning was restricted to project scope"
+            )
+        if scope == "global" and needed_scopes == {"project"}:
+            raise ProductLoopError(
+                "SCOPE_MISMATCH: recommendation requires project scope but planning was restricted to global scope"
+            )
+
+        # Align effective scope for assembly
+        if "project" in needed_scopes and "global" in needed_scopes:
+            scope = "both"
+        elif "global" in needed_scopes:
+            scope = "global"
+        elif "project" in needed_scopes:
+            scope = "project"
 
         if context_value is None and not context_path:
             from bootstrap.guided import build_context
@@ -571,7 +618,10 @@ def render_summary(plan):
 
         project_writes = sum(x['result'] in {'copied', 'upgraded'} for x in plan['project_changes'])
         global_writes = sum(x['result'] in {'copied', 'upgraded'} for x in plan['global_changes'])
-        lines.append(f"Scope: {plan.get('global_root') and 'both' or 'project'}")
+        has_project = bool(plan.get("project_changes"))
+        has_global = bool(plan.get("global_changes"))
+        applied_scope = "both" if (has_project and has_global) else ("global" if has_global else "project")
+        lines.append(f"Scope: {applied_scope}")
         lines.append(f"Changes: {project_writes} project writes, {global_writes} global writes, {len(plan['conflicts'])} conflicts")
         return "\n".join(lines)
     lines = [f"Route: {plan['route']}", f"Target: {plan['target']['repository'] or Path(plan['target']['path']).name} @ {plan['target']['commit_sha'][:7]}",
@@ -798,7 +848,7 @@ def _validate_materialization_preflight(plan, dry, project_root=None, global_roo
             )
 
 
-def apply_plan(plan, decision, project_root, global_root=None, root=ROOT):
+def apply_plan(plan, decision, project_root, global_root=None, root=ROOT, vcbs_home=None):
     validate(plan, "bootstrap-plan.schema.json", root)
     project = Path(project_root).resolve(strict=True)
     if not plan["requires_confirmation"] and plan["actual_changes"] == 0:
@@ -827,7 +877,7 @@ def apply_plan(plan, decision, project_root, global_root=None, root=ROOT):
         raise ProductLoopError("STALE_BOOTSTRAP_PLAN: target revision or dirty state changed")
     if _current_catalog_revision(root) != plan["catalog_revision"]:
         raise ProductLoopError("STALE_BOOTSTRAP_CATALOG: Catalog changed after planning")
-    if _profile_digest(root) != plan["profile_sha256"]:
+    if _profile_digest(root, vcbs_home=vcbs_home) != plan["profile_sha256"]:
         raise ProductLoopError("STALE_BOOTSTRAP_PROFILE: Personal Profile changed after planning")
     intended_global = plan.get("global_root")
     if plan["global_changes"] and (not global_root or str(Path(global_root).resolve()) != intended_global):

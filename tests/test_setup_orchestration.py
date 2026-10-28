@@ -8,9 +8,9 @@ import sys
 import tempfile
 import unittest
 
-from bootstrap.core import ROOT, apply_plan, build_plan, decide
+from bootstrap.core import ROOT, ProductLoopError, apply_plan, build_plan, decide, render_summary
 from bootstrap.guided import inspect_setup
-from bootstrap.home import init_vcbs_home, save_profile
+from bootstrap.home import init_vcbs_home, load_profile, save_profile
 from bootstrap.lifecycle import get_status
 
 
@@ -391,6 +391,184 @@ components:
         plan = json.loads(plan_file.read_text(encoding="utf-8"))
         self.assertEqual(["testing"], plan["capabilities"])
         self.assertEqual(1, plan["actual_changes"])
+
+    def test_apply_with_custom_vcbs_home_and_customized_profile(self):
+        """Test that custom VCBS Home with modified profile plans and applies successfully."""
+        custom_home = self.base / "custom_vcbs_home"
+        init_vcbs_home(custom_home)
+        # Modify personal profile in custom home using valid schema values
+        profile_data = load_profile(custom_home)
+        profile_data["preferences"]["testing_approach"] = "comprehensive"
+        save_profile(profile_data, home_path=custom_home)
+
+        rec_file = self.base / "custom-rec.json"
+        rec_data = {
+            "format_version": 1,
+            "target": {
+                "commit_sha": self.head_sha,
+                "dirty": False,
+                "path": str(self.project),
+            },
+            "host": "none",
+            "recommendations": [
+                {
+                    "capability_id": "testing",
+                    "reason": "Testing guidance with custom profile.",
+                    "scope": "project",
+                    "component_ids": ["project-test-guidance"],
+                }
+            ],
+            "not_recommended": [],
+            "conflicts": [],
+            "install_nothing": False,
+        }
+        rec_file.write_text(json.dumps(rec_data, indent=2), encoding="utf-8")
+
+        plan_file = self.base / "custom-plan.json"
+        plan_res = self.cli(
+            "setup", "plan",
+            "--project-root", self.project,
+            "--host", "none",
+            "--recommendation", rec_file,
+            "--vcbs-home", custom_home,
+            "--output", plan_file,
+        )
+        self.assertEqual(0, plan_res.returncode, plan_res.stderr)
+
+        # Apply using --vcbs-home custom_home (without VCBS_HOME env set)
+        apply_res = self.cli(
+            "setup", "apply",
+            "--project-root", self.project,
+            "--plan", plan_file,
+            "--confirm",
+            "--vcbs-home", custom_home,
+        )
+        self.assertEqual(0, apply_res.returncode, apply_res.stderr)
+        applied = json.loads(apply_res.stdout)
+        self.assertEqual("applied", applied["status"])
+
+    def test_apply_aborts_when_custom_profile_mutated_after_planning(self):
+        """Test that apply aborts with STALE_BOOTSTRAP_PROFILE when profile changes between plan and apply."""
+        custom_home = self.base / "custom_vcbs_home_stale"
+        init_vcbs_home(custom_home)
+
+        rec_file = self.base / "stale-rec.json"
+        rec_data = {
+            "format_version": 1,
+            "target": {
+                "commit_sha": self.head_sha,
+                "dirty": False,
+                "path": str(self.project),
+            },
+            "host": "none",
+            "recommendations": [
+                {
+                    "capability_id": "testing",
+                    "reason": "Testing guidance.",
+                    "scope": "project",
+                    "component_ids": ["project-test-guidance"],
+                }
+            ],
+            "not_recommended": [],
+            "conflicts": [],
+            "install_nothing": False,
+        }
+        rec_file.write_text(json.dumps(rec_data, indent=2), encoding="utf-8")
+
+        plan_file = self.base / "stale-plan.json"
+        plan_res = self.cli(
+            "setup", "plan",
+            "--project-root", self.project,
+            "--host", "none",
+            "--recommendation", rec_file,
+            "--vcbs-home", custom_home,
+            "--output", plan_file,
+        )
+        self.assertEqual(0, plan_res.returncode, plan_res.stderr)
+
+        # Mutate profile in custom home after planning
+        profile_data = load_profile(custom_home)
+        profile_data["preferences"]["interaction_style"] = "detailed"
+        save_profile(profile_data, home_path=custom_home)
+
+        # Apply must fail with STALE_BOOTSTRAP_PROFILE
+        apply_res = self.cli(
+            "setup", "apply",
+            "--project-root", self.project,
+            "--plan", plan_file,
+            "--confirm",
+            "--vcbs-home", custom_home,
+        )
+        self.assertNotEqual(0, apply_res.returncode)
+        self.assertIn("STALE_BOOTSTRAP_PROFILE", apply_res.stderr)
+
+    def test_render_summary_scope_matches_plan_actual_applied_scope(self):
+        """Test that render_summary outputs the actual applied scope matching plan changes."""
+        rec_data = {
+            "format_version": 1,
+            "target": {
+                "commit_sha": self.head_sha,
+                "dirty": False,
+                "path": str(self.project),
+            },
+            "host": "none",
+            "recommendations": [
+                {
+                    "capability_id": "testing",
+                    "reason": "Testing guidance.",
+                    "scope": "project",
+                    "component_ids": ["project-test-guidance"],
+                }
+            ],
+            "not_recommended": [],
+            "conflicts": [],
+            "install_nothing": False,
+        }
+        # Build plan with global_root passed, but project-only recommendation
+        global_root = self.base / "global_root"
+        global_root.mkdir()
+        plan = build_plan(
+            self.project,
+            host="none",
+            recommendation=rec_data,
+            global_root=global_root,
+            vcbs_home=self.home,
+        )
+        summary = render_summary(plan)
+        # Even with global_root passed, actual applied scope is 'project' because only project changes exist
+        self.assertIn("Scope: project", summary)
+        self.assertNotIn("Scope: both", summary)
+
+        # Build plan with global recommendation
+        global_rec = {
+            "format_version": 1,
+            "target": {
+                "commit_sha": self.head_sha,
+                "dirty": False,
+                "path": str(self.project),
+            },
+            "host": "none",
+            "recommendations": [
+                {
+                    "capability_id": "engineering-baseline",
+                    "reason": "Global baseline git config.",
+                    "scope": "global",
+                    "component_ids": ["reviewable-changes"],
+                }
+            ],
+            "not_recommended": [],
+            "conflicts": [],
+            "install_nothing": False,
+        }
+        global_plan = build_plan(
+            self.project,
+            host="none",
+            recommendation=global_rec,
+            global_root=global_root,
+            vcbs_home=self.home,
+        )
+        global_summary = render_summary(global_plan)
+        self.assertIn("Scope: global", global_summary)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ Responsibilities:
 
 from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
 import shutil
 import yaml
@@ -297,6 +298,29 @@ def build_recommendation_package(project_root, host="codex", root=ROOT, vcbs_hom
     }
 
 
+def _detect_project_name(project: Path) -> str | None:
+    pyproject = project / "pyproject.toml"
+    if pyproject.is_file():
+        try:
+            import tomllib
+            data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+            name = data.get("project", {}).get("name")
+            if name:
+                return str(name)
+        except Exception:
+            pass
+    package_json = project / "package.json"
+    if package_json.is_file():
+        try:
+            data = json.loads(package_json.read_text(encoding="utf-8"))
+            name = data.get("name")
+            if name:
+                return str(name)
+        except Exception:
+            pass
+    return None
+
+
 def validate_host_recommendation(rec: dict, project_root, root=ROOT, vcbs_home=None) -> dict:
     """Validate structured Host recommendation against schema, target revision, IDs, and conflicts."""
     project = Path(project_root).resolve(strict=True)
@@ -321,6 +345,46 @@ def validate_host_recommendation(rec: dict, project_root, root=ROOT, vcbs_home=N
         raise ProductLoopError(
             "STALE_RECOMMENDATION: target dirty state has changed since recommendation was prepared"
         )
+
+    if rec_target.get("path") is not None:
+        rec_path = os.path.normcase(str(Path(rec_target["path"]).resolve()))
+        cur_path = os.path.normcase(str(project.resolve()))
+        if rec_path != cur_path:
+            raise ProductLoopError(
+                f"STALE_RECOMMENDATION: recommendation target path '{rec_target['path']}' does not match current target path '{project}'"
+            )
+
+    if rec_target.get("repository") is not None:
+        rec_repo = rec_target["repository"].strip().lower()
+        if rec_repo.endswith(".git"):
+            rec_repo = rec_repo[:-4]
+        cur_repo = (target.get("repository") or "").strip().lower()
+        if cur_repo.endswith(".git"):
+            cur_repo = cur_repo[:-4]
+        project_dir_name = project.name.strip().lower()
+        detected_name = (_detect_project_name(project) or "").strip().lower()
+
+        candidates = set()
+        if cur_repo:
+            candidates.add(cur_repo)
+            if "/" in cur_repo:
+                candidates.add(cur_repo.split("/")[-1])
+        if project_dir_name:
+            candidates.add(project_dir_name)
+        if detected_name:
+            candidates.add(detected_name)
+
+        matches = False
+        for cand in candidates:
+            if rec_repo == cand or rec_repo.endswith("/" + cand) or cand.endswith("/" + rec_repo):
+                matches = True
+                break
+
+        if not matches:
+            expected_desc = cur_repo or project_dir_name
+            raise ProductLoopError(
+                f"STALE_RECOMMENDATION: recommendation target repository '{rec_target['repository']}' does not match current target repository '{expected_desc}'"
+            )
 
     # 3. Known Catalog and user capabilities / components
     raw_caps = _all_capabilities(root=root, vcbs_home=vcbs_home)
@@ -372,6 +436,38 @@ def validate_host_recommendation(rec: dict, project_root, root=ROOT, vcbs_home=N
                         raise ProductLoopError(
                             f"RECOMMENDATION_CONFLICT: component '{comp_id}' conflicts with existing unmanaged project file '{assembly['destination']}'"
                         )
+
+        # Validate item scope against registered component scopes
+        rec_scope = item.get("scope")
+        if rec_scope is not None:
+            if component_ids:
+                for comp_id in component_ids:
+                    comp_def = comp_map[comp_id]
+                    asm = comp_def.get("assembly", {})
+                    asm_scope = asm.get("scope")
+                    if asm_scope == "project" and rec_scope in {"global", "both"}:
+                        raise ProductLoopError(
+                            f"INVALID_RECOMMENDATION: component '{comp_id}' registered scope is project; cannot be recommended for '{rec_scope}' scope"
+                        )
+                    if asm_scope == "global" and rec_scope in {"project", "both"}:
+                        raise ProductLoopError(
+                            f"INVALID_RECOMMENDATION: component '{comp_id}' registered scope is global; cannot be recommended for '{rec_scope}' scope"
+                        )
+            else:
+                cap_components = cap_map[cid].get("components", [])
+                asm_scopes = {
+                    c.get("assembly", {}).get("scope")
+                    for c in cap_components
+                    if c.get("assembly", {}).get("scope") in {"project", "global"}
+                }
+                if asm_scopes == {"project"} and rec_scope in {"global", "both"}:
+                    raise ProductLoopError(
+                        f"INVALID_RECOMMENDATION: capability '{cid}' has only project-scope components; cannot be recommended for '{rec_scope}' scope"
+                    )
+                if asm_scopes == {"global"} and rec_scope in {"project", "both"}:
+                    raise ProductLoopError(
+                        f"INVALID_RECOMMENDATION: capability '{cid}' has only global-scope components; cannot be recommended for '{rec_scope}' scope"
+                    )
 
     # 6. Validate not_recommended
     for item in rec.get("not_recommended", []):
